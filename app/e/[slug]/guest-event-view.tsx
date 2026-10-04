@@ -20,6 +20,7 @@ type DisplayGift = {
   description: string;
   price: number;
   emoji: string;
+  storeName: string;
 };
 
 function amountButtonClass(selected: boolean) {
@@ -83,6 +84,7 @@ export default function GuestEventView() {
           description: gift.description,
           price: gift.targetAmount,
           emoji: gift.icon,
+          storeName: gift.storeName,
         }));
 
       setMissing(false);
@@ -245,9 +247,14 @@ export default function GuestEventView() {
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-start justify-between gap-2">
-                    <h3 className="text-base font-bold text-foreground">
-                      {gift.name}
-                    </h3>
+                    <div>
+                      <h3 className="text-base font-bold text-foreground">
+                        {gift.name}
+                      </h3>
+                      {gift.storeName ? (
+                        <p className="mt-1 text-sm text-muted">חנות: {gift.storeName}</p>
+                      ) : null}
+                    </div>
                     {selected ? (
                       <span className="text-sm font-bold text-brand">
                         ✓ {formatGiftAmount(contribution?.amount ?? 0)}

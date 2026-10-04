@@ -14,6 +14,8 @@ type GiftRow = {
   icon: string;
   priority: number;
   active: boolean;
+  store_id?: string | null;
+  store_name?: string | null;
 };
 
 type EventRow = {
@@ -69,6 +71,8 @@ function toEvent(row: EventRow, gifts: GiftRow[]): StoredEvent {
         icon: gift.icon,
         priority: gift.priority,
         active: gift.active,
+        storeId: gift.store_id || null,
+        storeName: gift.store_name?.trim() ?? "",
       })),
     createdAt: row.created_at,
   };

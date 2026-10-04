@@ -14,6 +14,8 @@ export function buildDemoEvent(): StoredEvent {
       icon: "✈️",
       priority: 0,
       active: true,
+      storeId: null,
+      storeName: "",
     },
     {
       id: "demo-sofa",
@@ -24,6 +26,8 @@ export function buildDemoEvent(): StoredEvent {
       icon: "🛋️",
       priority: 1,
       active: true,
+      storeId: null,
+      storeName: "",
     },
     {
       id: "demo-tv",
@@ -34,6 +38,8 @@ export function buildDemoEvent(): StoredEvent {
       icon: "📺",
       priority: 2,
       active: true,
+      storeId: null,
+      storeName: "",
     },
   ];
 

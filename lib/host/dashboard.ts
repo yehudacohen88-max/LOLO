@@ -9,6 +9,7 @@ export type HostDashboardGift = {
   id: string;
   title: string;
   icon: string;
+  storeName: string;
   targetAmount: number | null;
   paidAmount: number;
   pendingAmount: number;
@@ -96,11 +97,26 @@ export async function getHostDashboardData(
     return null;
   }
 
-  const { data: giftRows } = await supabase
+  const withStoreName = await supabase
     .from("event_gifts")
-    .select("id, title, icon, target_amount, priority")
+    .select("id, title, icon, target_amount, priority, store_name")
     .eq("event_id", eventId)
     .order("priority", { ascending: true });
+  const giftResult = withStoreName.error
+    ? await supabase
+        .from("event_gifts")
+        .select("id, title, icon, target_amount, priority")
+        .eq("event_id", eventId)
+        .order("priority", { ascending: true })
+    : withStoreName;
+  const giftRows = (giftResult.data ?? []) as Array<{
+    id: string;
+    title: string;
+    icon: string;
+    target_amount: number | string | null;
+    priority: number;
+    store_name?: string | null;
+  }>;
 
   const { data: orderRows } = await supabase
     .from("orders")
@@ -174,6 +190,7 @@ export async function getHostDashboardData(
         id: String(gift.id),
         title: String(gift.title || ""),
         icon: String(gift.icon || ""),
+        storeName: String(gift.store_name || "").trim(),
         targetAmount: Number.isFinite(target) && target > 0 ? target : null,
         paidAmount: paidByGift.get(String(gift.id)) ?? 0,
         pendingAmount: pendingByGift.get(String(gift.id)) ?? 0,

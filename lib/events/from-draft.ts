@@ -1,5 +1,5 @@
 import { loadEventDraft } from "@/lib/event-draft";
-import { loadSelectedGifts } from "@/lib/gifts";
+import { loadSelectedGiftChoices, loadSelectedGifts } from "@/lib/gifts";
 import { createEvent } from "./repository";
 import type { EventGift, PublishedHostEvent } from "./types";
 
@@ -7,6 +7,9 @@ export async function publishHostEvent(): Promise<PublishedHostEvent> {
   const draft = loadEventDraft();
   const catalogGifts =
     draft.giftMode === "money" ? [] : loadSelectedGifts();
+  const storeByGiftId = new Map(
+    loadSelectedGiftChoices().map((choice) => [choice.giftId, choice.storeId]),
+  );
 
   const gifts: EventGift[] =
     catalogGifts.length > 0
@@ -19,6 +22,8 @@ export async function publishHostEvent(): Promise<PublishedHostEvent> {
           icon: gift.emoji,
           priority: index,
           active: true,
+          storeId: storeByGiftId.get(gift.id) ?? null,
+          storeName: "",
         }))
       : [
           {
@@ -30,6 +35,8 @@ export async function publishHostEvent(): Promise<PublishedHostEvent> {
             icon: "💝",
             priority: 0,
             active: true,
+            storeId: null,
+            storeName: "",
           },
         ];
 

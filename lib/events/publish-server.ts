@@ -51,6 +51,18 @@ function asMoneyAmounts(value: unknown) {
   );
 }
 
+function asStoreId(value: unknown) {
+  if (value == null || value === "") {
+    return null;
+  }
+
+  if (typeof value !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value.trim())) {
+    throw new Error("נבחרה חנות לא תקינה.");
+  }
+
+  return value.trim();
+}
+
 function asGifts(value: unknown): Omit<EventGift, "id" | "eventId">[] {
   if (!Array.isArray(value) || value.length === 0) {
     return [
@@ -61,6 +73,8 @@ function asGifts(value: unknown): Omit<EventGift, "id" | "eventId">[] {
         icon: "💝",
         priority: 0,
         active: true,
+        storeId: null,
+        storeName: "",
       },
     ];
   }
@@ -83,6 +97,8 @@ function asGifts(value: unknown): Omit<EventGift, "id" | "eventId">[] {
         icon: asString(gift.icon) || "🎁",
         priority: Number.isFinite(priority) ? priority : index,
         active: gift.active !== false,
+        storeId: asStoreId(gift.storeId),
+        storeName: "",
       };
     })
     .filter((gift): gift is Omit<EventGift, "id" | "eventId"> => Boolean(gift));
@@ -93,6 +109,57 @@ function asGifts(value: unknown): Omit<EventGift, "id" | "eventId">[] {
     ...gift,
     priority: index,
   }));
+}
+
+async function attachActiveStoreNames(
+  supabase: ReturnType<typeof getSupabaseServiceClient>,
+  gifts: Omit<EventGift, "id" | "eventId">[],
+) {
+  const storeIds = [
+    ...new Set(
+      gifts
+        .map((gift) => gift.storeId)
+        .filter((storeId): storeId is string => Boolean(storeId)),
+    ),
+  ];
+
+  if (storeIds.length === 0) {
+    return gifts.map((gift) => ({
+      ...gift,
+      storeId: null,
+      storeName: "",
+    }));
+  }
+
+  const { data, error } = await supabase
+    .from("stores")
+    .select("id, name, active")
+    .in("id", storeIds)
+    .eq("active", true);
+
+  if (error) {
+    throw new Error("טעינת החנויות נכשלה.");
+  }
+
+  const names = new Map(
+    (data ?? []).map((store) => [String(store.id), String(store.name || "").trim()]),
+  );
+
+  return gifts.map((gift) => {
+    if (!gift.storeId) {
+      return { ...gift, storeId: null, storeName: "" };
+    }
+
+    const storeName = names.get(gift.storeId) ?? "";
+    if (!storeName) {
+      throw new Error("החנות שנבחרה אינה פעילה.");
+    }
+
+    return {
+      ...gift,
+      storeName: storeName.slice(0, 120),
+    };
+  });
 }
 
 async function listSlugs() {
@@ -110,14 +177,13 @@ export async function publishEventOnServer(
   const title = asString(input.title);
   const hostName = asString(input.hostName);
   const giftMode = asGiftMode(input.giftMode);
-  const gifts = asGifts(input.gifts);
   const guests = parseGuestList(input.guests);
+  const supabase = getSupabaseServiceClient();
+  const gifts = await attachActiveStoreNames(supabase, asGifts(input.gifts));
 
   if (gifts.length === 0) {
     throw new Error("נא לבחור לפחות מתנה אחת.");
   }
-
-  const supabase = getSupabaseServiceClient();
   const existingSlugs = await listSlugs();
   const id = crypto.randomUUID();
   let slug = createUniqueSlug(title || hostName || "event", existingSlugs);
@@ -186,9 +252,18 @@ export async function publishEventOnServer(
     icon: gift.icon,
     priority: gift.priority,
     active: gift.active,
+    store_id: gift.storeId,
+    store_name: gift.storeName,
   }));
+  const insertRows = giftRows.some((gift) => gift.store_id)
+    ? giftRows
+    : giftRows.map(({ store_id, store_name, ...row }) => {
+        void store_id;
+        void store_name;
+        return row;
+      });
 
-  const { error: giftError } = await supabase.from("event_gifts").insert(giftRows);
+  const { error: giftError } = await supabase.from("event_gifts").insert(insertRows);
 
   if (giftError) {
     await supabase.from("events").delete().eq("id", id);
@@ -239,6 +314,8 @@ export async function publishEventOnServer(
       icon: gift.icon,
       priority: gift.priority,
       active: gift.active,
+      storeId: gift.store_id,
+      storeName: gift.store_name,
     })),
     createdAt,
     accessCode,

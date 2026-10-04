@@ -169,10 +169,15 @@ export default function HostDashboard({
                     className="rounded-2xl border border-border px-4 py-4"
                   >
                     <div className="flex items-start justify-between gap-3">
-                      <p className="font-semibold text-foreground">
-                        {gift.icon ? `${gift.icon} ` : ""}
-                        {gift.title || "מתנה"}
-                      </p>
+                      <div>
+                        <p className="font-semibold text-foreground">
+                          {gift.icon ? `${gift.icon} ` : ""}
+                          {gift.title || "מתנה"}
+                        </p>
+                        {gift.storeName ? (
+                          <p className="mt-1 text-sm text-muted">חנות: {gift.storeName}</p>
+                        ) : null}
+                      </div>
                       {gift.targetAmount ? (
                         <p className="shrink-0 text-sm text-muted">
                           יעד {formatMoney(gift.targetAmount)}

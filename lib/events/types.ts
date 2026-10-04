@@ -7,6 +7,8 @@ export type EventGift = {
   icon: string;
   priority: number;
   active: boolean;
+  storeId: string | null;
+  storeName: string;
 };
 
 export type StoredEvent = {

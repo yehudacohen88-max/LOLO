@@ -12,12 +12,21 @@ import {
 } from "@/lib/event-draft";
 import { publishHostEvent } from "@/lib/events";
 import { saveCreatedHostAccessCode } from "@/lib/host/created-code";
-import { formatPrice, loadSelectedGifts, type Gift } from "@/lib/gifts";
+import {
+  formatPrice,
+  loadSelectedGiftChoices,
+  loadSelectedGifts,
+  type Gift,
+} from "@/lib/gifts";
+
+type PreviewGift = Gift & {
+  storeName: string;
+};
 
 export default function EventPreview() {
   const router = useRouter();
   const [draft, setDraft] = useState<EventDraft | null>(null);
-  const [gifts, setGifts] = useState<Gift[]>([]);
+  const [gifts, setGifts] = useState<PreviewGift[]>([]);
   const [selectedAmount, setSelectedAmount] = useState<number | "custom" | null>(
     null,
   );
@@ -27,14 +36,52 @@ export default function EventPreview() {
   useEffect(() => {
     let cancelled = false;
 
-    void Promise.resolve().then(() => {
+    void (async () => {
       const eventDraft = loadEventDraft();
       if (cancelled) {
         return;
       }
       setDraft(eventDraft);
-      setGifts(eventDraft.giftMode === "money" ? [] : loadSelectedGifts());
-    });
+      if (eventDraft.giftMode === "money") {
+        setGifts([]);
+        return;
+      }
+
+      const selected = loadSelectedGifts();
+      const storeByGiftId = new Map(
+        loadSelectedGiftChoices().map((choice) => [choice.giftId, choice.storeId]),
+      );
+      let storeNames = new Map<string, string>();
+      try {
+        const response = await fetch("/api/stores");
+        const payload = (await response.json()) as {
+          stores?: { id?: string; name?: string }[];
+        };
+        if (response.ok && Array.isArray(payload.stores)) {
+          storeNames = new Map(
+            payload.stores
+              .filter(
+                (store): store is { id: string; name: string } =>
+                  typeof store?.id === "string" && typeof store?.name === "string",
+              )
+              .map((store) => [store.id, store.name.trim()]),
+          );
+        }
+      } catch {
+        storeNames = new Map();
+      }
+
+      if (cancelled) {
+        return;
+      }
+
+      setGifts(
+        selected.map((gift) => ({
+          ...gift,
+          storeName: storeNames.get(storeByGiftId.get(gift.id) ?? "") ?? "",
+        })),
+      );
+    })();
 
     return () => {
       cancelled = true;
@@ -190,8 +237,15 @@ export default function EventPreview() {
                 <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-soft text-sm font-bold text-brand">
                   {index + 1}
                 </span>
-                <span className="min-w-0 flex-1 font-semibold text-foreground">
-                  {gift.name}
+                <span className="min-w-0 flex-1">
+                  <span className="block font-semibold text-foreground">
+                    {gift.name}
+                  </span>
+                  {gift.storeName ? (
+                    <span className="mt-1 block text-sm text-muted">
+                      חנות: {gift.storeName}
+                    </span>
+                  ) : null}
                 </span>
                 <span className="text-sm text-muted">{formatPrice(gift.price)}</span>
               </li>

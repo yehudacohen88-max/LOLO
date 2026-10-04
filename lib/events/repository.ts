@@ -34,6 +34,8 @@ type GiftRow = {
   icon: string;
   priority: number;
   active: boolean;
+  store_id?: string | null;
+  store_name?: string | null;
 };
 
 function requireClient() {
@@ -58,6 +60,8 @@ function toGift(row: GiftRow): EventGift {
     icon: row.icon,
     priority: row.priority,
     active: row.active,
+    storeId: row.store_id || null,
+    storeName: row.store_name?.trim() ?? "",
   };
 }
 
@@ -267,6 +271,7 @@ export async function createEvent(
         icon: gift.icon,
         priority: gift.priority,
         active: gift.active,
+        storeId: gift.storeId,
       })),
       guests: guests.map((guest) => ({
         name: guest.name,

@@ -217,6 +217,11 @@ export const gifts: Gift[] = [
 
 export const SELECTED_GIFTS_KEY = "lolo-selected-gifts";
 
+export type SelectedGiftChoice = {
+  giftId: string;
+  storeId: string | null;
+};
+
 export function formatPrice(price: number) {
   return `${price.toLocaleString("he-IL")} ₪`;
 }
@@ -225,7 +230,7 @@ export function getGiftById(id: string) {
   return gifts.find((gift) => gift.id === id);
 }
 
-export function loadSelectedGiftIds(): string[] {
+function readSelectedGiftChoices(): SelectedGiftChoice[] {
   if (typeof window === "undefined") {
     return [];
   }
@@ -241,16 +246,78 @@ export function loadSelectedGiftIds(): string[] {
       return [];
     }
 
-    return parsed.filter(
-      (id): id is string => typeof id === "string" && Boolean(getGiftById(id)),
-    );
+    const seen = new Set<string>();
+    const choices: SelectedGiftChoice[] = [];
+
+    for (const item of parsed) {
+      let giftId = "";
+      let storeId: string | null = null;
+
+      if (typeof item === "string") {
+        giftId = item;
+      } else if (item && typeof item === "object") {
+        const record = item as Record<string, unknown>;
+        if (typeof record.giftId === "string") {
+          giftId = record.giftId;
+        } else if (typeof record.id === "string") {
+          giftId = record.id;
+        }
+        if (typeof record.storeId === "string" && record.storeId.trim()) {
+          storeId = record.storeId.trim();
+        }
+      }
+
+      if (!giftId || seen.has(giftId) || !getGiftById(giftId)) {
+        continue;
+      }
+
+      seen.add(giftId);
+      choices.push({ giftId, storeId });
+    }
+
+    return choices;
   } catch {
     return [];
   }
 }
 
+function writeSelectedGiftChoices(choices: SelectedGiftChoice[]) {
+  window.localStorage.setItem(SELECTED_GIFTS_KEY, JSON.stringify(choices));
+}
+
+export function loadSelectedGiftChoices(): SelectedGiftChoice[] {
+  return readSelectedGiftChoices();
+}
+
+export function loadSelectedGiftIds(): string[] {
+  return readSelectedGiftChoices().map((choice) => choice.giftId);
+}
+
 export function saveSelectedGiftIds(ids: string[]) {
-  window.localStorage.setItem(SELECTED_GIFTS_KEY, JSON.stringify(ids));
+  const current = new Map(
+    readSelectedGiftChoices().map((choice) => [choice.giftId, choice.storeId]),
+  );
+  const seen = new Set<string>();
+  const next: SelectedGiftChoice[] = [];
+
+  for (const id of ids) {
+    if (!getGiftById(id) || seen.has(id)) {
+      continue;
+    }
+    seen.add(id);
+    next.push({ giftId: id, storeId: current.get(id) ?? null });
+  }
+
+  writeSelectedGiftChoices(next);
+}
+
+export function saveSelectedGiftStore(giftId: string, storeId: string | null) {
+  const nextStoreId = storeId?.trim() || null;
+  writeSelectedGiftChoices(
+    readSelectedGiftChoices().map((choice) =>
+      choice.giftId === giftId ? { ...choice, storeId: nextStoreId } : choice,
+    ),
+  );
 }
 
 export function clearSelectedGifts() {

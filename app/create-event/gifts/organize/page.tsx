@@ -22,7 +22,7 @@ export default function OrganizeGiftsPage() {
             מה הכי הייתם רוצים לקבל?
           </h1>
           <p className="mt-3 text-base text-muted sm:text-lg">
-            סדרו את המתנות לפי סדר העדיפות שלכם
+            סדרו את המתנות לפי סדר העדיפות, ואפשר לשייך לכל מתנה חנות פעילה
           </p>
         </header>
 
