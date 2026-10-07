@@ -1,61 +1,53 @@
-import { createHmac, timingSafeEqual } from "node:crypto";
+import "server-only";
 import { cookies } from "next/headers";
+import { signScopedPayload, signaturesMatch } from "@/lib/security/hmac";
 
 export const ADMIN_SESSION_COOKIE = "lolo_admin_session";
 const SESSION_HOURS = 12;
+const TOKEN_TYP = "admin";
 
 type AdminSession = {
+  typ: typeof TOKEN_TYP;
   role: "admin";
   exp: number;
 };
 
-function sessionSecret() {
-  return (
-    process.env.HOST_SESSION_SECRET ||
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    ""
-  );
-}
-
-function sign(value: string) {
-  const secret = sessionSecret();
-  if (!secret) {
-    throw new Error("חסר מפתח שרת של Supabase.");
-  }
-  return createHmac("sha256", secret).update(`admin:${value}`).digest("base64url");
+function encodePayload(payload: AdminSession) {
+  return Buffer.from(JSON.stringify(payload), "utf8").toString("base64url");
 }
 
 export function createAdminSessionToken() {
   const payload: AdminSession = {
+    typ: TOKEN_TYP,
     role: "admin",
     exp: Date.now() + SESSION_HOURS * 60 * 60 * 1000,
   };
-  const encoded = Buffer.from(JSON.stringify(payload), "utf8").toString(
-    "base64url",
-  );
-  return `${encoded}.${sign(encoded)}`;
+  const encoded = encodePayload(payload);
+  return `${encoded}.${signScopedPayload("ADMIN_SESSION_SECRET", TOKEN_TYP, encoded)}`;
 }
 
 export function readAdminSessionToken(token: string | undefined): AdminSession | null {
-  if (!token || !token.includes(".")) {
+  if (!token) {
     return null;
   }
 
-  const [encoded, signature] = token.split(".");
+  const parts = token.split(".");
+  if (parts.length !== 2) {
+    return null;
+  }
+  const [encoded, signature] = parts;
   if (!encoded || !signature) {
     return null;
   }
 
   let expected: string;
   try {
-    expected = sign(encoded);
+    expected = signScopedPayload("ADMIN_SESSION_SECRET", TOKEN_TYP, encoded);
   } catch {
     return null;
   }
 
-  const given = Buffer.from(signature);
-  const good = Buffer.from(expected);
-  if (given.length !== good.length || !timingSafeEqual(given, good)) {
+  if (!signaturesMatch(signature, expected)) {
     return null;
   }
 
@@ -63,7 +55,12 @@ export function readAdminSessionToken(token: string | undefined): AdminSession |
     const payload = JSON.parse(
       Buffer.from(encoded, "base64url").toString("utf8"),
     ) as AdminSession;
-    if (payload.role !== "admin" || typeof payload.exp !== "number" || payload.exp < Date.now()) {
+    if (
+      payload.typ !== TOKEN_TYP ||
+      payload.role !== "admin" ||
+      typeof payload.exp !== "number" ||
+      payload.exp < Date.now()
+    ) {
       return null;
     }
     return payload;

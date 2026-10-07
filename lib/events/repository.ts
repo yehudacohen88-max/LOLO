@@ -44,7 +44,10 @@ function requireClient() {
   }
 
   if (!isSupabaseConfigured()) {
-    throw new Error("חסר חיבור ל-Supabase. בדקו את קובץ .env.local.");
+    console.error(
+      "[LOLO] Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY",
+    );
+    throw new Error("לא הצלחנו לטעון את הנתונים כרגע. נסו שוב בעוד רגע.");
   }
 
   return getSupabaseBrowserClient();

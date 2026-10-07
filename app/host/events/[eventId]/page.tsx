@@ -42,7 +42,21 @@ export default async function HostEventDashboardPage({
     redirect("/host");
   }
 
-  const data = await getHostDashboardData(session.eventId);
+  let data: Awaited<ReturnType<typeof getHostDashboardData>>;
+  try {
+    data = await getHostDashboardData(session.eventId);
+  } catch (error) {
+    console.error("[LOLO] host dashboard failed", {
+      message: error instanceof Error ? error.message : "unknown",
+    });
+    return (
+      <main className="mx-auto flex w-full max-w-lg flex-1 flex-col px-5 py-16 text-center">
+        <p className="text-base text-muted">
+          השירות אינו זמין כרגע. נסו שוב מאוחר יותר.
+        </p>
+      </main>
+    );
+  }
   if (!data || data.eventId !== session.eventId) {
     notFound();
   }

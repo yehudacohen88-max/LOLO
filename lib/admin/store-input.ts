@@ -1,3 +1,4 @@
+import "server-only";
 import {
   SETTLEMENT_METHODS,
   type AdminStoreInput,

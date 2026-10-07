@@ -1,3 +1,4 @@
+import "server-only";
 import { DEMO_EVENT_SLUG } from "@/lib/events/demo";
 import { getSupabaseServiceClient } from "@/lib/supabase/server";
 import { normalizeEventSlug } from "@/lib/events/slug";

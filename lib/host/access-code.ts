@@ -1,3 +1,4 @@
+import "server-only";
 import { pbkdf2, randomBytes, timingSafeEqual } from "node:crypto";
 import { promisify } from "node:util";
 

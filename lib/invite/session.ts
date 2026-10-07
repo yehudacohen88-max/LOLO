@@ -1,9 +1,12 @@
-import { createHmac, timingSafeEqual } from "node:crypto";
+import "server-only";
+import { signScopedPayload, signaturesMatch } from "@/lib/security/hmac";
 
 export const INVITE_SESSION_COOKIE = "lolo_invite_session";
 const SESSION_DAYS = 30;
+const TOKEN_TYP = "invite";
 
 export type InviteSession = {
+  typ: typeof TOKEN_TYP;
   eventId: string;
   guestId: string;
   name: string;
@@ -11,21 +14,8 @@ export type InviteSession = {
   exp: number;
 };
 
-function sessionSecret() {
-  return (
-    process.env.INVITE_TOKEN_SECRET ||
-    process.env.HOST_SESSION_SECRET ||
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    ""
-  );
-}
-
-function sign(value: string) {
-  const secret = sessionSecret();
-  if (!secret) {
-    throw new Error("חסר מפתח שרת של Supabase.");
-  }
-  return createHmac("sha256", secret).update(value).digest("base64url");
+function encodePayload(payload: InviteSession) {
+  return Buffer.from(JSON.stringify(payload), "utf8").toString("base64url");
 }
 
 export function createInviteSessionToken(input: {
@@ -35,40 +25,41 @@ export function createInviteSessionToken(input: {
   phone: string;
 }) {
   const payload: InviteSession = {
+    typ: TOKEN_TYP,
     eventId: input.eventId,
     guestId: input.guestId,
     name: input.name,
     phone: input.phone,
     exp: Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000,
   };
-  const encoded = Buffer.from(JSON.stringify(payload), "utf8").toString(
-    "base64url",
-  );
-  return `${encoded}.${sign(encoded)}`;
+  const encoded = encodePayload(payload);
+  return `${encoded}.${signScopedPayload("INVITE_TOKEN_SECRET", TOKEN_TYP, encoded)}`;
 }
 
 export function readInviteSessionToken(
   token: string | undefined,
 ): InviteSession | null {
-  if (!token || !token.includes(".")) {
+  if (!token) {
     return null;
   }
 
-  const [encoded, signature] = token.split(".");
+  const parts = token.split(".");
+  if (parts.length !== 2) {
+    return null;
+  }
+  const [encoded, signature] = parts;
   if (!encoded || !signature) {
     return null;
   }
 
   let expected: string;
   try {
-    expected = sign(encoded);
+    expected = signScopedPayload("INVITE_TOKEN_SECRET", TOKEN_TYP, encoded);
   } catch {
     return null;
   }
 
-  const given = Buffer.from(signature);
-  const good = Buffer.from(expected);
-  if (given.length !== good.length || !timingSafeEqual(given, good)) {
+  if (!signaturesMatch(signature, expected)) {
     return null;
   }
 
@@ -77,6 +68,7 @@ export function readInviteSessionToken(
       Buffer.from(encoded, "base64url").toString("utf8"),
     ) as InviteSession;
     if (
+      payload.typ !== TOKEN_TYP ||
       typeof payload.eventId !== "string" ||
       !payload.eventId ||
       typeof payload.guestId !== "string" ||

@@ -1,3 +1,4 @@
+import "server-only";
 import { getSupabaseServiceClient } from "@/lib/supabase/server";
 import type { AdminStore, AdminStoreInput, SettlementMethod } from "./store-fields";
 import { SETTLEMENT_METHODS } from "./store-fields";

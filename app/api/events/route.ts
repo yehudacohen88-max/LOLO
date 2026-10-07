@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { publishEventOnServer } from "@/lib/events/publish-server";
+import { caughtErrorBody } from "@/lib/security/required-secret";
 
 export async function POST(request: Request) {
   try {
@@ -32,9 +33,7 @@ export async function POST(request: Request) {
       event,
     });
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "שמירת האירוע נכשלה.";
-    const status = message.includes("חסר מפתח") ? 500 : 400;
-    return NextResponse.json({ error: message }, { status });
+    const body = caughtErrorBody(error, "שמירת האירוע נכשלה.");
+    return NextResponse.json({ error: body.error }, { status: body.status });
   }
 }

@@ -57,7 +57,10 @@ export function getSupabaseBrowserClient() {
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!url || !anonKey) {
-    throw new Error("Supabase is not configured.");
+    console.error(
+      "[LOLO] Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY",
+    );
+    throw new Error("לא הצלחנו לטעון את הנתונים כרגע. נסו שוב בעוד רגע.");
   }
 
   const normalizedUrl = normalizeSupabaseUrl(url);
@@ -68,12 +71,8 @@ export function getSupabaseBrowserClient() {
       const origin = new URL(normalizedUrl).origin;
       console.info("[LOLO] Supabase client origin", origin);
     } catch {
-      console.error("[LOLO] Invalid NEXT_PUBLIC_SUPABASE_URL", {
-        message: "URL must be https://PROJECT.supabase.co",
-      });
-      throw new Error(
-        "NEXT_PUBLIC_SUPABASE_URL חייב להיות כתובת הפרויקט: https://PROJECT.supabase.co",
-      );
+      console.error("[LOLO] Invalid NEXT_PUBLIC_SUPABASE_URL");
+      throw new Error("לא הצלחנו לטעון את הנתונים כרגע. נסו שוב בעוד רגע.");
     }
 
     browserClient = createClient(normalizedUrl, normalizedKey, {
