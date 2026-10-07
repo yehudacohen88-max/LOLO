@@ -191,7 +191,7 @@ export async function countStoresByStatus() {
   };
 }
 
-async function countRows(table: "events" | "orders") {
+async function countRows(table: "events" | "orders" | "event_gifts") {
   const supabase = getSupabaseServiceClient();
   const { count, error } = await supabase
     .from(table)
@@ -209,4 +209,8 @@ export async function countEvents() {
 
 export async function countOrders() {
   return countRows("orders");
+}
+
+export async function countGifts() {
+  return countRows("event_gifts");
 }

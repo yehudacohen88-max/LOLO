@@ -38,7 +38,12 @@ export default async function StoreRedeemPage() {
           <h1 className="mt-4 text-2xl font-bold">מימוש שובר</h1>
           <p className="mt-1 text-sm text-muted">{storeName || "בית העסק"}</p>
         </div>
-        <StoreLogoutButton />
+        <div className="flex flex-col items-end gap-3">
+          <StoreLogoutButton />
+          <Link href="/store/settlements" className="text-sm font-semibold text-brand">
+            התחשבנויות
+          </Link>
+        </div>
       </header>
       <RedeemForm />
     </main>

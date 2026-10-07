@@ -29,7 +29,7 @@ export default async function AdminSettingsPage() {
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-5 py-10 sm:px-8">
+    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-5 py-10 sm:px-8">
       <header>
         <h1 className="text-2xl font-bold text-foreground sm:text-4xl">הגדרות</h1>
         <p className="mt-2 max-w-2xl text-base leading-relaxed text-muted">
