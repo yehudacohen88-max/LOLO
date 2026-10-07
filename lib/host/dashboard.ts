@@ -1,4 +1,5 @@
 import "server-only";
+import { calculateEventFunding } from "@/lib/funding/calculate";
 import { listEventGuests } from "@/lib/host/guest-list";
 import type { EventGuest } from "@/lib/host/guest-fields";
 import { normalizeEventSlug } from "@/lib/events/slug";
@@ -16,6 +17,8 @@ export type HostDashboardGift = {
   targetAmount: number | null;
   paidAmount: number;
   pendingAmount: number;
+  contributorCount: number;
+  percentOfTarget: number | null;
 };
 
 export type HostDashboardOrder = {
@@ -180,33 +183,25 @@ export async function getHostDashboardData(
     itemRows = (items ?? []) as ItemRow[];
   }
 
-  const statusByOrderId = new Map(
-    orders.map((order) => [order.id, asStatus(order.payment_status)]),
-  );
-
-  const paidByGift = new Map<string, number>();
-  const pendingByGift = new Map<string, number>();
-
-  for (const item of itemRows) {
-    const status = statusByOrderId.get(item.order_id);
-    if (!status) {
-      continue;
-    }
-    const amount = asAmount(item.amount);
-    if (status === "paid") {
-      paidByGift.set(item.gift_id, roundAmount((paidByGift.get(item.gift_id) ?? 0) + amount));
-    } else if (status === "pending") {
-      pendingByGift.set(
-        item.gift_id,
-        roundAmount((pendingByGift.get(item.gift_id) ?? 0) + amount),
-      );
-    }
-  }
-
-  const paidOrders = orders.filter((order) => asStatus(order.payment_status) === "paid");
-  const pendingOrders = orders.filter(
-    (order) => asStatus(order.payment_status) === "pending",
-  );
+  const funding = calculateEventFunding({
+    gifts: (giftRows ?? []).map((gift) => {
+      const target = Number(gift.target_amount);
+      return {
+        id: String(gift.id),
+        targetAmount: Number.isFinite(target) && target > 0 ? target : null,
+      };
+    }),
+    orders: orders.map((order) => ({
+      id: order.id,
+      paymentStatus: asStatus(order.payment_status),
+    })),
+    items: itemRows.map((item) => ({
+      orderId: String(item.order_id),
+      giftId: String(item.gift_id),
+      amount: asAmount(item.amount),
+    })),
+  });
+  const fundingByGift = new Map(funding.gifts.map((gift) => [gift.giftId, gift]));
 
   return {
     eventId: event.id,
@@ -216,16 +211,13 @@ export async function getHostDashboardData(
     hostName: String(event.host_name || ""),
     slug: String(event.slug || ""),
     guestPath: guestEventPath(String(event.slug || "")),
-    paidAmount: roundAmount(
-      paidOrders.reduce((sum, order) => sum + asAmount(order.total_amount), 0),
-    ),
-    pendingAmount: roundAmount(
-      pendingOrders.reduce((sum, order) => sum + asAmount(order.total_amount), 0),
-    ),
-    paidOrderCount: paidOrders.length,
-    pendingOrderCount: pendingOrders.length,
+    paidAmount: funding.paidAmount,
+    pendingAmount: funding.pendingAmount,
+    paidOrderCount: funding.paidOrderCount,
+    pendingOrderCount: funding.pendingOrderCount,
     gifts: (giftRows ?? []).map((gift) => {
       const target = Number(gift.target_amount);
+      const progress = fundingByGift.get(String(gift.id));
       return {
         id: String(gift.id),
         title: String(gift.title || ""),
@@ -234,8 +226,10 @@ export async function getHostDashboardData(
         imageUrl: String(gift.image_url || "").trim(),
         storeName: String(gift.store_name || "").trim(),
         targetAmount: Number.isFinite(target) && target > 0 ? target : null,
-        paidAmount: paidByGift.get(String(gift.id)) ?? 0,
-        pendingAmount: pendingByGift.get(String(gift.id)) ?? 0,
+        paidAmount: progress?.raisedAmount ?? 0,
+        pendingAmount: progress?.pendingAmount ?? 0,
+        contributorCount: progress?.contributorCount ?? 0,
+        percentOfTarget: progress?.percentOfTarget ?? null,
       };
     }),
     orders: orders.map((order) => ({
