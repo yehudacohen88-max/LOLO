@@ -139,14 +139,20 @@ export default function StoreForm({ store }: { store?: AdminStore }) {
           <input value={name} onChange={(event) => setName(event.target.value)} className={fieldClass} />
         </label>
         <label className="flex flex-col gap-2">
-          <span className="text-sm font-semibold">מזהה באנגלית</span>
+          <span className="text-sm font-semibold">שם כניסה לחנות</span>
           <input
             value={slug}
             onChange={(event) => setSlug(event.target.value)}
             dir="ltr"
             placeholder="bike-shop"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
             className={fieldClass}
           />
+          <span className="text-xs leading-relaxed text-muted">
+            אותיות באנגלית, מספרים ומקפים. החנות מזינה את השם הזה במסך המימוש.
+          </span>
         </label>
         <label className="flex items-center gap-3 text-sm font-semibold">
           <input

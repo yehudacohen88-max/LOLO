@@ -1,8 +1,10 @@
 import Link from "next/link";
 import FundingProgress from "@/components/funding-progress";
 import GiftMedia from "@/components/gift-media";
+import GiftTimeline from "@/components/gift-timeline";
 import type {
   HostDashboardData,
+  HostDashboardGift,
   HostPaymentStatus,
 } from "@/lib/host/dashboard";
 import CopyGuestLink from "./copy-guest-link";
@@ -56,6 +58,19 @@ function paymentLabel(status: HostPaymentStatus) {
     return "בוטל";
   }
   return "ממתין לתשלום";
+}
+
+function redemptionStage(vouchers: HostDashboardGift["vouchers"]) {
+  const active = vouchers.filter(
+    (voucher) => voucher.status !== "CANCELLED" && voucher.status !== "EXPIRED",
+  );
+  const touched = active.filter((voucher) => voucher.remainingAmount < voucher.amount);
+  if (touched.length === 0) {
+    return "none" as const;
+  }
+  const fully =
+    active.length > 0 && active.every((voucher) => voucher.remainingAmount === 0);
+  return fully ? ("full" as const) : ("partial" as const);
 }
 
 function paymentClass(status: HostPaymentStatus) {
@@ -160,7 +175,7 @@ export default function HostDashboard({
           <h2 className="text-lg font-bold text-foreground">התקדמות המתנות</h2>
           {data.vouchersReady ? null : (
             <p className="mt-3 text-sm text-muted">
-              הנפקת שובר תתאפשר לאחר עדכון המערכת.
+              הנפקת שוברים עדיין לא זמינה.
             </p>
           )}
           {data.gifts.length === 0 ? (
@@ -208,6 +223,19 @@ export default function HostDashboard({
                       contributorCount={gift.contributorCount}
                       showPending
                     />
+                    <GiftTimeline
+                      paid={gift.paidAmount > 0}
+                      issued={gift.vouchers.some((voucher) => voucher.status !== "CANCELLED")}
+                      redeemed={redemptionStage(gift.vouchers)}
+                    />
+                    {gift.vouchers.some(
+                      (voucher) =>
+                        voucher.status === "ISSUED" || voucher.status === "PARTIALLY_REDEEMED",
+                    ) ? (
+                      <p className="mt-2 text-sm font-semibold text-brand">
+                        הצעד הבא: הציגו את הכרטיס בחנות
+                      </p>
+                    ) : null}
                     {data.vouchersReady ? (
                       <IssueVoucherPanel
                         eventId={data.eventId}

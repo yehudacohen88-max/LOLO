@@ -25,7 +25,7 @@ export default async function StoreLoginPage() {
         </Link>
         <h1 className="mt-8 text-2xl font-bold leading-tight sm:text-4xl">כניסה למימוש שוברים</h1>
         <p className="mt-3 text-base text-muted">
-          הזינו את מזהה בית העסק ואת קוד הכניסה שקיבלתם מ-LOLO.
+          הזינו את שם הכניסה של החנות ואת הקוד שקיבלתם מ-LOLO.
         </p>
       </header>
       <StoreLoginForm />

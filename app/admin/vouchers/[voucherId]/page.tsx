@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { headers } from "next/headers";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import VoucherCard from "@/components/voucher-card";
 import { getAdminSession } from "@/lib/admin/session";
 import { appPublicOrigin, originFromProxyHeaders } from "@/lib/app-url";
@@ -11,6 +11,7 @@ import {
   redemptionChannelLabel,
   settlementStatusLabel,
 } from "@/lib/vouchers/labels";
+import { isUuid } from "@/lib/vouchers/input";
 import { getAdminVoucherDetail, listVoucherAdminRedemptions } from "@/lib/vouchers/repository";
 import CancelVoucherButton from "./cancel-voucher-button";
 import AdminRedeemForm from "./admin-redeem-form";
@@ -32,6 +33,9 @@ export default async function AdminVoucherPage({ params }: PageProps) {
   }
 
   const { voucherId } = await params;
+  if (!isUuid(voucherId)) {
+    notFound();
+  }
   const headerStore = await headers();
   const origin = appPublicOrigin(originFromProxyHeaders(headerStore));
   let detail = null;
@@ -46,6 +50,10 @@ export default async function AdminVoucherPage({ params }: PageProps) {
     loadError = error instanceof Error ? error.message : "טעינת השובר נכשלה.";
   }
 
+  if (!loadError && !detail) {
+    notFound();
+  }
+
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-5 py-10 sm:px-8">
       <Link href="/admin/vouchers" className="text-sm font-semibold text-brand">
@@ -53,7 +61,6 @@ export default async function AdminVoucherPage({ params }: PageProps) {
       </Link>
       <h1 className="text-2xl font-bold sm:text-4xl">פרטי שובר</h1>
       {loadError ? <p className="text-sm text-brand">{loadError}</p> : null}
-      {!loadError && !detail ? <p className="text-muted">השובר לא נמצא.</p> : null}
       {detail ? (
         <div className="grid gap-6 lg:grid-cols-[minmax(0,420px)_1fr]">
           <VoucherCard model={detail.card} />

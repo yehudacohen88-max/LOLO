@@ -18,7 +18,7 @@ import { jsonFromError } from "@/lib/vouchers/http";
 import { VoucherSchemaMissingError } from "@/lib/vouchers/messages";
 import { findStoreForLogin } from "@/lib/vouchers/repository";
 
-const GENERIC_ERROR = "מזהה בית העסק או קוד הכניסה שגויים.";
+const GENERIC_ERROR = "שם הכניסה או קוד הכניסה שגויים.";
 
 function limitedResponse(ip: string) {
   const retryAfter = loginRetryAfterSeconds("store", ip);

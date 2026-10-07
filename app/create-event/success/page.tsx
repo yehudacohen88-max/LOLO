@@ -26,7 +26,7 @@ export default function SuccessPage() {
           </p>
         </header>
 
-        <Suspense fallback={null}>
+        <Suspense fallback={<p className="mt-10 text-center text-sm text-muted">טוענים...</p>}>
           <SuccessActions />
         </Suspense>
       </main>

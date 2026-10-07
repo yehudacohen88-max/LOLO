@@ -14,7 +14,7 @@ export async function POST(request: Request) {
     const orderId = body.orderId?.trim() ?? "";
     const accessToken = body.accessToken?.trim() ?? "";
     if (!orderId || !accessToken) {
-      return NextResponse.json({ error: "חסר מזהה הזמנה." }, { status: 400 });
+      return NextResponse.json({ error: "לא מצאנו את ההזמנה." }, { status: 400 });
     }
 
     const order = await getOrderForGuest(orderId, accessToken);
