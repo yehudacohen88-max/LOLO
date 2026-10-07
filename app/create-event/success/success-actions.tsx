@@ -78,7 +78,7 @@ export default function SuccessActions() {
 
       {eventSlug ? (
         <p className="text-center text-sm text-muted">
-          מזהה האירוע לכניסת מארחים:{" "}
+          שם האירוע לכניסת המארח:{" "}
           <span dir="ltr" className="font-semibold text-foreground">
             {eventSlug}
           </span>

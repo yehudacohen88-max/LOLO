@@ -7,7 +7,7 @@ export function formatFundingPercent(percent: number) {
     minimumFractionDigits: hasFraction ? 1 : 0,
     maximumFractionDigits: hasFraction ? 1 : 0,
   });
-  return `${text}%`;
+  return `\u2066${text}%\u2069`;
 }
 
 export function contributorLabel(count: number) {

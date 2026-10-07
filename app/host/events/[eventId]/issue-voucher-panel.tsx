@@ -107,8 +107,8 @@ export default function IssueVoucherPanel({
                 className="flex items-center justify-between gap-3 rounded-2xl bg-brand-soft/50 px-4 py-3 text-sm"
               >
                 <span className="font-semibold">{formatGiftAmount(voucher.amount)}</span>
-                <span className="text-muted">
-                  {voucher.storeName} · {voucherStatusLabel(voucher.status)}
+                <span className="text-end text-muted">
+                  {voucher.storeName} · {voucherStatusLabel(voucher.status)} · פתיחת הכרטיס
                 </span>
               </Link>
             </li>

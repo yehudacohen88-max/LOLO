@@ -158,8 +158,19 @@ function readStored(): { gifts: DraftGift[]; migrated: boolean } {
   }
 }
 
+export class DraftGiftStorageError extends Error {
+  constructor(message = "לא הצלחנו לשמור את המתנה. נסו שוב.") {
+    super(message);
+    this.name = "DraftGiftStorageError";
+  }
+}
+
 function writeStored(gifts: DraftGift[]) {
-  window.localStorage.setItem(DRAFT_GIFTS_KEY, JSON.stringify(gifts));
+  try {
+    window.localStorage.setItem(DRAFT_GIFTS_KEY, JSON.stringify(gifts));
+  } catch {
+    throw new DraftGiftStorageError();
+  }
 }
 
 export function loadDraftGifts(): DraftGift[] {

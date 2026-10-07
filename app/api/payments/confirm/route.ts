@@ -15,7 +15,7 @@ export async function POST(request: Request) {
     const orderId = body.orderId?.trim() ?? "";
     const accessToken = body.accessToken?.trim() ?? "";
     if (!orderId || !accessToken) {
-      return NextResponse.json({ error: "חסר מזהה הזמנה." }, { status: 400 });
+      return NextResponse.json({ error: "לא מצאנו את ההזמנה." }, { status: 400 });
     }
     if (body.outcome !== "success" && body.outcome !== "failure") {
       return NextResponse.json({ error: "בקשת התשלום אינה תקינה." }, { status: 400 });

@@ -24,9 +24,10 @@ export async function uploadImageFile(file: File, kind: "gift" | "cover" = "gift
   }
 
   if (!response.ok || typeof payload.url !== "string" || !payload.url) {
+    const serverMessage = typeof payload.error === "string" ? payload.error.trim() : "";
     const message =
-      typeof payload.error === "string" && payload.error
-        ? payload.error
+      serverMessage && serverMessage !== "השירות אינו זמין כרגע. נסו שוב מאוחר יותר."
+        ? serverMessage
         : "העלאת התמונה נכשלה. נסו שוב.";
     throw new ImagePrepareError(message);
   }

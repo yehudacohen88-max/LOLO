@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import SettlementFigures from "@/components/settlement-figures";
 import { settlementLabel } from "@/lib/admin/store-fields";
 import { getAdminSession } from "@/lib/admin/session";
@@ -30,11 +30,7 @@ export default async function AdminSettlementDetailPage({ params }: PageProps) {
 
   const { settlementId } = await params;
   if (!isUuid(settlementId)) {
-    return (
-      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-5 py-10 sm:px-8">
-        <p className="text-base text-muted">ההתחשבנות לא נמצאה.</p>
-      </main>
-    );
+    notFound();
   }
 
   let settlement: Awaited<ReturnType<typeof getSettlement>> = null;
@@ -45,15 +41,16 @@ export default async function AdminSettlementDetailPage({ params }: PageProps) {
     loadError = error instanceof Error ? error.message : "טעינת ההתחשבנות נכשלה.";
   }
 
+  if (!loadError && !settlement) {
+    notFound();
+  }
+
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-5 py-10 sm:px-8">
       <Link href="/admin/settlements" className="text-sm font-semibold text-brand">
         לכל ההתחשבנויות
       </Link>
       {loadError ? <p className="text-sm text-brand">{loadError}</p> : null}
-      {!loadError && !settlement ? (
-        <p className="text-base text-muted">ההתחשבנות לא נמצאה.</p>
-      ) : null}
       {settlement ? (
         <>
           <header>
