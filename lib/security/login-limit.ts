@@ -28,6 +28,18 @@ export const LOGIN_POLICIES = {
     windowMs: 15 * 60 * 1000,
     lockMs: 15 * 60 * 1000,
   },
+  store: {
+    perIp: 10,
+    global: null,
+    windowMs: 15 * 60 * 1000,
+    lockMs: 15 * 60 * 1000,
+  },
+  voucherLookup: {
+    perIp: 30,
+    global: null,
+    windowMs: 15 * 60 * 1000,
+    lockMs: 15 * 60 * 1000,
+  },
 } as const satisfies Record<string, Policy>;
 
 export type LoginScope = keyof typeof LOGIN_POLICIES;

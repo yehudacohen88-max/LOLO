@@ -84,6 +84,18 @@ export default async function AdminHomePage() {
           ניהול בתי העסק
         </Link>
         <Link
+          href="/admin/vouchers"
+          className="inline-flex h-12 w-full items-center justify-center rounded-full border border-brand px-6 text-base font-semibold text-brand transition-colors hover:bg-brand-soft sm:w-auto"
+        >
+          שוברים
+        </Link>
+        <Link
+          href="/admin/redemptions"
+          className="inline-flex h-12 w-full items-center justify-center rounded-full border border-brand px-6 text-base font-semibold text-brand transition-colors hover:bg-brand-soft sm:w-auto"
+        >
+          מימושים
+        </Link>
+        <Link
           href="/admin/settings"
           className="inline-flex h-12 w-full items-center justify-center rounded-full border border-brand px-6 text-base font-semibold text-brand transition-colors hover:bg-brand-soft sm:w-auto"
         >

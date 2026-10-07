@@ -4,6 +4,11 @@ import { listEventGuests } from "@/lib/host/guest-list";
 import type { EventGuest } from "@/lib/host/guest-fields";
 import { normalizeEventSlug } from "@/lib/events/slug";
 import { getSupabaseServiceClient } from "@/lib/supabase/server";
+import {
+  giftVoucherAmounts,
+  loadHostVoucherContext,
+} from "@/lib/vouchers/repository";
+import type { HostGiftVoucher, VoucherStoreOption } from "@/lib/vouchers/types";
 
 export type HostPaymentStatus = "pending" | "paid" | "failed" | "cancelled";
 
@@ -13,12 +18,16 @@ export type HostDashboardGift = {
   description: string;
   icon: string;
   imageUrl: string;
+  storeId: string | null;
   storeName: string;
   targetAmount: number | null;
   paidAmount: number;
   pendingAmount: number;
   contributorCount: number;
   percentOfTarget: number | null;
+  voucheredAmount: number;
+  availableAmount: number;
+  vouchers: HostGiftVoucher[];
 };
 
 export type HostDashboardOrder = {
@@ -46,6 +55,8 @@ export type HostDashboardData = {
   gifts: HostDashboardGift[];
   orders: HostDashboardOrder[];
   invitedGuests: EventGuest[];
+  vouchersReady: boolean;
+  voucherStores: VoucherStoreOption[];
 };
 
 type OrderRow = {
@@ -97,6 +108,7 @@ type HostGiftRow = {
   image_url?: string | null;
   target_amount: number | string | null;
   priority: number;
+  store_id?: string | null;
   store_name?: string | null;
 };
 
@@ -108,13 +120,15 @@ async function loadHostGiftRows(
     () =>
       supabase
         .from("event_gifts")
-        .select("id, title, description, icon, image_url, target_amount, priority, store_name")
+        .select(
+          "id, title, description, icon, image_url, target_amount, priority, store_name, store_id",
+        )
         .eq("event_id", eventId)
         .order("priority", { ascending: true }),
     () =>
       supabase
         .from("event_gifts")
-        .select("id, title, description, icon, target_amount, priority, store_name")
+        .select("id, title, description, icon, target_amount, priority, store_name, store_id")
         .eq("event_id", eventId)
         .order("priority", { ascending: true }),
     () =>
@@ -202,6 +216,7 @@ export async function getHostDashboardData(
     })),
   });
   const fundingByGift = new Map(funding.gifts.map((gift) => [gift.giftId, gift]));
+  const voucherContext = await loadHostVoucherContext(eventId);
 
   return {
     eventId: event.id,
@@ -218,18 +233,27 @@ export async function getHostDashboardData(
     gifts: (giftRows ?? []).map((gift) => {
       const target = Number(gift.target_amount);
       const progress = fundingByGift.get(String(gift.id));
+      const paidAmount = progress?.raisedAmount ?? 0;
+      const voucherAmounts = giftVoucherAmounts(
+        paidAmount,
+        voucherContext.byGift.get(String(gift.id)),
+      );
       return {
         id: String(gift.id),
         title: String(gift.title || ""),
         description: String(gift.description || "").trim(),
         icon: String(gift.icon || ""),
         imageUrl: String(gift.image_url || "").trim(),
+        storeId: gift.store_id ? String(gift.store_id) : null,
         storeName: String(gift.store_name || "").trim(),
         targetAmount: Number.isFinite(target) && target > 0 ? target : null,
-        paidAmount: progress?.raisedAmount ?? 0,
+        paidAmount,
         pendingAmount: progress?.pendingAmount ?? 0,
         contributorCount: progress?.contributorCount ?? 0,
         percentOfTarget: progress?.percentOfTarget ?? null,
+        voucheredAmount: voucherAmounts.voucheredAmount,
+        availableAmount: voucherAmounts.availableAmount,
+        vouchers: voucherAmounts.vouchers,
       };
     }),
     orders: orders.map((order) => ({
@@ -242,5 +266,7 @@ export async function getHostDashboardData(
       paymentStatus: asStatus(order.payment_status),
     })),
     invitedGuests: await listEventGuests(eventId),
+    vouchersReady: voucherContext.ready,
+    voucherStores: voucherContext.stores,
   };
 }

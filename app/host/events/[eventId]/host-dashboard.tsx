@@ -7,6 +7,7 @@ import type {
 } from "@/lib/host/dashboard";
 import CopyGuestLink from "./copy-guest-link";
 import HostGuestList from "./host-guest-list";
+import IssueVoucherPanel from "./issue-voucher-panel";
 
 function formatMoney(amount: number) {
   return `${amount.toLocaleString("he-IL")} ₪`;
@@ -126,7 +127,8 @@ export default function HostDashboard({
           <h2 className="text-lg font-bold text-foreground">סקירה כספית</h2>
           <p className="mt-2 text-sm leading-relaxed text-muted">
             הסכום ששולם הוא השתתפות שאושרה למתנות. עמלת שירות אינה נספרת ליעד.
-            הזמנות שממתינות לתשלום עדיין לא נספרות, ואין עדיין משיכה לבית העסק.
+            אפשר להנפיק שובר על הסכום ששולם גם לפני שהיעד הושלם, ותשלום שמגיע אחר כך נשאר פנוי לשובר נוסף.
+            מימוש בחנות אינו התחשבנות מול LOLO.
           </p>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <article className="rounded-2xl bg-brand-soft px-4 py-4">
@@ -156,6 +158,11 @@ export default function HostDashboard({
 
         <section className="rounded-3xl border border-border bg-white p-5 sm:p-6">
           <h2 className="text-lg font-bold text-foreground">התקדמות המתנות</h2>
+          {data.vouchersReady ? null : (
+            <p className="mt-3 text-sm text-muted">
+              הנפקת שובר תתאפשר לאחר עדכון המערכת.
+            </p>
+          )}
           {data.gifts.length === 0 ? (
             <p className="mt-4 text-sm text-muted">אין מתנות באירוע זה.</p>
           ) : (
@@ -201,6 +208,13 @@ export default function HostDashboard({
                       contributorCount={gift.contributorCount}
                       showPending
                     />
+                    {data.vouchersReady ? (
+                      <IssueVoucherPanel
+                        eventId={data.eventId}
+                        gift={gift}
+                        stores={data.voucherStores}
+                      />
+                    ) : null}
                   </li>
                 );
               })}
