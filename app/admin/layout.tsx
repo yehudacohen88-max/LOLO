@@ -17,7 +17,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
             LOLO
           </Link>
           {session ? (
-            <nav className="flex items-center gap-4">
+            <nav className="flex flex-wrap items-center justify-end gap-x-4 gap-y-2">
               <Link href="/admin" className="text-sm font-semibold text-foreground">
                 לוח בקרה
               </Link>
@@ -26,6 +26,12 @@ export default async function AdminLayout({ children }: { children: ReactNode })
                 className="text-sm font-semibold text-foreground"
               >
                 בתי עסק
+              </Link>
+              <Link
+                href="/admin/settings"
+                className="text-sm font-semibold text-foreground"
+              >
+                הגדרות
               </Link>
               <LogoutButton />
             </nav>

@@ -63,7 +63,9 @@ export async function loadPendingGuestOrder(
     id: existing.id,
     accessToken: existing.accessToken,
   });
-  const response = await fetch(`/api/orders?${params.toString()}`);
+  const response = await fetch(`/api/orders?${params.toString()}`, {
+    cache: "no-store",
+  });
   if (!response.ok) {
     return null;
   }

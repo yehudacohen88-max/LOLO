@@ -19,7 +19,7 @@ export default function GuestPaymentPage() {
           </Link>
           <p className="mt-5 text-sm font-medium text-brand">שלב 4 מתוך 4</p>
           <h1 className="mt-4 text-2xl font-bold leading-tight tracking-tight text-foreground sm:text-4xl">
-            תשלום מאובטח
+            תשלום
           </h1>
         </header>
         <GuestPaymentSummary />

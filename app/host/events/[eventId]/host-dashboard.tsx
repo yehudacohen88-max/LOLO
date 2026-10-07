@@ -1,4 +1,5 @@
 import Link from "next/link";
+import FundingProgress from "@/components/funding-progress";
 import GiftMedia from "@/components/gift-media";
 import type {
   HostDashboardData,
@@ -124,7 +125,8 @@ export default function HostDashboard({
         <section className="rounded-3xl border border-border bg-white p-5 sm:p-6">
           <h2 className="text-lg font-bold text-foreground">סקירה כספית</h2>
           <p className="mt-2 text-sm leading-relaxed text-muted">
-            הזמנות ממתינות אינן כסף שהתקבל. אין עדיין משיכות או תשלום אמיתי.
+            הסכום ששולם הוא השתתפות שאושרה למתנות. עמלת שירות אינה נספרת ליעד.
+            הזמנות שממתינות לתשלום עדיין לא נספרות, ואין עדיין משיכה לבית העסק.
           </p>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <article className="rounded-2xl bg-brand-soft px-4 py-4">
@@ -159,11 +161,6 @@ export default function HostDashboard({
           ) : (
             <ul className="mt-4 flex flex-col gap-3">
               {data.gifts.map((gift) => {
-                const progress =
-                  gift.targetAmount && gift.targetAmount > 0
-                    ? Math.min(100, (gift.paidAmount / gift.targetAmount) * 100)
-                    : null;
-
                 return (
                   <li
                     key={gift.id}
@@ -197,25 +194,13 @@ export default function HostDashboard({
                         ) : null}
                       </div>
                     </div>
-                    <p className="mt-2 text-sm text-foreground">
-                      שולם: {formatMoney(gift.paidAmount)}
-                    </p>
-                    <p className="mt-1 text-sm text-muted">
-                      ממתין לתשלום: {formatMoney(gift.pendingAmount)}
-                    </p>
-                    {progress !== null ? (
-                      <div className="mt-3 h-2 overflow-hidden rounded-full bg-border">
-                        <div
-                          className="h-full rounded-full bg-brand"
-                          style={{ width: `${progress}%` }}
-                        />
-                      </div>
-                    ) : null}
-                    {gift.targetAmount && gift.paidAmount > gift.targetAmount ? (
-                      <p className="mt-2 text-sm font-medium text-brand">
-                        ההשתתפות עברה את היעד
-                      </p>
-                    ) : null}
+                    <FundingProgress
+                      raisedAmount={gift.paidAmount}
+                      pendingAmount={gift.pendingAmount}
+                      percentOfTarget={gift.percentOfTarget}
+                      contributorCount={gift.contributorCount}
+                      showPending
+                    />
                   </li>
                 );
               })}
@@ -259,6 +244,7 @@ export default function HostDashboard({
                   <p className="mt-1 text-base font-semibold text-foreground">
                     {formatMoney(order.totalAmount)}
                   </p>
+                  <p className="text-xs text-muted">השתתפות במתנה</p>
                   {order.guestPhone || order.guestEmail ? (
                     <div className="mt-2 space-y-1 text-sm text-muted" dir="ltr">
                       {order.guestPhone ? <p>{order.guestPhone}</p> : null}

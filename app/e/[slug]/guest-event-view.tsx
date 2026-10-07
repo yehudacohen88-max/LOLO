@@ -2,6 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import FundingProgress from "@/components/funding-progress";
 import GiftMedia from "@/components/gift-media";
 import { formatEventDate, formatEventTime } from "@/lib/event-draft";
 import { getEventBySlug, guestEventPath, type StoredEvent } from "@/lib/events";
@@ -14,6 +15,12 @@ import {
 } from "@/lib/guest-draft";
 
 const DEFAULT_AMOUNTS = [150, 250, 350, 500];
+
+type GiftFundingView = {
+  raisedAmount: number;
+  contributorCount: number;
+  percentOfTarget: number | null;
+};
 
 type DisplayGift = {
   id: string;
@@ -51,6 +58,8 @@ export default function GuestEventView() {
   const [customDrafts, setCustomDrafts] = useState<Record<string, string>>({});
   const [openCustom, setOpenCustom] = useState<Record<string, boolean>>({});
   const [customErrors, setCustomErrors] = useState<Record<string, string>>({});
+  const [funding, setFunding] = useState<Record<string, GiftFundingView> | null>(null);
+  const [fundingNote, setFundingNote] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -100,6 +109,51 @@ export default function GuestEventView() {
       );
       setContributions(loaded);
       saveContributions(eventSlug, loaded);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [slug]);
+
+  useEffect(() => {
+    if (!slug) {
+      return;
+    }
+
+    let cancelled = false;
+    void (async () => {
+      try {
+        const response = await fetch(
+          `/api/events/${encodeURIComponent(slug)}/funding`,
+          { cache: "no-store" },
+        );
+        if (!response.ok) {
+          throw new Error("unavailable");
+        }
+        const body = (await response.json()) as {
+          gifts?: Array<GiftFundingView & { giftId: string }>;
+        };
+        if (cancelled) {
+          return;
+        }
+        const next: Record<string, GiftFundingView> = {};
+        for (const gift of body.gifts ?? []) {
+          next[gift.giftId] = {
+            raisedAmount: Number(gift.raisedAmount) || 0,
+            contributorCount: Number(gift.contributorCount) || 0,
+            percentOfTarget:
+              gift.percentOfTarget == null ? null : Number(gift.percentOfTarget),
+          };
+        }
+        setFunding(next);
+        setFundingNote("");
+      } catch {
+        if (!cancelled) {
+          setFunding(null);
+          setFundingNote("ההתקדמות אינה זמינה כרגע.");
+        }
+      }
     })();
 
     return () => {
@@ -229,6 +283,12 @@ export default function GuestEventView() {
         <h2 className="text-center text-lg font-bold text-foreground">
           מה תרצו להעניק?
         </h2>
+        {fundingNote ? (
+          <p className="text-center text-sm text-muted">{fundingNote}</p>
+        ) : null}
+        {!funding && !fundingNote ? (
+          <p className="text-center text-sm text-muted">טוענים את ההתקדמות...</p>
+        ) : null}
         {hostGifts.map((gift) => {
           const contribution = contributionFor(gift.id);
           const selected = Boolean(contribution);
@@ -280,6 +340,13 @@ export default function GuestEventView() {
                       אפשר להשתתף בכל סכום.
                     </span>
                   </p>
+                ) : null}
+                {funding?.[gift.id] ? (
+                  <FundingProgress
+                    raisedAmount={funding[gift.id].raisedAmount}
+                    percentOfTarget={funding[gift.id].percentOfTarget}
+                    contributorCount={funding[gift.id].contributorCount}
+                  />
                 ) : null}
               </div>
 

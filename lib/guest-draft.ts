@@ -234,5 +234,10 @@ export function saveGuestDetails(slug: string, details: GuestDetails) {
 }
 
 export function formatGiftAmount(amount: number) {
-  return `${amount.toLocaleString("he-IL")} ₪`;
+  const rounded = Math.round((Number(amount) || 0) * 100) / 100;
+  const hasFraction = Math.abs(rounded - Math.trunc(rounded)) > 0;
+  return `${rounded.toLocaleString("he-IL", {
+    minimumFractionDigits: hasFraction ? 2 : 0,
+    maximumFractionDigits: 2,
+  })} ₪`;
 }

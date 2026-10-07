@@ -28,8 +28,15 @@ export type StoredOrder = {
   eventId: string;
   eventSlug: string;
   guestName: string;
+  /** Gift contribution. Same value as contributionAmount. */
   totalAmount: number;
+  contributionAmount: number;
+  feeAmount: number;
+  chargedAmount: number;
   paymentStatus: PaymentStatus;
+  paymentProvider: string | null;
+  paymentReference: string | null;
+  paidAt: string | null;
   accessToken: string;
   items: StoredOrderItem[];
 };

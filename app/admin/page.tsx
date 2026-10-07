@@ -76,12 +76,20 @@ export default async function AdminHomePage() {
         <StatCard label="אירועים" value={events} />
         <StatCard label="הזמנות" value={orders} />
       </section>
-      <Link
-        href="/admin/stores"
-        className="mt-8 inline-flex h-12 w-full items-center justify-center rounded-full bg-brand px-6 text-base font-semibold text-white transition-colors hover:bg-brand-hover sm:w-auto sm:self-start"
-      >
-        ניהול בתי העסק
-      </Link>
+      <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+        <Link
+          href="/admin/stores"
+          className="inline-flex h-12 w-full items-center justify-center rounded-full bg-brand px-6 text-base font-semibold text-white transition-colors hover:bg-brand-hover sm:w-auto"
+        >
+          ניהול בתי העסק
+        </Link>
+        <Link
+          href="/admin/settings"
+          className="inline-flex h-12 w-full items-center justify-center rounded-full border border-brand px-6 text-base font-semibold text-brand transition-colors hover:bg-brand-soft sm:w-auto"
+        >
+          הגדרות
+        </Link>
+      </div>
     </main>
   );
 }
