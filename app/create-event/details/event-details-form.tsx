@@ -87,7 +87,7 @@ export default function EventDetailsForm() {
         : target === "video"
           ? videoActionRef.current
           : formErrorRef.current;
-    node?.scrollIntoView({ behavior: "smooth", block: "center" });
+    node?.scrollIntoView({ behavior: "auto", block: "center" });
     node?.focus({ preventScroll: true });
   }, [focusRequest]);
 
