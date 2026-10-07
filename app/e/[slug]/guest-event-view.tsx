@@ -2,6 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import GiftMedia from "@/components/gift-media";
 import { formatEventDate, formatEventTime } from "@/lib/event-draft";
 import { getEventBySlug, guestEventPath, type StoredEvent } from "@/lib/events";
 import { fromRouteParam } from "@/lib/events/slug";
@@ -20,6 +21,7 @@ type DisplayGift = {
   description: string;
   price: number;
   emoji: string;
+  imageUrl: string;
   storeName: string;
 };
 
@@ -84,6 +86,7 @@ export default function GuestEventView() {
           description: gift.description,
           price: gift.targetAmount,
           emoji: gift.icon,
+          imageUrl: gift.imageUrl,
           storeName: gift.storeName,
         }));
 
@@ -173,7 +176,9 @@ export default function GuestEventView() {
   }
 
   if (!event) {
-    return null;
+    return (
+      <p className="mt-10 text-center text-base text-muted">טוענים את האירוע...</p>
+    );
   }
 
   const location = [event.venueName, event.address].filter(Boolean).join(", ");
@@ -241,37 +246,41 @@ export default function GuestEventView() {
                   : "border-border bg-white"
               }`}
             >
-              <div className="flex items-start gap-3">
-                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white text-2xl">
-                  {gift.emoji}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <h3 className="text-base font-bold text-foreground">
-                        {gift.name}
-                      </h3>
-                      {gift.storeName ? (
-                        <p className="mt-1 text-sm text-muted">חנות: {gift.storeName}</p>
-                      ) : null}
-                    </div>
-                    {selected ? (
-                      <span className="text-sm font-bold text-brand">
-                        ✓ {formatGiftAmount(contribution?.amount ?? 0)}
-                      </span>
+              <GiftMedia
+                imageUrl={gift.imageUrl}
+                icon={gift.emoji}
+                alt=""
+                className="h-44 w-full text-5xl"
+              />
+              <div className="mt-4">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <h3 className="text-base font-bold text-foreground">
+                      {gift.name}
+                    </h3>
+                    {gift.storeName ? (
+                      <p className="mt-1 text-sm text-muted">חנות: {gift.storeName}</p>
                     ) : null}
                   </div>
-                  {gift.description ? (
-                    <p className="mt-1 text-sm leading-relaxed text-muted">
-                      {gift.description}
-                    </p>
-                  ) : null}
-                  {showSuggested && gift.price > 0 ? (
-                    <p className="mt-2 text-sm font-medium text-brand">
-                      יעד: {formatGiftAmount(gift.price)}
-                    </p>
+                  {selected ? (
+                    <span className="text-sm font-bold text-brand">
+                      ✓ {formatGiftAmount(contribution?.amount ?? 0)}
+                    </span>
                   ) : null}
                 </div>
+                {gift.description ? (
+                  <p className="mt-1 text-sm leading-relaxed text-muted">
+                    {gift.description}
+                  </p>
+                ) : null}
+                {gift.price > 0 ? (
+                  <p className="mt-2 text-sm font-medium text-brand">
+                    יעד: {formatGiftAmount(gift.price)}
+                    <span className="mt-1 block font-normal text-muted">
+                      אפשר להשתתף בכל סכום.
+                    </span>
+                  </p>
+                ) : null}
               </div>
 
               {showSuggested ? (

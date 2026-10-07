@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import GiftCatalog from "./gift-catalog";
 
 export const metadata: Metadata = {
-  title: "קטלוג מתנות | LOLO",
-  description: "בוחרים את המתנות שלכם",
+  title: "רעיונות למתנות | LOLO",
+  description: "רעיונות להשראה למתנות האירוע",
 };
 
 export default function GiftCatalogPage() {

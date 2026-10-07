@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import OrganizeGifts from "./organize-gifts";
+import { Suspense } from "react";
+import CustomGiftForm from "./custom-gift-form";
 
 export const metadata: Metadata = {
-  title: "המתנות לאירוע | LOLO",
-  description: "הוסיפו את המתנות שהייתם שמחים לקבל",
+  title: "מתנה משלכם | LOLO",
+  description: "הוספת מתנה עם תמונה, יעד וחנות",
 };
 
-export default function OrganizeGiftsPage() {
+export default function CustomGiftPage() {
   return (
     <div className="flex flex-1 flex-col">
       <main className="mx-auto flex w-full max-w-lg flex-1 flex-col px-5 py-10 sm:max-w-2xl sm:px-8 sm:py-16">
@@ -20,15 +21,16 @@ export default function OrganizeGiftsPage() {
           </Link>
           <p className="mt-5 text-sm font-medium text-brand">שלב 2 מתוך 4</p>
           <h1 className="mt-4 text-2xl font-bold leading-tight tracking-tight text-foreground sm:text-4xl">
-            המתנות לאירוע
+            מתנה משלכם
           </h1>
           <p className="mt-3 text-base leading-relaxed text-muted sm:text-lg">
-            הוסיפו מתנות משלכם וסדרו אותן לפי עדיפות. אפשר לשייך חנות לכל מתנה.
-            היעד הוא מטרה, והאורחים יכולים להשתתף בכל סכום.
+            שם, תמונה ויעד. החנות והתיאור לא חובה.
           </p>
         </header>
 
-        <OrganizeGifts />
+        <Suspense fallback={null}>
+          <CustomGiftForm />
+        </Suspense>
       </main>
     </div>
   );

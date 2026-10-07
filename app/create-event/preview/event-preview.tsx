@@ -12,14 +12,12 @@ import {
 } from "@/lib/event-draft";
 import { publishHostEvent } from "@/lib/events";
 import { saveCreatedHostAccessCode } from "@/lib/host/created-code";
-import {
-  formatPrice,
-  loadSelectedGiftChoices,
-  loadSelectedGifts,
-  type Gift,
-} from "@/lib/gifts";
+import { loadDraftGifts, type DraftGift } from "@/lib/draft-gifts";
+import { formatPrice } from "@/lib/gifts";
+import GiftMedia from "@/components/gift-media";
+import { fetchActiveStoreOptions } from "@/lib/stores/active-stores-client";
 
-type PreviewGift = Gift & {
+type PreviewGift = DraftGift & {
   storeName: string;
 };
 
@@ -32,6 +30,7 @@ export default function EventPreview() {
   );
   const [customAmount, setCustomAmount] = useState("");
   const [publishError, setPublishError] = useState("");
+  const [publishing, setPublishing] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -47,26 +46,11 @@ export default function EventPreview() {
         return;
       }
 
-      const selected = loadSelectedGifts();
-      const storeByGiftId = new Map(
-        loadSelectedGiftChoices().map((choice) => [choice.giftId, choice.storeId]),
-      );
+      const selected = loadDraftGifts();
       let storeNames = new Map<string, string>();
       try {
-        const response = await fetch("/api/stores");
-        const payload = (await response.json()) as {
-          stores?: { id?: string; name?: string }[];
-        };
-        if (response.ok && Array.isArray(payload.stores)) {
-          storeNames = new Map(
-            payload.stores
-              .filter(
-                (store): store is { id: string; name: string } =>
-                  typeof store?.id === "string" && typeof store?.name === "string",
-              )
-              .map((store) => [store.id, store.name.trim()]),
-          );
-        }
+        const stores = await fetchActiveStoreOptions();
+        storeNames = new Map(stores.map((store) => [store.id, store.name.trim()]));
       } catch {
         storeNames = new Map();
       }
@@ -78,7 +62,7 @@ export default function EventPreview() {
       setGifts(
         selected.map((gift) => ({
           ...gift,
-          storeName: storeNames.get(storeByGiftId.get(gift.id) ?? "") ?? "",
+          storeName: storeNames.get(gift.storeId ?? "") ?? "",
         })),
       );
     })();
@@ -89,7 +73,7 @@ export default function EventPreview() {
   }, []);
 
   if (!draft) {
-    return null;
+    return <p className="mt-10 text-center text-sm text-muted">טוענים את התצוגה...</p>;
   }
 
   const location = [draft.venueName, draft.address].filter(Boolean).join(", ");
@@ -224,35 +208,48 @@ export default function EventPreview() {
           </section>
         )
       ) : gifts.length > 0 ? (
-        <section>
-          <h3 className="text-center text-sm font-semibold text-muted">
-            המתנות שנבחרו
+        <section className="flex flex-col gap-3">
+          <h3 className="text-center text-lg font-bold text-foreground">
+            המתנות לאירוע
           </h3>
-          <ol className="mt-3 flex flex-col gap-2">
-            {gifts.map((gift, index) => (
+          <ol className="flex flex-col gap-3">
+            {gifts.map((gift) => (
               <li
                 key={gift.id}
-                className="flex items-center gap-3 rounded-2xl border border-border bg-white px-4 py-3"
+                className="rounded-3xl border border-border bg-white p-4"
               >
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-soft text-sm font-bold text-brand">
-                  {index + 1}
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block font-semibold text-foreground">
-                    {gift.name}
-                  </span>
-                  {gift.storeName ? (
-                    <span className="mt-1 block text-sm text-muted">
-                      חנות: {gift.storeName}
-                    </span>
+                <GiftMedia
+                  imageUrl={gift.imageUrl}
+                  icon={gift.icon}
+                  alt=""
+                  className="h-44 w-full text-5xl"
+                />
+                <div className="mt-4">
+                  <h4 className="text-base font-bold text-foreground">{gift.title}</h4>
+                  {gift.description ? (
+                    <p className="mt-1 text-sm leading-relaxed text-muted">
+                      {gift.description}
+                    </p>
                   ) : null}
-                </span>
-                <span className="text-sm text-muted">{formatPrice(gift.price)}</span>
+                  <p className="mt-2 text-sm font-semibold text-brand">
+                    יעד: {formatPrice(gift.targetAmount)}
+                  </p>
+                  <p className="mt-1 text-sm text-muted">
+                    האורחים יכולים להשתתף בכל סכום.
+                  </p>
+                  {gift.storeName ? (
+                    <p className="mt-2 text-sm text-muted">חנות: {gift.storeName}</p>
+                  ) : null}
+                </div>
               </li>
             ))}
           </ol>
         </section>
-      ) : null}
+      ) : (
+        <p className="rounded-3xl border border-dashed border-border bg-white px-5 py-6 text-center text-sm text-muted">
+          עדיין אין מתנות. חזרו והוסיפו לפחות מתנה אחת.
+        </p>
+      )}
 
       <div className="mt-2 flex flex-col gap-3">
         <Link
@@ -266,7 +263,13 @@ export default function EventPreview() {
         ) : null}
         <button
           type="button"
+          disabled={publishing || (draft.giftMode !== "money" && gifts.length === 0)}
           onClick={async () => {
+            if (publishing) {
+              return;
+            }
+            setPublishing(true);
+            setPublishError("");
             try {
               const created = await publishHostEvent();
               resetEventCreationDraft();
@@ -277,14 +280,15 @@ export default function EventPreview() {
                 `/create-event/success?slug=${encodeURIComponent(created.slug)}`,
               );
             } catch (error) {
+              setPublishing(false);
               setPublishError(
                 error instanceof Error ? error.message : "שמירת האירוע נכשלה.",
               );
             }
           }}
-          className="inline-flex h-12 w-full cursor-pointer items-center justify-center rounded-full bg-brand px-6 text-base font-semibold text-white transition-colors hover:bg-brand-hover"
+          className="inline-flex h-12 w-full cursor-pointer items-center justify-center rounded-full bg-brand px-6 text-base font-semibold text-white transition-colors hover:bg-brand-hover disabled:cursor-not-allowed disabled:bg-brand/40"
         >
-          יצירת האירוע
+          {publishing ? "יוצרים את האירוע..." : "יצירת האירוע"}
         </button>
       </div>
     </div>

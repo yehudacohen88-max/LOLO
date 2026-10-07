@@ -2,14 +2,11 @@
 
 import Link from "next/link";
 import { hasUnfinishedEventDraft } from "@/lib/event-draft";
-import { loadSelectedGiftIds } from "@/lib/gifts";
 import { useIsClient } from "@/lib/use-is-client";
 
 export default function HomeCreateActions() {
   const isClient = useIsClient();
-  const hasDraft =
-    isClient &&
-    (hasUnfinishedEventDraft() || loadSelectedGiftIds().length > 0);
+  const hasDraft = isClient && hasUnfinishedEventDraft();
 
   return (
     <div className="mt-8 flex w-full flex-col gap-3 sm:mt-10 sm:flex-row sm:justify-center">

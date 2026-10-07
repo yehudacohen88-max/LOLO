@@ -32,6 +32,8 @@ type GiftRow = {
   description: string;
   target_amount: number | string;
   icon: string;
+  image_url?: string | null;
+  source?: string | null;
   priority: number;
   active: boolean;
   store_id?: string | null;
@@ -61,6 +63,8 @@ function toGift(row: GiftRow): EventGift {
     description: row.description,
     targetAmount: Number(row.target_amount) || 0,
     icon: row.icon,
+    imageUrl: row.image_url?.trim() ?? "",
+    source: row.source === "custom" || row.source === "catalog" ? row.source : "",
     priority: row.priority,
     active: row.active,
     storeId: row.store_id || null,
@@ -272,6 +276,8 @@ export async function createEvent(
         description: gift.description,
         targetAmount: gift.targetAmount,
         icon: gift.icon,
+        imageUrl: gift.imageUrl,
+        source: gift.source,
         priority: gift.priority,
         active: gift.active,
         storeId: gift.storeId,

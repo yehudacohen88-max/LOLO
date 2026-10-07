@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { loadEventDraft, saveEventDraft } from "@/lib/event-draft";
-import { clearSelectedGifts } from "@/lib/gifts";
+import { clearDraftGifts } from "@/lib/draft-gifts";
 import { useIsClient } from "@/lib/use-is-client";
 
 const defaultAmounts = ["150", "250", "350", "500"];
@@ -62,7 +62,7 @@ export default function MoneyGiftForm() {
   }
 
   function continueToDetails() {
-    clearSelectedGifts();
+    clearDraftGifts();
     persistMoney(amounts, allowCustomAmount, display);
     router.push("/create-event/details");
   }

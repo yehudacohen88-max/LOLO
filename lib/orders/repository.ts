@@ -13,6 +13,8 @@ type GiftRow = {
   description: string;
   target_amount: number | string;
   icon: string;
+  image_url?: string | null;
+  source?: string | null;
   priority: number;
   active: boolean;
   store_id?: string | null;
@@ -70,6 +72,8 @@ function toEvent(row: EventRow, gifts: GiftRow[]): StoredEvent {
         description: gift.description,
         targetAmount: Number(gift.target_amount) || 0,
         icon: gift.icon,
+        imageUrl: gift.image_url?.trim() ?? "",
+        source: gift.source === "custom" || gift.source === "catalog" ? gift.source : "",
         priority: gift.priority,
         active: gift.active,
         storeId: gift.store_id || null,

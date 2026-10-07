@@ -9,7 +9,9 @@ export type HostPaymentStatus = "pending" | "paid" | "failed" | "cancelled";
 export type HostDashboardGift = {
   id: string;
   title: string;
+  description: string;
   icon: string;
+  imageUrl: string;
   storeName: string;
   targetAmount: number | null;
   paidAmount: number;
@@ -84,6 +86,62 @@ function guestEventPath(slug: string) {
   return `/e/${encodeURIComponent(normalizeEventSlug(slug))}`;
 }
 
+type HostGiftRow = {
+  id: string;
+  title: string;
+  description?: string | null;
+  icon: string;
+  image_url?: string | null;
+  target_amount: number | string | null;
+  priority: number;
+  store_name?: string | null;
+};
+
+async function loadHostGiftRows(
+  supabase: ReturnType<typeof getSupabaseServiceClient>,
+  eventId: string,
+) {
+  const attempts = [
+    () =>
+      supabase
+        .from("event_gifts")
+        .select("id, title, description, icon, image_url, target_amount, priority, store_name")
+        .eq("event_id", eventId)
+        .order("priority", { ascending: true }),
+    () =>
+      supabase
+        .from("event_gifts")
+        .select("id, title, description, icon, target_amount, priority, store_name")
+        .eq("event_id", eventId)
+        .order("priority", { ascending: true }),
+    () =>
+      supabase
+        .from("event_gifts")
+        .select("id, title, description, icon, target_amount, priority")
+        .eq("event_id", eventId)
+        .order("priority", { ascending: true }),
+    () =>
+      supabase
+        .from("event_gifts")
+        .select("id, title, icon, target_amount, priority")
+        .eq("event_id", eventId)
+        .order("priority", { ascending: true }),
+  ];
+
+  for (const attempt of attempts) {
+    const result = await attempt();
+    if (!result.error) {
+      return (result.data ?? []) as HostGiftRow[];
+    }
+    console.error("[LOLO] Host gift query failed for a column set.", {
+      code: result.error.code,
+      message: result.error.message,
+    });
+  }
+
+  return [] as HostGiftRow[];
+}
+
 export async function getHostDashboardData(
   eventId: string,
 ): Promise<HostDashboardData | null> {
@@ -98,26 +156,7 @@ export async function getHostDashboardData(
     return null;
   }
 
-  const withStoreName = await supabase
-    .from("event_gifts")
-    .select("id, title, icon, target_amount, priority, store_name")
-    .eq("event_id", eventId)
-    .order("priority", { ascending: true });
-  const giftResult = withStoreName.error
-    ? await supabase
-        .from("event_gifts")
-        .select("id, title, icon, target_amount, priority")
-        .eq("event_id", eventId)
-        .order("priority", { ascending: true })
-    : withStoreName;
-  const giftRows = (giftResult.data ?? []) as Array<{
-    id: string;
-    title: string;
-    icon: string;
-    target_amount: number | string | null;
-    priority: number;
-    store_name?: string | null;
-  }>;
+  const giftRows = await loadHostGiftRows(supabase, eventId);
 
   const { data: orderRows } = await supabase
     .from("orders")
@@ -190,7 +229,9 @@ export async function getHostDashboardData(
       return {
         id: String(gift.id),
         title: String(gift.title || ""),
+        description: String(gift.description || "").trim(),
         icon: String(gift.icon || ""),
+        imageUrl: String(gift.image_url || "").trim(),
         storeName: String(gift.store_name || "").trim(),
         targetAmount: Number.isFinite(target) && target > 0 ? target : null,
         paidAmount: paidByGift.get(String(gift.id)) ?? 0,
