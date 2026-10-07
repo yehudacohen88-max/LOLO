@@ -3,6 +3,7 @@ import {
   deleteEventGuest,
   requireHostEventSession,
 } from "@/lib/host/guest-list";
+import { caughtErrorBody } from "@/lib/security/required-secret";
 
 type RouteContext = {
   params: Promise<{
@@ -50,9 +51,7 @@ export async function DELETE(request: Request, context: RouteContext) {
     await deleteEventGuest(session.eventId, guestId);
     return NextResponse.json({ ok: true });
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "הסרת האורח נכשלה.";
-    const status = message.includes("חסר מפתח") ? 500 : 400;
-    return NextResponse.json({ error: message }, { status });
+    const body = caughtErrorBody(error, "הסרת האורח נכשלה.");
+    return NextResponse.json({ error: body.error }, { status: body.status });
   }
 }

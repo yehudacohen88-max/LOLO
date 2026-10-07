@@ -1,3 +1,4 @@
+import "server-only";
 import { cookies } from "next/headers";
 import { getSupabaseServiceClient } from "@/lib/supabase/server";
 import { parseGuestInput, type EventGuest } from "@/lib/host/guest-fields";
@@ -47,6 +48,19 @@ function toGuest(row: GuestRow, invitePath = ""): EventGuest {
   };
 }
 
+let redisplayFailureLogged = false;
+
+function noteRedisplayFailure(eventId: string) {
+  if (redisplayFailureLogged) {
+    return;
+  }
+  redisplayFailureLogged = true;
+  console.error(
+    "[LOLO] Could not redisplay an invite link; the stored hash was left unchanged",
+    { eventId },
+  );
+}
+
 async function persistInviteCredentials(
   eventId: string,
   guestId: string,
@@ -68,11 +82,21 @@ async function persistInviteCredentials(
 }
 
 async function invitePathForRow(row: GuestRow) {
-  if (row.invite_token_hash && row.invite_token_enc) {
-    const token = decryptInviteToken(row.invite_token_enc);
-    if (token && hashInviteToken(token) === row.invite_token_hash) {
-      return inviteTokenPath(token);
+  if (row.invite_token_hash) {
+    if (row.invite_token_enc) {
+      try {
+        const token = decryptInviteToken(row.invite_token_enc);
+        if (token && hashInviteToken(token) === row.invite_token_hash) {
+          return inviteTokenPath(token);
+        }
+      } catch (error) {
+        console.error("[LOLO] Invite link decrypt failed", {
+          message: error instanceof Error ? error.message : "unknown",
+        });
+      }
     }
+    noteRedisplayFailure(row.event_id);
+    return "";
   }
 
   const credentials = createInviteCredentials();

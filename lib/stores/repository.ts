@@ -1,3 +1,4 @@
+import "server-only";
 import { getSupabaseServiceClient } from "@/lib/supabase/server";
 import type { Store } from "./types";
 

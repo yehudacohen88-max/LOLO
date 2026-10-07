@@ -4,6 +4,7 @@ import {
   listEventGuests,
   requireHostEventSession,
 } from "@/lib/host/guest-list";
+import { caughtErrorBody } from "@/lib/security/required-secret";
 
 type RouteContext = {
   params: Promise<{ eventId: string }>;
@@ -20,9 +21,8 @@ export async function GET(_request: Request, context: RouteContext) {
     const guests = await listEventGuests(session.eventId);
     return NextResponse.json({ guests });
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "טעינת רשימת האורחים נכשלה.";
-    return NextResponse.json({ error: message }, { status: 500 });
+    const body = caughtErrorBody(error, "טעינת רשימת האורחים נכשלה.", 500);
+    return NextResponse.json({ error: body.error }, { status: body.status });
   }
 }
 
@@ -41,9 +41,7 @@ export async function POST(request: Request, context: RouteContext) {
     });
     return NextResponse.json({ guest });
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "הוספת האורח נכשלה.";
-    const status = message.includes("חסר מפתח") ? 500 : 400;
-    return NextResponse.json({ error: message }, { status });
+    const body = caughtErrorBody(error, "הוספת האורח נכשלה.");
+    return NextResponse.json({ error: body.error }, { status: body.status });
   }
 }

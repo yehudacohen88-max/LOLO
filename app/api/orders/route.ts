@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getOrderForGuest, upsertPendingOrder } from "@/lib/orders/repository";
 import type { OrderItemInput } from "@/lib/orders/types";
+import { caughtErrorBody } from "@/lib/security/required-secret";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -18,9 +19,8 @@ export async function GET(request: Request) {
     }
     return NextResponse.json(order);
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "טעינת ההזמנה נכשלה.";
-    return NextResponse.json({ error: message }, { status: 500 });
+    const body = caughtErrorBody(error, "טעינת ההזמנה נכשלה.", 500);
+    return NextResponse.json({ error: body.error }, { status: body.status });
   }
 }
 
@@ -52,9 +52,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(order);
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "שמירת ההזמנה נכשלה.";
-    const status = message.includes("חסר מפתח") ? 500 : 400;
-    return NextResponse.json({ error: message }, { status });
+    const body = caughtErrorBody(error, "שמירת ההזמנה נכשלה.");
+    return NextResponse.json({ error: body.error }, { status: body.status });
   }
 }

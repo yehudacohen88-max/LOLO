@@ -1,3 +1,4 @@
+import "server-only";
 import { getSupabaseServiceClient } from "@/lib/supabase/server";
 import { createUniqueSlug } from "@/lib/events/slug";
 import {

@@ -1,60 +1,52 @@
-import { createHmac, timingSafeEqual } from "node:crypto";
+import "server-only";
+import { signScopedPayload, signaturesMatch } from "@/lib/security/hmac";
 
 export const HOST_SESSION_COOKIE = "lolo_host_session";
 const SESSION_HOURS = 12;
+const TOKEN_TYP = "host";
 
 type HostSession = {
+  typ: typeof TOKEN_TYP;
   eventId: string;
   exp: number;
 };
 
-function sessionSecret() {
-  return (
-    process.env.HOST_SESSION_SECRET ||
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    ""
-  );
-}
-
-function sign(value: string) {
-  const secret = sessionSecret();
-  if (!secret) {
-    throw new Error("חסר מפתח שרת של Supabase.");
-  }
-  return createHmac("sha256", secret).update(value).digest("base64url");
+function encodePayload(payload: HostSession) {
+  return Buffer.from(JSON.stringify(payload), "utf8").toString("base64url");
 }
 
 export function createHostSessionToken(eventId: string) {
   const payload: HostSession = {
+    typ: TOKEN_TYP,
     eventId,
     exp: Date.now() + SESSION_HOURS * 60 * 60 * 1000,
   };
-  const encoded = Buffer.from(JSON.stringify(payload), "utf8").toString(
-    "base64url",
-  );
-  return `${encoded}.${sign(encoded)}`;
+  const encoded = encodePayload(payload);
+  return `${encoded}.${signScopedPayload("HOST_SESSION_SECRET", TOKEN_TYP, encoded)}`;
 }
 
 export function readHostSessionToken(token: string | undefined): HostSession | null {
-  if (!token || !token.includes(".")) {
+  if (!token) {
     return null;
   }
 
-  const [encoded, signature] = token.split(".");
+  const parts = token.split(".");
+  if (parts.length !== 2) {
+    return null;
+  }
+  const [encoded, signature] = parts;
   if (!encoded || !signature) {
     return null;
   }
 
   let expected: string;
   try {
-    expected = sign(encoded);
+    expected = signScopedPayload("HOST_SESSION_SECRET", TOKEN_TYP, encoded);
   } catch {
     return null;
   }
 
-  const given = Buffer.from(signature);
-  const good = Buffer.from(expected);
-  if (given.length !== good.length || !timingSafeEqual(given, good)) {
+  if (!signaturesMatch(signature, expected)) {
     return null;
   }
 
@@ -63,6 +55,7 @@ export function readHostSessionToken(token: string | undefined): HostSession | n
       Buffer.from(encoded, "base64url").toString("utf8"),
     ) as HostSession;
     if (
+      payload.typ !== TOKEN_TYP ||
       typeof payload.eventId !== "string" ||
       !payload.eventId ||
       typeof payload.exp !== "number" ||

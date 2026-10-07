@@ -1,3 +1,4 @@
+import "server-only";
 import { listEventGuests } from "@/lib/host/guest-list";
 import type { EventGuest } from "@/lib/host/guest-fields";
 import { normalizeEventSlug } from "@/lib/events/slug";

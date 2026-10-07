@@ -140,24 +140,32 @@ export default function HostGuestList({
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
-                  <button
-                    type="button"
-                    disabled={saving || !guest.invitePath}
-                    onClick={() => copyInviteLink(guest.invitePath ?? "")}
-                    className="text-sm font-semibold text-foreground disabled:text-muted"
-                  >
-                    העתק קישור אישי
-                  </button>
-                  {waUrl ? (
-                    <a
-                      href={waUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm font-semibold text-brand"
-                    >
-                      שלח ב-WhatsApp
-                    </a>
-                  ) : null}
+                  {guest.invitePath ? (
+                    <>
+                      <button
+                        type="button"
+                        disabled={saving}
+                        onClick={() => copyInviteLink(guest.invitePath ?? "")}
+                        className="text-sm font-semibold text-foreground disabled:text-muted"
+                      >
+                        העתק קישור אישי
+                      </button>
+                      {waUrl ? (
+                        <a
+                          href={waUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm font-semibold text-brand"
+                        >
+                          שלח ב-WhatsApp
+                        </a>
+                      ) : null}
+                    </>
+                  ) : (
+                    <p className="text-sm text-muted">
+                      הקישור שנשלח עדיין תקף, אבל לא ניתן להציג אותו שוב.
+                    </p>
+                  )}
                   <button
                     type="button"
                     disabled={saving}
