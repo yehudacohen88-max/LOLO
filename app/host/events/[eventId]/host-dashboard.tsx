@@ -1,4 +1,5 @@
 import Link from "next/link";
+import GiftMedia from "@/components/gift-media";
 import type {
   HostDashboardData,
   HostPaymentStatus,
@@ -168,21 +169,33 @@ export default function HostDashboard({
                     key={gift.id}
                     className="rounded-2xl border border-border px-4 py-4"
                   >
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="font-semibold text-foreground">
-                          {gift.icon ? `${gift.icon} ` : ""}
-                          {gift.title || "מתנה"}
-                        </p>
+                    <div className="flex items-start gap-3">
+                      <GiftMedia
+                        imageUrl={gift.imageUrl}
+                        icon={gift.icon}
+                        alt=""
+                        className="h-16 w-16 text-2xl"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-3">
+                          <p className="font-semibold text-foreground">
+                            {gift.title || "מתנה"}
+                          </p>
+                          {gift.targetAmount ? (
+                            <p className="shrink-0 text-sm text-muted">
+                              יעד {formatMoney(gift.targetAmount)}
+                            </p>
+                          ) : null}
+                        </div>
+                        {gift.description ? (
+                          <p className="mt-1 text-sm leading-relaxed text-muted">
+                            {gift.description}
+                          </p>
+                        ) : null}
                         {gift.storeName ? (
                           <p className="mt-1 text-sm text-muted">חנות: {gift.storeName}</p>
                         ) : null}
                       </div>
-                      {gift.targetAmount ? (
-                        <p className="shrink-0 text-sm text-muted">
-                          יעד {formatMoney(gift.targetAmount)}
-                        </p>
-                      ) : null}
                     </div>
                     <p className="mt-2 text-sm text-foreground">
                       שולם: {formatMoney(gift.paidAmount)}
@@ -197,6 +210,11 @@ export default function HostDashboard({
                           style={{ width: `${progress}%` }}
                         />
                       </div>
+                    ) : null}
+                    {gift.targetAmount && gift.paidAmount > gift.targetAmount ? (
+                      <p className="mt-2 text-sm font-medium text-brand">
+                        ההשתתפות עברה את היעד
+                      </p>
                     ) : null}
                   </li>
                 );

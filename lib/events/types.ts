@@ -5,6 +5,8 @@ export type EventGift = {
   description: string;
   targetAmount: number;
   icon: string;
+  imageUrl: string;
+  source: "custom" | "catalog" | "";
   priority: number;
   active: boolean;
   storeId: string | null;

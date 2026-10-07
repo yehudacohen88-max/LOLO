@@ -10,6 +10,7 @@ import {
 } from "@/lib/host/guest-list";
 import { parseGuestList } from "@/lib/host/guest-fields";
 import type { EventGift, StoredEvent } from "@/lib/events/types";
+import { isOwnGiftImageUrl } from "@/lib/images/public-url";
 
 export type PublishEventInput = {
   title?: string;
@@ -64,20 +65,61 @@ function asStoreId(value: unknown) {
   return value.trim();
 }
 
-function asGifts(value: unknown): Omit<EventGift, "id" | "eventId">[] {
+function asTargetAmount(value: unknown) {
+  const amount = Number(value);
+  if (!Number.isFinite(amount) || amount < 0 || amount > 10_000_000) {
+    return 0;
+  }
+  return Math.round(amount * 100) / 100;
+}
+
+function asImageUrl(value: unknown) {
+  const raw = asString(value).trim();
+  if (!raw || !isOwnGiftImageUrl(raw)) {
+    return "";
+  }
+  return raw;
+}
+
+function asGiftSource(value: unknown): EventGift["source"] {
+  return value === "catalog" ? "catalog" : "custom";
+}
+
+function asCoverImage(value: unknown) {
+  const raw = asString(value).trim();
+  if (!raw) {
+    return "";
+  }
+  if (raw.startsWith("data:image/")) {
+    return raw;
+  }
+  if (isOwnGiftImageUrl(raw)) {
+    return raw;
+  }
+  return "";
+}
+
+function moneyPlaceholder(): Omit<EventGift, "id" | "eventId"> {
+  return {
+    title: "מתנה לאירוע",
+    description: "השתתפות במתנה לאירוע.",
+    targetAmount: 0,
+    icon: "💝",
+    imageUrl: "",
+    source: "custom",
+    priority: 0,
+    active: true,
+    storeId: null,
+    storeName: "",
+  };
+}
+
+function asGifts(
+  value: unknown,
+  giftMode: StoredEvent["giftMode"],
+): Omit<EventGift, "id" | "eventId">[] {
   if (!Array.isArray(value) || value.length === 0) {
-    return [
-      {
-        title: "מתנה לאירוע",
-        description: "השתתפות במתנה לאירוע.",
-        targetAmount: 0,
-        icon: "💝",
-        priority: 0,
-        active: true,
-        storeId: null,
-        storeName: "",
-      },
-    ];
+    return giftMode === "money" ? [moneyPlaceholder()] : [];
   }
 
   const gifts = value
@@ -87,15 +129,17 @@ function asGifts(value: unknown): Omit<EventGift, "id" | "eventId">[] {
       }
 
       const gift = item as Record<string, unknown>;
-      const title = asString(gift.title);
-      const targetAmount = Number(gift.targetAmount);
+      const title = asString(gift.title).trim().slice(0, 80);
+      const targetAmount = asTargetAmount(gift.targetAmount);
       const priority = Number(gift.priority);
 
       return {
         title,
-        description: asString(gift.description),
-        targetAmount: Number.isFinite(targetAmount) ? targetAmount : 0,
-        icon: asString(gift.icon) || "🎁",
+        description: asString(gift.description).trim().slice(0, 400),
+        targetAmount,
+        icon: asString(gift.icon).trim().slice(0, 16) || "🎁",
+        imageUrl: asImageUrl(gift.imageUrl),
+        source: asGiftSource(gift.source),
         priority: Number.isFinite(priority) ? priority : index,
         active: gift.active !== false,
         storeId: asStoreId(gift.storeId),
@@ -110,6 +154,15 @@ function asGifts(value: unknown): Omit<EventGift, "id" | "eventId">[] {
     ...gift,
     priority: index,
   }));
+}
+
+function isMissingCustomGiftColumn(error: { code?: string; message?: string }) {
+  const message = error.message ?? "";
+  return (
+    error.code === "42703" ||
+    error.code === "PGRST204" ||
+    (/image_url|source/.test(message) && /column|schema cache/i.test(message))
+  );
 }
 
 async function attachActiveStoreNames(
@@ -180,16 +233,28 @@ export async function publishEventOnServer(
   const giftMode = asGiftMode(input.giftMode);
   const guests = parseGuestList(input.guests);
   const supabase = getSupabaseServiceClient();
-  const gifts = await attachActiveStoreNames(supabase, asGifts(input.gifts));
+  const gifts = await attachActiveStoreNames(
+    supabase,
+    asGifts(input.gifts, giftMode),
+  );
 
   if (gifts.length === 0) {
-    throw new Error("נא לבחור לפחות מתנה אחת.");
+    throw new Error("נא להוסיף לפחות מתנה אחת.");
+  }
+
+  if (giftMode !== "money") {
+    const incomplete = gifts.some(
+      (gift) => !gift.title.trim() || !(gift.targetAmount > 0),
+    );
+    if (incomplete) {
+      throw new Error("לכל מתנה צריך שם ויעד גדול מ־0.");
+    }
   }
   const existingSlugs = await listSlugs();
   const id = crypto.randomUUID();
   let slug = createUniqueSlug(title || hostName || "event", existingSlugs);
   const createdAt = new Date().toISOString();
-  let coverImage = asString(input.coverImage);
+  let coverImage = asCoverImage(input.coverImage);
 
   const eventRow = {
     id,
@@ -251,6 +316,8 @@ export async function publishEventOnServer(
     description: gift.description,
     target_amount: gift.targetAmount,
     icon: gift.icon,
+    image_url: gift.imageUrl,
+    source: gift.source === "catalog" ? "catalog" : "custom",
     priority: gift.priority,
     active: gift.active,
     store_id: gift.storeId,
@@ -268,6 +335,17 @@ export async function publishEventOnServer(
 
   if (giftError) {
     await supabase.from("events").delete().eq("id", id);
+    if (isMissingCustomGiftColumn(giftError)) {
+      console.error(
+        "[LOLO] Publishing gifts failed because custom gift columns are missing. Run supabase/custom-gifts.sql in the Supabase SQL editor.",
+        { code: giftError.code, message: giftError.message },
+      );
+      throw new Error("לא הצלחנו לשמור את האירוע. נסו שוב מאוחר יותר.");
+    }
+    console.error("[LOLO] Saving event gifts failed.", {
+      code: giftError.code,
+      message: giftError.message,
+    });
     throw new Error("שמירת המתנות נכשלה.");
   }
 
@@ -306,18 +384,24 @@ export async function publishEventOnServer(
     moneyAmounts: asMoneyAmounts(input.moneyAmounts),
     allowCustomAmount: input.allowCustomAmount !== false,
     moneyDisplay: asMoneyDisplay(input.moneyDisplay),
-    gifts: giftRows.map((gift) => ({
-      id: gift.id,
-      eventId: gift.event_id,
-      title: gift.title,
-      description: gift.description,
-      targetAmount: Number(gift.target_amount) || 0,
-      icon: gift.icon,
-      priority: gift.priority,
-      active: gift.active,
-      storeId: gift.store_id,
-      storeName: gift.store_name,
-    })),
+    gifts: giftRows.map((gift) => {
+      const source: EventGift["source"] =
+        gift.source === "catalog" ? "catalog" : "custom";
+      return {
+        id: gift.id,
+        eventId: gift.event_id,
+        title: gift.title,
+        description: gift.description,
+        targetAmount: Number(gift.target_amount) || 0,
+        icon: gift.icon,
+        imageUrl: gift.image_url,
+        source,
+        priority: gift.priority,
+        active: gift.active,
+        storeId: gift.store_id,
+        storeName: gift.store_name,
+      };
+    }),
     createdAt,
     accessCode,
   };

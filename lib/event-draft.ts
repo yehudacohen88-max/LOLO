@@ -1,4 +1,4 @@
-import { clearSelectedGifts } from "./gifts";
+import { clearDraftGifts, hasDraftGifts } from "./draft-gifts";
 
 export type Guest = {
   id: string;
@@ -122,7 +122,8 @@ export function hasUnfinishedEventDraft() {
       draft.guests.length ||
       draft.excelFileName ||
       draft.giftMode ||
-      draft.moneyAmounts.length,
+      draft.moneyAmounts.length ||
+      hasDraftGifts(),
   );
 }
 
@@ -137,7 +138,7 @@ export function resetEventCreationDraft() {
   }
 
   window.localStorage.removeItem(EVENT_DRAFT_KEY);
-  clearSelectedGifts();
+  clearDraftGifts();
 }
 
 export function getVideoPreviewUrl() {
@@ -179,13 +180,4 @@ export function formatEventTime(time: string) {
   }
 
   return `${hours}:${minutes}`;
-}
-
-export function fileToDataUrl(file: File) {
-  return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result));
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(file);
-  });
 }

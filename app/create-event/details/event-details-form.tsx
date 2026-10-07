@@ -3,13 +3,14 @@
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import {
-  fileToDataUrl,
   formatEventDate,
   getVideoPreviewUrl,
   loadEventDraft,
   saveEventDraft,
   setVideoPreviewUrl,
 } from "@/lib/event-draft";
+import { ImagePrepareError } from "@/lib/images/prepare";
+import { uploadImageFile } from "@/lib/images/upload-client";
 import { useIsClient } from "@/lib/use-is-client";
 
 const fieldClass =
@@ -27,6 +28,8 @@ export default function EventDetailsForm() {
   const [venueName, setVenueName] = useState("");
   const [address, setAddress] = useState("");
   const [eventTime, setEventTime] = useState("");
+  const [imageUploading, setImageUploading] = useState(false);
+  const [imageError, setImageError] = useState("");
 
   if (isClient && !ready) {
     const draft = loadEventDraft();
@@ -55,13 +58,25 @@ export default function EventDetailsForm() {
   }
 
   async function handleImage(file?: File) {
-    if (!file) {
+    if (!file || imageUploading) {
       return;
     }
 
-    const dataUrl = await fileToDataUrl(file);
-    setImageDataUrl(dataUrl);
-    persistDetails({ imageDataUrl: dataUrl });
+    setImageError("");
+    setImageUploading(true);
+    try {
+      const url = await uploadImageFile(file, "cover");
+      setImageDataUrl(url);
+      persistDetails({ imageDataUrl: url });
+    } catch (error) {
+      setImageError(
+        error instanceof ImagePrepareError
+          ? error.message
+          : "העלאת התמונה נכשלה. נסו שוב.",
+      );
+    } finally {
+      setImageUploading(false);
+    }
   }
 
   function handleVideo(file?: File) {
@@ -110,15 +125,25 @@ export default function EventDetailsForm() {
             עדיין לא נבחרה תמונה
           </div>
         )}
-        <label className="inline-flex h-12 cursor-pointer items-center justify-center rounded-full border border-border bg-white px-6 text-sm font-semibold text-foreground hover:bg-brand-soft">
-          בחירת תמונה
+        <label
+          className={`inline-flex h-12 cursor-pointer items-center justify-center rounded-full border border-border bg-white px-6 text-sm font-semibold text-foreground hover:bg-brand-soft ${
+            imageUploading ? "pointer-events-none opacity-60" : ""
+          }`}
+        >
+          {imageUploading ? "מעלים את התמונה..." : "בחירת תמונה"}
           <input
             type="file"
             accept="image/*"
             className="sr-only"
-            onChange={(event) => handleImage(event.target.files?.[0])}
+            disabled={imageUploading}
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              event.target.value = "";
+              void handleImage(file);
+            }}
           />
         </label>
+        {imageError ? <p className="text-sm text-brand">{imageError}</p> : null}
         <p className="text-sm text-muted">התמונה תופיע בעמוד האירוע ובהזמנה</p>
       </section>
 

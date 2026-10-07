@@ -2,18 +2,18 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { clearDraftGifts } from "@/lib/draft-gifts";
 import { loadEventDraft, saveEventDraft } from "@/lib/event-draft";
-import { clearSelectedGifts } from "@/lib/gifts";
 import { useIsClient } from "@/lib/use-is-client";
 
 const options = [
   {
     id: "catalog",
-    href: "/create-event/gifts/catalog",
+    href: "/create-event/gifts/organize",
     emoji: "🎁",
-    title: "מתנות שבחרתי",
+    title: "מתנות משלכם",
     description:
-      "בוחרים מתנות מראש, והאורחים משתתפים במה שבאמת רוצים לקבל.",
+      "מגדירים מתנה עם תמונה, יעד וחנות. אפשר גם להתחיל מרעיון מוכן ולערוך אותו.",
     recommended: true,
   },
   {
@@ -106,7 +106,7 @@ export default function GiftChoiceForm() {
               moneyDisplay: "amounts",
             });
           } else {
-            clearSelectedGifts();
+            clearDraftGifts();
             saveEventDraft({ giftMode: "money" });
           }
 
