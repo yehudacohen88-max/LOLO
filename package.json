@@ -8,11 +8,13 @@
     "start": "next start",
     "lint": "eslint",
     "verify:sessions": "node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/register-test-hooks.mjs --test scripts/verify-session-separation.ts",
-    "verify:checkout": "node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/register-test-hooks.mjs --test scripts/verify-demo-checkout.ts"
+    "verify:checkout": "node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/register-test-hooks.mjs --test scripts/verify-demo-checkout.ts",
+    "verify:vouchers": "node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/register-test-hooks.mjs --test scripts/verify-vouchers.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.114.0",
     "next": "16.3.1",
+    "qrcode": "^1.5.4",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "server-only": "^0.0.1",
@@ -21,6 +23,7 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
+    "@types/qrcode": "^1.5.6",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",

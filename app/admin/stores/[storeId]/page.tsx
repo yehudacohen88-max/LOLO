@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getAdminSession } from "@/lib/admin/session";
 import { getAdminStore } from "@/lib/admin/stores";
+import RedemptionCodePanel from "../redemption-code-panel";
 import StoreForm from "../store-form";
 
 export const metadata: Metadata = {
@@ -36,7 +37,12 @@ export default async function EditAdminStorePage({ params }: PageProps) {
       {!loadError && !store ? (
         <p className="mt-6 text-base text-muted">בית העסק לא נמצא.</p>
       ) : null}
-      {store ? <StoreForm store={store} /> : null}
+      {store ? (
+        <>
+          <StoreForm store={store} />
+          <RedemptionCodePanel storeId={store.id} />
+        </>
+      ) : null}
     </main>
   );
 }

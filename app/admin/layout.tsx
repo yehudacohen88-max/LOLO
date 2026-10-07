@@ -28,6 +28,18 @@ export default async function AdminLayout({ children }: { children: ReactNode })
                 בתי עסק
               </Link>
               <Link
+                href="/admin/vouchers"
+                className="text-sm font-semibold text-foreground"
+              >
+                שוברים
+              </Link>
+              <Link
+                href="/admin/redemptions"
+                className="text-sm font-semibold text-foreground"
+              >
+                מימושים
+              </Link>
+              <Link
                 href="/admin/settings"
                 className="text-sm font-semibold text-foreground"
               >

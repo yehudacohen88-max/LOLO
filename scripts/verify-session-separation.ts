@@ -9,6 +9,7 @@ import { beforeEach, describe, it } from "node:test";
 import { createAdminSessionToken, readAdminSessionToken } from "../lib/admin/session";
 import { createHostSessionToken, readHostSessionToken } from "../lib/host/session";
 import { createInviteSessionToken, readInviteSessionToken } from "../lib/invite/session";
+import { createStoreSessionToken, readStoreSessionToken } from "../lib/store/session";
 import {
   decryptInviteToken,
   encryptInviteToken,
@@ -30,21 +31,30 @@ import {
 const HOST_SECRET = "host-session-secret-for-tests";
 const INVITE_SECRET = "invite-token-secret-for-tests";
 const ADMIN_SECRET = "admin-session-secret-for-tests";
+const STORE_SECRET = "store-session-secret-for-tests";
 const SERVICE_ROLE = "service-role-must-not-sign-or-encrypt";
 
 function useSecrets(values: {
   host?: string;
   invite?: string;
   admin?: string;
+  store?: string;
   serviceRole?: string;
 }) {
   process.env.HOST_SESSION_SECRET = values.host ?? HOST_SECRET;
   process.env.INVITE_TOKEN_SECRET = values.invite ?? INVITE_SECRET;
   process.env.ADMIN_SESSION_SECRET = values.admin ?? ADMIN_SECRET;
+  process.env.STORE_SESSION_SECRET = values.store ?? STORE_SECRET;
   process.env.SUPABASE_SERVICE_ROLE_KEY = values.serviceRole ?? SERVICE_ROLE;
 }
 
-function dropSecret(name: "HOST_SESSION_SECRET" | "INVITE_TOKEN_SECRET" | "ADMIN_SESSION_SECRET") {
+function dropSecret(
+  name:
+    | "HOST_SESSION_SECRET"
+    | "INVITE_TOKEN_SECRET"
+    | "ADMIN_SESSION_SECRET"
+    | "STORE_SESSION_SECRET",
+) {
   delete process.env[name];
 }
 
@@ -99,7 +109,7 @@ describe("session token separation", () => {
 
   it("keeps types separated even when every secret is the same string", () => {
     const shared = "same-secret-for-every-role";
-    useSecrets({ host: shared, invite: shared, admin: shared });
+    useSecrets({ host: shared, invite: shared, admin: shared, store: shared });
 
     const invite = createInviteSessionToken({
       eventId: "event-1",
@@ -109,13 +119,62 @@ describe("session token separation", () => {
     });
     const host = createHostSessionToken("event-1");
     const admin = createAdminSessionToken();
+    const store = createStoreSessionToken("store-1");
 
     assert.equal(readHostSessionToken(invite), null);
     assert.equal(readAdminSessionToken(invite), null);
+    assert.equal(readStoreSessionToken(invite), null);
     assert.equal(readInviteSessionToken(host), null);
     assert.equal(readAdminSessionToken(host), null);
+    assert.equal(readStoreSessionToken(host), null);
     assert.equal(readHostSessionToken(admin), null);
     assert.equal(readInviteSessionToken(admin), null);
+    assert.equal(readStoreSessionToken(admin), null);
+    assert.equal(readHostSessionToken(store), null);
+    assert.equal(readInviteSessionToken(store), null);
+    assert.equal(readAdminSessionToken(store), null);
+    assert.equal(readStoreSessionToken(store)?.storeId, "store-1");
+  });
+
+  it("rejects a store session whose payload type is not store", () => {
+    const encoded = Buffer.from(
+      JSON.stringify({
+        typ: "host",
+        storeId: "store-1",
+        exp: Date.now() + 60_000,
+      }),
+      "utf8",
+    ).toString("base64url");
+    const forged = `${encoded}.${signScopedPayload("STORE_SESSION_SECRET", "store", encoded)}`;
+    assert.equal(readStoreSessionToken(forged), null);
+  });
+
+  it("does not fall back to the service role key when the store secret is missing", () => {
+    useSecrets({});
+    dropSecret("STORE_SESSION_SECRET");
+    const logs: string[] = [];
+    const original = console.error;
+    console.error = (...args: unknown[]) => {
+      logs.push(args.map((part) => String(part)).join(" "));
+    };
+
+    try {
+      assert.throws(
+        () => createStoreSessionToken("store-1"),
+        (error: unknown) => {
+          assert.ok(error instanceof Error);
+          assert.equal(error.message, SERVICE_UNAVAILABLE_MESSAGE);
+          assert.equal(error.message.includes(SERVICE_ROLE), false);
+          assert.equal(error.message.includes("STORE_SESSION_SECRET"), false);
+          return true;
+        },
+      );
+    } finally {
+      console.error = original;
+    }
+
+    assert.match(logs.join("\n"), /STORE_SESSION_SECRET/);
+    assert.equal(readStoreSessionToken("not-a-token"), null);
   });
 
   it("rejects legacy untyped cookies, including ones signed with the service role", () => {
@@ -275,5 +334,15 @@ describe("login rate limit", () => {
     assert.equal(loginAttemptAllowed("host", "192.0.2.11"), true);
     clearLoginFailures("host", "192.0.2.10");
     assert.equal(loginAttemptAllowed("host", "192.0.2.10"), true);
+  });
+
+  it("locks only the store IP that failed, without locking host login", () => {
+    const { perIp } = LOGIN_POLICIES.store;
+    for (let attempt = 0; attempt < perIp; attempt += 1) {
+      recordLoginFailure("store", "192.0.2.40");
+    }
+    assert.equal(loginAttemptAllowed("store", "192.0.2.40"), false);
+    assert.equal(loginAttemptAllowed("host", "192.0.2.40"), true);
+    assert.equal(loginAttemptAllowed("store", "192.0.2.41"), true);
   });
 });
