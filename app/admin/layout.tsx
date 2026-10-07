@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { getAdminSession } from "@/lib/admin/session";
+import AdminNav from "./admin-nav";
 import LogoutButton from "./logout-button";
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
@@ -9,47 +10,14 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   return (
     <div className="flex flex-1 flex-col">
       <header className="border-b border-border bg-white">
-        <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-4 px-5 py-4">
-          <Link
-            href="/admin"
-            className="text-2xl font-extrabold tracking-[0.22em] text-brand"
-          >
-            LOLO
-          </Link>
-          {session ? (
-            <nav className="flex flex-wrap items-center justify-end gap-x-4 gap-y-2">
-              <Link href="/admin" className="text-sm font-semibold text-foreground">
-                לוח בקרה
-              </Link>
-              <Link
-                href="/admin/stores"
-                className="text-sm font-semibold text-foreground"
-              >
-                בתי עסק
-              </Link>
-              <Link
-                href="/admin/vouchers"
-                className="text-sm font-semibold text-foreground"
-              >
-                שוברים
-              </Link>
-              <Link
-                href="/admin/redemptions"
-                className="text-sm font-semibold text-foreground"
-              >
-                מימושים
-              </Link>
-              <Link
-                href="/admin/settings"
-                className="text-sm font-semibold text-foreground"
-              >
-                הגדרות
-              </Link>
-              <LogoutButton />
-            </nav>
-          ) : (
-            <p className="text-sm font-semibold text-muted">ניהול פנימי</p>
-          )}
+        <div className="mx-auto flex w-full max-w-6xl flex-col gap-3 px-5 py-4 sm:px-8">
+          <div className="flex items-center justify-between gap-4">
+            <Link href="/admin" className="text-2xl font-extrabold tracking-[0.22em] text-brand">
+              LOLO
+            </Link>
+            {session ? <LogoutButton /> : <p className="text-sm font-semibold text-muted">ניהול פנימי</p>}
+          </div>
+          {session ? <AdminNav /> : null}
         </div>
       </header>
       {children}

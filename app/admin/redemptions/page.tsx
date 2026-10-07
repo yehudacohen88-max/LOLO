@@ -43,11 +43,15 @@ export default async function AdminRedemptionsPage({ searchParams }: PageProps) 
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-5 py-10 sm:px-8">
+    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-5 py-10 sm:px-8">
       <header>
         <h1 className="text-2xl font-bold sm:text-4xl">מימושים</h1>
         <p className="mt-2 text-base text-muted">
-          כל מימוש שנקלט בחנות או דרך הניהול. זה הבסיס להתחשבנות מול בית העסק.
+          כל מימוש שנקלט בחנות או דרך הניהול.{" "}
+          <Link href="/admin/settlements" className="font-semibold text-brand">
+            יצירת התחשבנות
+          </Link>{" "}
+          אוספת את מה שטרם הוסדר.
         </p>
       </header>
       <form className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-end" method="get">

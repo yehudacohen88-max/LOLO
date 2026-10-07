@@ -42,11 +42,11 @@ export default async function AdminVouchersPage({ searchParams }: PageProps) {
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-5 py-10 sm:px-8">
+    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-5 py-10 sm:px-8">
       <header>
         <h1 className="text-2xl font-bold sm:text-4xl">שוברים</h1>
         <p className="mt-2 text-base text-muted">
-          שוברים שהונפקו לבעלי אירועים. ההתחשבנות מול בתי העסק תגיע בשלב הבא.
+          שוברים שהונפקו לבעלי אירועים. אחרי מימוש, ההתחשבנות מול בית העסק נעשית ממסך ההתחשבנויות.
         </p>
       </header>
 
