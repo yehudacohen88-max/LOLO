@@ -18,6 +18,9 @@ export default function ThankYouPage() {
             LOLO
           </Link>
           <h1 className="mt-8 text-3xl font-bold text-foreground">תודה ❤️</h1>
+          <p className="mt-3 max-w-sm text-sm font-semibold leading-relaxed text-brand">
+            גרסת בטא — תשלומים מדומים בלבד
+          </p>
         </header>
         <ThankYouView />
       </main>

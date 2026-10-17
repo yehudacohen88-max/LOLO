@@ -17,6 +17,8 @@ import {
 const actionClass =
   "inline-flex h-12 cursor-pointer items-center justify-center rounded-full border border-border bg-white px-4 text-sm font-semibold text-foreground hover:bg-brand-soft";
 
+const guestMediaEnabled = false;
+
 export default function GuestGreetingForm() {
   const router = useRouter();
   const slug = fromRouteParam(useParams<{ slug: string }>().slug);
@@ -188,6 +190,7 @@ export default function GuestGreetingForm() {
         />
       </label>
 
+      {guestMediaEnabled ? (
       <section className="flex flex-col gap-3">
         <p className="text-sm font-semibold text-foreground">
           אפשר גם להוסיף (לא חובה)
@@ -288,6 +291,7 @@ export default function GuestGreetingForm() {
           </div>
         ) : null}
       </section>
+      ) : null}
 
       <button
         type="submit"

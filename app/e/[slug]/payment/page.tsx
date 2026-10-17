@@ -21,6 +21,9 @@ export default function GuestPaymentPage() {
           <h1 className="mt-4 text-2xl font-bold leading-tight tracking-tight text-foreground sm:text-4xl">
             תשלום
           </h1>
+          <p className="mt-3 max-w-sm text-sm font-semibold leading-relaxed text-brand">
+            גרסת בטא — תשלומים מדומים בלבד
+          </p>
         </header>
         <GuestPaymentSummary />
       </main>

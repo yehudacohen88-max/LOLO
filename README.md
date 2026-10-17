@@ -20,31 +20,39 @@ Next.js 16 (App Router), React 19, TypeScript, Supabase, Tailwind CSS 4, Vercel.
 - `ADMIN_SESSION_SECRET`
 - `STORE_SESSION_SECRET`
 - `LOLO_ADMIN_PASSWORD`
+- `BETA_ACCESS_ENABLED` (ברירת מחדל: ההגבלה פעילה. רק `false` מבטל אותה)
+- `BETA_ACCESS_PASSWORD`
+- `BETA_ACCESS_SECRET`
 - `NEXT_PUBLIC_APP_URL` (אופציונלי)
 - `PAYMENT_PROVIDER` (אופציונלי. ריק = תשלום הדגמה)
 
 ## בסיס הנתונים
 
-מריצים ידנית בעורך ה-SQL, לפי הסדר. לא מריצים מחדש קבצים ישנים אחרי שהם כבר הוחלו. אף קובץ כאן לא רץ אוטומטית בפריסה.
+מריצים ידנית בעורך ה-SQL, לפי הסדר. לא מריצים מחדש קובץ שכבר הוחל. אף קובץ כאן לא רץ אוטומטית בפריסה.
 
-1. `supabase/schema.sql`
-2. `supabase/fix-public-read.sql`
-3. `supabase/events-server-write.sql`
-4. `supabase/orders.sql`
-5. `supabase/host-access-code.sql`
-6. `supabase/event-guests.sql`
-7. `supabase/invite-tokens.sql`
-8. `supabase/stores.sql`
-9. `supabase/stores-admin-fields.sql`
-10. `supabase/event-gifts-store.sql`
-11. `supabase/custom-gifts.sql`
-12. `supabase/demo-checkout.sql`
-13. `supabase/vouchers.sql`
-14. `supabase/settlements.sql`
+לא מריצים את `supabase/fix-public-read.sql`. הוא פותח מחדש קריאה אנונימית לאירועים ולמתנות.
+
+`supabase/schema.sql` מיועד להתקנה ראשונה בלבד. הרצה חוזרת שלו אחרי `supabase/events-anon-read.sql` מחזירה את אותה קריאה אנונימית, ולכן לא מריצים אותו שוב.
+
+1. `supabase/schema.sql` — התקנה ראשונה בלבד
+2. `supabase/events-server-write.sql`
+3. `supabase/orders.sql`
+4. `supabase/host-access-code.sql`
+5. `supabase/event-guests.sql`
+6. `supabase/invite-tokens.sql`
+7. `supabase/stores.sql`
+8. `supabase/stores-admin-fields.sql`
+9. `supabase/event-gifts-store.sql`
+10. `supabase/custom-gifts.sql`
+11. `supabase/demo-checkout.sql`
+12. `supabase/vouchers.sql`
+13. `supabase/settlements.sql`
+
+אחרי שהאפליקציה שרצה בפרודקשן קוראת אירוע דרך השרת, מריצים פעם אחת את `supabase/events-anon-read.sql`. הוא סוגר קריאה אנונימית לאירועים ולמתנות, ולא מוחק שורות. לא מריצים אותו לפני שהקוד הזה חי באתר.
 
 אירוע הדגמה, אופציונלי ולא הורס נתונים קיימים:
 
-15. `supabase/demo-seed.sql`
+14. `supabase/demo-seed.sql`
 
 מחיקה של שורות ההדגמה בלבד: `supabase/demo-cleanup.sql`. פרטי הכניסה והמסלול: `docs/DEMO.md`.
 

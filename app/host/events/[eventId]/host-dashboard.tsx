@@ -293,6 +293,11 @@ export default function HostDashboard({
                       {order.guestEmail ? <p>{order.guestEmail}</p> : null}
                     </div>
                   ) : null}
+                  {order.greetingText ? (
+                    <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-relaxed text-foreground">
+                      {order.greetingText}
+                    </p>
+                  ) : null}
                 </li>
               ))}
             </ul>

@@ -128,6 +128,10 @@ export default function IssueVoucherPanel({
         <p className="mt-3 text-sm text-muted">אין כרגע בית עסק פעיל שאפשר לשייך לשובר.</p>
       ) : null}
 
+      <p className="mt-4 rounded-2xl bg-brand-soft px-4 py-3 text-sm font-semibold leading-relaxed text-brand">
+        זוהי סביבת התנסות. השובר שיונפק אינו בעל ערך כספי ולא ניתן לממשו בחנות
+      </p>
+
       {canStart && !open ? (
         <button
           type="button"
@@ -141,6 +145,9 @@ export default function IssueVoucherPanel({
       {open ? (
         <section className="mt-4 rounded-3xl border border-brand/30 bg-brand-soft/30 p-4">
           <h3 className="text-base font-bold text-foreground">אישור הנפקת שובר</h3>
+          <p className="mt-2 text-sm font-semibold leading-relaxed text-brand">
+            זוהי סביבת התנסות. השובר שיונפק אינו בעל ערך כספי ולא ניתן לממשו בחנות
+          </p>
           <p className="mt-3 text-3xl font-bold text-brand">
             {formatGiftAmount(gift.availableAmount)}
           </p>

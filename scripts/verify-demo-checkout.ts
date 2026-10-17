@@ -8,6 +8,13 @@ import {
   orderMoneyFromRow,
 } from "../lib/payments/fee";
 import { resolveProviderKind } from "../lib/payments/selection";
+import {
+  clearGuestOrderRef,
+  loadGuestOrderRef,
+  saveGuestOrderRef,
+} from "../lib/orders/guest-ref";
+import { decideStoredOrderWrite } from "../lib/orders/repeat";
+import { thankYouAfterLoad } from "../lib/orders/thank-you-ref";
 import { decideMarkFailed, decideMarkPaid } from "../lib/payments/state";
 
 const pending = {
@@ -228,5 +235,134 @@ describe("demo checkout funding and payments", () => {
       }),
       GUEST_FEE_OFF,
     );
+  });
+});
+
+describe("repeat guest purchase", () => {
+  it("opens a new order after paid or cancelled and keeps pending and failed editable", () => {
+    const sameGuest = { accessTokenMatches: true, eventMatches: true };
+    assert.equal(
+      decideStoredOrderWrite({ ...sameGuest, paymentStatus: "paid" }),
+      "replace",
+    );
+    assert.equal(
+      decideStoredOrderWrite({ ...sameGuest, paymentStatus: "cancelled" }),
+      "replace",
+    );
+    assert.equal(
+      decideStoredOrderWrite({ ...sameGuest, paymentStatus: "pending" }),
+      "update",
+    );
+    assert.equal(
+      decideStoredOrderWrite({ ...sameGuest, paymentStatus: "failed" }),
+      "update",
+    );
+    assert.equal(
+      decideStoredOrderWrite({
+        accessTokenMatches: false,
+        eventMatches: true,
+        paymentStatus: "paid",
+      }),
+      "reject-auth",
+    );
+    assert.equal(
+      decideStoredOrderWrite({
+        accessTokenMatches: true,
+        eventMatches: false,
+        paymentStatus: "cancelled",
+      }),
+      "reject-auth",
+    );
+    assert.equal(
+      decideStoredOrderWrite({ ...sameGuest, paymentStatus: "unknown" }),
+      "reject-closed",
+    );
+  });
+
+  it("clears only that event's paid order ref", () => {
+    const store = new Map<string, string>();
+    const previousWindow = globalThis.window;
+    Object.assign(globalThis, {
+      window: {
+        localStorage: {
+          getItem: (key: string) => store.get(key) ?? null,
+          setItem: (key: string, value: string) => {
+            store.set(key, value);
+          },
+          removeItem: (key: string) => {
+            store.delete(key);
+          },
+        },
+      },
+    });
+
+    try {
+      saveGuestOrderRef("event-a", { id: "order-1", accessToken: "token-1" });
+      saveGuestOrderRef("event-b", { id: "order-2", accessToken: "token-2" });
+      store.set("lolo-guest-details:event-a", "{\"name\":\"נועה\"}");
+
+      clearGuestOrderRef("event-a");
+
+      assert.equal(loadGuestOrderRef("event-a"), null);
+      assert.deepEqual(loadGuestOrderRef("event-b"), {
+        id: "order-2",
+        accessToken: "token-2",
+      });
+      assert.equal(store.get("lolo-guest-details:event-a"), "{\"name\":\"נועה\"}");
+      assert.equal(store.has("lolo-guest-order:event-a"), false);
+    } finally {
+      Object.assign(globalThis, { window: previousWindow });
+    }
+  });
+
+  it("clears the order ref only after the thank-you screen verified a paid order", () => {
+    const store = new Map<string, string>();
+    const previousWindow = globalThis.window;
+    Object.assign(globalThis, {
+      window: {
+        localStorage: {
+          getItem: (key: string) => store.get(key) ?? null,
+          setItem: (key: string, value: string) => {
+            store.set(key, value);
+          },
+          removeItem: (key: string) => {
+            store.delete(key);
+          },
+        },
+      },
+    });
+
+    try {
+      saveGuestOrderRef("event-a", { id: "order-3", accessToken: "token-3" });
+
+      for (const paymentStatus of ["pending", "failed", "cancelled"]) {
+        const waiting = thankYouAfterLoad(
+          { ok: true, paymentStatus },
+          false,
+        );
+        assert.equal(waiting.clearRef, false);
+        assert.equal(waiting.replaceDisplay, true);
+        assert.equal(waiting.confirmedPaid, false);
+      }
+
+      const failedLoad = thankYouAfterLoad({ ok: false }, false);
+      assert.equal(failedLoad.clearRef, false);
+      assert.equal(failedLoad.replaceDisplay, true);
+
+      const paid = thankYouAfterLoad({ ok: true, paymentStatus: "paid" }, false);
+      assert.equal(paid.clearRef, true);
+      assert.equal(paid.confirmedPaid, true);
+      if (paid.clearRef) {
+        clearGuestOrderRef("event-a");
+      }
+
+      assert.equal(loadGuestOrderRef("event-a"), null);
+      const shownAgain = thankYouAfterLoad({ ok: false }, paid.confirmedPaid);
+      assert.equal(shownAgain.clearRef, false);
+      assert.equal(shownAgain.replaceDisplay, false);
+      assert.equal(shownAgain.confirmedPaid, true);
+    } finally {
+      Object.assign(globalThis, { window: previousWindow });
+    }
   });
 });

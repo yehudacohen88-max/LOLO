@@ -28,6 +28,7 @@ export default defineConfig({
       INVITE_TOKEN_SECRET: "",
       ADMIN_SESSION_SECRET: "",
       STORE_SESSION_SECRET: "",
+      BETA_ACCESS_ENABLED: "false",
     },
   },
 });

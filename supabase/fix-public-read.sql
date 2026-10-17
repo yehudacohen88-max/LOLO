@@ -1,4 +1,5 @@
--- Re-run this in the SQL Editor if public SELECT still fails.
+-- Obsolete. Do not run. This file restores anonymous reads of events and gifts.
+-- Use supabase/events-anon-read.sql instead.
 -- Does not allow UPDATE or DELETE.
 
 alter table public.events enable row level security;
