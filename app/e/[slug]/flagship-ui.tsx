@@ -113,9 +113,11 @@ function SatinBow({ className }: { className?: string }) {
 export function CornerRibbon({
   still = false,
   small = false,
+  untie = false,
 }: {
   still?: boolean;
   small?: boolean;
+  untie?: boolean;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const band = useSvgId("wrap");
@@ -137,10 +139,10 @@ export function CornerRibbon({
   return (
     <div
       ref={ref}
-      className={`${styles.ribbon} ${small ? styles.ribbonSm : ""} ${still ? styles.ribbonStill : ""}`}
+      className={`${styles.ribbon} ${small ? styles.ribbonSm : ""} ${still ? styles.ribbonStill : ""} ${untie ? styles.ribbonUntie : ""}`}
       aria-hidden="true"
     >
-      <svg className={styles.ribbonBand} viewBox="0 0 120 120">
+      <svg className={`${styles.ribbonBand} ${untie ? styles.untieBand : ""}`} viewBox="0 0 120 120">
         <defs>
           <linearGradient id={band} x1="0" y1="1" x2="1" y2="0">
             <stop offset="0" stopColor="#C9361F" />
@@ -152,7 +154,7 @@ export function CornerRibbon({
         <path d="M0 74 L74 0 H120 L0 120 Z" fill={`url(#${band})`} />
         <path d="M0 74 L74 0" stroke="#fff" strokeOpacity="0.4" strokeWidth="1.5" />
       </svg>
-      <SatinBow className={styles.ribbonBow} />
+      <SatinBow className={`${styles.ribbonBow} ${untie ? styles.untieBow : ""}`} />
     </div>
   );
 }
@@ -181,6 +183,8 @@ export function Portrait({
           alt={alt}
           className={styles.photo}
           data-portrait=""
+          width={800}
+          height={1000}
           style={{ objectPosition }}
           fetchPriority="high"
           decoding="async"
@@ -300,9 +304,10 @@ export function ProgressRibbon({
       className={styles.rib}
       role="progressbar"
       aria-valuemin={0}
-      aria-valuemax={100}
-      aria-valuenow={Math.round(Math.min(100, Math.max(0, percent)))}
-      aria-label={label}
+      aria-valuemax={Math.max(100, percent)}
+      aria-valuenow={percent}
+      aria-valuetext={label}
+      aria-label="התקדמות המתנה"
       style={{ ["--fs-p" as string]: String(ratio) }}
     >
       <div className={styles.track} />
@@ -317,6 +322,19 @@ export function ProgressRibbon({
         />
         <circle cx="20" cy="15" r="3" fill="#F2553F" opacity="0.55" />
       </svg>
+    </div>
+  );
+}
+
+export function GiftReveal({ label }: { label: string }) {
+  return (
+    <div className={styles.revealStage}>
+      <div className={styles.untie} aria-hidden="true">
+        <CornerRibbon untie />
+      </div>
+      <p className={styles.revealCard} data-reveal-card="">
+        {label}
+      </p>
     </div>
   );
 }

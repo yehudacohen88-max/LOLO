@@ -20,6 +20,7 @@ import {
   startGuestCheckout,
 } from "@/lib/payments/guest-client";
 import type { CheckoutQuote, PaymentOutcome } from "@/lib/payments/types";
+import styles from "../flagship.module.css";
 
 function delay(ms: number) {
   return new Promise((resolve) => {
@@ -89,7 +90,7 @@ export default function GuestPaymentSummary() {
   }, [slug]);
 
   if (!ready) {
-    return <p className="mt-10 text-center text-base text-muted">טוענים את התשלום...</p>;
+    return <p className={styles.quietLine}>טוענים את התשלום...</p>;
   }
 
   const localTotal = getContributionsTotal(contributions);
@@ -156,12 +157,9 @@ export default function GuestPaymentSummary() {
 
   if (contributions.length === 0 || localTotal <= 0) {
     return (
-      <div className="mt-10 rounded-3xl border border-border bg-white p-5 text-center">
-        <p className="text-base text-foreground">עדיין לא נבחרה מתנה.</p>
-        <Link
-          href={guestEventPath(slug)}
-          className="mt-6 inline-flex h-12 w-full items-center justify-center rounded-full bg-brand px-6 text-base font-semibold text-white hover:bg-brand-hover"
-        >
+      <div className={styles.card}>
+        <p>עדיין לא נבחרה מתנה.</p>
+        <Link href={guestEventPath(slug)} className={styles.cta}>
           חזרה לבחירת מתנה
         </Link>
       </div>
@@ -169,83 +167,57 @@ export default function GuestPaymentSummary() {
   }
 
   return (
-    <div className="mt-10 flex flex-col gap-6" aria-busy={phase === "processing"}>
-      <section className="rounded-3xl border border-border bg-white p-5">
-        <div className="flex items-start justify-between gap-3">
-          <h2 className="text-base font-bold text-foreground">סיכום התשלום</h2>
-          {showDemo && !unavailable ? (
-            <span className="shrink-0 rounded-full bg-brand-soft px-3 py-1 text-xs font-bold text-brand">
-              תשלום הדגמה
-            </span>
-          ) : null}
-        </div>
+    <div className={styles.flowBody} aria-busy={phase === "processing"}>
+      <section className={styles.card}>
+        <h2>סיכום התשלום</h2>
         {showDemo && !unavailable ? (
-          <p className="mt-3 text-sm leading-relaxed text-muted">
-            זהו תשלום הדגמה. לא נגבה כסף אמיתי, ולא מתבקש מספר כרטיס אשראי.
+          <>
+            <p className={styles.notice}>תשלום הדגמה — לא מתבצע חיוב אמיתי</p>
+            <p className={styles.quietLine}>תשלום הדגמה</p>
+            <p className={styles.quietLine}>
+              זהו תשלום הדגמה. לא נגבה כסף אמיתי, ולא מתבקש מספר כרטיס אשראי.
+            </p>
+          </>
+        ) : null}
+        {eventName ? <p className={styles.lineRow}>{eventName}</p> : null}
+        {guestName ? <p className={styles.quietLine}>{guestName}</p> : null}
+        {greeting ? <p className={styles.quietLine}>״{greeting}״</p> : null}
+
+        {contributions.map((item) => (
+          <p key={item.giftId} className={styles.lineRow}>
+            <span>{item.giftName}</span>
+            <b>{formatGiftAmount(item.amount)}</b>
           </p>
-        ) : null}
-        {eventName ? <p className="mt-4 text-sm font-semibold text-foreground">{eventName}</p> : null}
-        {guestName ? <p className="mt-1 text-sm text-muted">{guestName}</p> : null}
-        {greeting ? (
-          <p className="mt-3 text-sm leading-relaxed text-muted">“{greeting}”</p>
-        ) : null}
+        ))}
 
-        <ul className="mt-4 flex flex-col gap-2 border-t border-border pt-4">
-          {contributions.map((item) => (
-            <li
-              key={item.giftId}
-              className="flex items-center justify-between gap-3 text-sm"
-            >
-              <span className="font-medium text-foreground">{item.giftName}</span>
-              <span className="font-semibold text-foreground">
-                {formatGiftAmount(item.amount)}
-              </span>
-            </li>
-          ))}
-        </ul>
-
-        <dl className="mt-4 flex flex-col gap-2 border-t border-border pt-4 text-sm">
-          <div className="flex items-center justify-between gap-3">
-            <dt className="text-muted">השתתפות במתנה</dt>
-            <dd className="font-semibold text-foreground">
-              {formatGiftAmount(contributionAmount)}
-            </dd>
-          </div>
-          <div className="flex items-center justify-between gap-3">
-            <dt className="text-muted">
-              {feeAmount > 0 ? "עמלת שירות" : "ללא עמלת שירות"}
-            </dt>
-            {feeAmount > 0 ? (
-              <dd className="font-semibold text-foreground">{formatGiftAmount(feeAmount)}</dd>
-            ) : null}
-          </div>
-          <div className="mt-1 flex items-center justify-between gap-3 text-lg">
-            <dt className="font-bold text-foreground">סה״כ לחיוב</dt>
-            <dd className="font-bold text-brand">{formatGiftAmount(chargedAmount)}</dd>
-          </div>
-        </dl>
+        <p className={styles.lineRow}>
+          <span>השתתפות במתנה</span>
+          <b>{formatGiftAmount(contributionAmount)}</b>
+        </p>
+        <p className={styles.lineRow}>
+          <span>{feeAmount > 0 ? "עמלת שירות" : "ללא עמלת שירות"}</span>
+          {feeAmount > 0 ? <b>{formatGiftAmount(feeAmount)}</b> : null}
+        </p>
+        <p className={styles.totalLine}>
+          <span>סה״כ לחיוב</span>
+          <span>{formatGiftAmount(chargedAmount)}</span>
+        </p>
         {!quote && !quoteError ? (
-          <p className="mt-3 text-sm text-muted">מחשבים את הסכום...</p>
+          <p className={styles.quietLine}>מחשבים את הסכום...</p>
         ) : null}
       </section>
 
-      {quoteError ? <p className="text-center text-sm text-brand">{quoteError}</p> : null}
-      {actionError ? <p className="text-center text-sm text-brand">{actionError}</p> : null}
+      {quoteError ? <p className={styles.fieldError}>{quoteError}</p> : null}
+      {actionError ? <p className={styles.fieldError}>{actionError}</p> : null}
 
       {unavailable ? (
-        <p className="rounded-3xl border border-border bg-white px-5 py-4 text-center text-sm leading-relaxed text-muted">
-          אמצעי התשלום אינו זמין כרגע.
-        </p>
+        <p className={styles.card}>אמצעי התשלום אינו זמין כרגע.</p>
       ) : null}
 
       {phase === "processing" ? (
-        <p className="text-center text-sm font-semibold text-brand">
-          מאשרים את תשלום ההדגמה...
-        </p>
+        <p className={styles.quietLine}>מאשרים את תשלום ההדגמה...</p>
       ) : null}
-      {phase === "success" ? (
-        <p className="text-center text-base font-bold text-brand">התשלום התקבל</p>
-      ) : null}
+      {phase === "success" ? <p className={styles.notice}>התשלום התקבל</p> : null}
 
       {phase === "form" && !unavailable ? (
         <>
@@ -255,7 +227,7 @@ export default function GuestPaymentSummary() {
             onClick={() => {
               void pay("success");
             }}
-            className="inline-flex h-12 w-full items-center justify-center rounded-full bg-brand px-6 text-base font-semibold text-white hover:bg-brand-hover disabled:bg-brand/40"
+            className={styles.cta}
           >
             אישור תשלום הדגמה
           </button>
@@ -265,11 +237,11 @@ export default function GuestPaymentSummary() {
             onClick={() => {
               void pay("failure");
             }}
-            className="text-center text-sm font-semibold text-muted underline-offset-4 hover:text-foreground hover:underline disabled:opacity-40"
+            className={styles.ghost}
           >
             הדמיית תשלום שנכשל
           </button>
-          <p className="text-center text-xs text-muted">לבדיקה בלבד. לא מתבצע חיוב אמיתי.</p>
+          <p className={styles.quietLine}>לבדיקה בלבד. לא מתבצע חיוב אמיתי.</p>
         </>
       ) : null}
     </div>

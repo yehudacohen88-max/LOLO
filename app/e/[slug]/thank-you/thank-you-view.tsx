@@ -16,6 +16,9 @@ import { loadPendingGuestOrder } from "@/lib/orders/client";
 import { clearGuestOrderRef } from "@/lib/orders/guest-ref";
 import { thankYouAfterLoad } from "@/lib/orders/thank-you-ref";
 import type { PaymentStatus } from "@/lib/orders/types";
+import { GiftReveal } from "../flagship-ui";
+import { giftProgressCopy } from "../progress-copy";
+import styles from "../flagship.module.css";
 
 export default function ThankYouView() {
   const slug = fromRouteParam(useParams<{ slug: string }>().slug);
@@ -29,7 +32,13 @@ export default function ThankYouView() {
   const [paymentProvider, setPaymentProvider] = useState<string | null>(null);
   const [paymentReference, setPaymentReference] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
+  const [together, setTogether] = useState("");
+  const [shareNote, setShareNote] = useState("");
   const confirmedPaid = useRef(false);
+
+  function eventUrl() {
+    return `${window.location.origin}${guestEventPath(slug)}`;
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -89,7 +98,51 @@ export default function ThankYouView() {
       if (decision.clearRef) {
         clearGuestOrderRef(slug);
       }
-      setReady(true);
+
+      const gift = [...(stored?.gifts ?? [])]
+        .filter((item) => item.active !== false)
+        .sort((a, b) => a.priority - b.priority)[0];
+      if (gift) {
+        try {
+          const response = await fetch(
+            `/api/events/${encodeURIComponent(slug)}/funding`,
+            { cache: "no-store" },
+          );
+          if (response.ok) {
+            const body = (await response.json()) as {
+              gifts?: Array<{
+                giftId: string;
+                raisedAmount: number;
+                contributorCount: number;
+                percentOfTarget: number | null;
+              }>;
+            };
+            const row = body.gifts?.find((item) => item.giftId === gift.id);
+            if (row && !cancelled) {
+              const copy = giftProgressCopy({
+                raisedAmount: Number(row.raisedAmount),
+                contributorCount: Number(row.contributorCount),
+                percentOfTarget:
+                  row.percentOfTarget == null ? null : Number(row.percentOfTarget),
+                targetAmount: gift.targetAmount > 0 ? gift.targetAmount : null,
+              });
+              const parts = [
+                copy.countText,
+                copy.raisedText && copy.targetText
+                  ? `${copy.raisedText} מתוך ${copy.targetText}`
+                  : copy.raisedText,
+                copy.percentText,
+              ].filter(Boolean);
+              setTogether(parts.join(" · "));
+            }
+          }
+        } catch {
+          setTogether("");
+        }
+      }
+      if (!cancelled) {
+        setReady(true);
+      }
     })();
 
     return () => {
@@ -98,82 +151,124 @@ export default function ThankYouView() {
   }, [slug]);
 
   if (!ready) {
-    return <p className="mt-8 text-center text-base text-muted">טוענים את פרטי המתנה...</p>;
+    return <p className={styles.quietLine}>טוענים את פרטי המתנה...</p>;
   }
 
   const paid = paymentStatus === "paid";
   const failed = paymentStatus === "failed";
   const demoPaid = paid && paymentProvider === "demo";
+  const shareText = eventName ? `בואו לחגוג: ${eventName}` : "בואו לחגוג ב-LOLO";
+
+  async function shareEvent() {
+    const payload = { title: eventName || "LOLO", text: shareText, url: eventUrl() };
+    if (typeof navigator.share === "function") {
+      try {
+        await navigator.share(payload);
+        return;
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          return;
+        }
+      }
+    }
+    setShareNote("fallback");
+  }
+
+  async function copyLink() {
+    try {
+      await navigator.clipboard.writeText(eventUrl());
+      setShareNote("copied");
+    } catch {
+      setShareNote("fallback");
+    }
+  }
 
   return (
-    <div className="mt-8 flex flex-col">
-      <div className="rounded-3xl border border-border bg-white px-5 py-6 text-center">
-        <p className="text-sm font-semibold leading-relaxed text-brand">
-          גרסת בטא — תשלומים מדומים בלבד
-        </p>
+    <div className={styles.flowBody}>
+      {paid ? <GiftReveal label={contributions[0]?.giftName || eventName || "המתנה"} /> : null}
+      <div className={styles.card}>
+        <p className={styles.notice}>גרסת בטא — תשלומים מדומים בלבד</p>
         {paid ? (
-          <p className="mt-3 text-base font-bold text-brand">התשלום התקבל</p>
+          <p className={styles.lineRow}>התשלום התקבל</p>
         ) : failed ? (
-          <p className="text-base font-bold text-brand">התשלום לא הושלם</p>
+          <p className={styles.lineRow}>התשלום לא הושלם</p>
         ) : (
-          <p className="text-base font-bold text-brand">ממתינים לתשלום</p>
+          <p className={styles.lineRow}>ממתינים לתשלום</p>
         )}
+        {demoPaid ? <p className={styles.quietLine}>תשלום הדגמה</p> : null}
         {demoPaid ? (
-          <p className="mt-2 text-sm font-semibold text-brand">תשלום הדגמה</p>
+          <p className={styles.notice}>תשלום הדגמה — לא מתבצע חיוב אמיתי</p>
         ) : null}
-        {eventName ? (
-          <p className="mt-3 text-lg font-bold text-foreground">{eventName}</p>
-        ) : null}
-        {guestName ? <p className="mt-1 text-sm text-muted">מאת {guestName}</p> : null}
-        <ul className="mt-4 flex flex-col gap-2 text-sm">
-          {contributions.map((item) => (
-            <li
-              key={item.giftId}
-              className="flex items-center justify-between gap-3 text-foreground"
-            >
-              <span>{item.giftName}</span>
-              <span className="font-semibold">{formatGiftAmount(item.amount)}</span>
-            </li>
-          ))}
-        </ul>
-        <div className="mt-4 flex flex-col gap-1 text-sm">
-          <p className="flex items-center justify-between gap-3 text-foreground">
-            <span>השתתפות במתנה</span>
-            <span className="font-semibold">{formatGiftAmount(contributionAmount)}</span>
+        {eventName ? <p className={styles.lineRow}>{eventName}</p> : null}
+        {guestName ? <p className={styles.quietLine}>מאת {guestName}</p> : null}
+        {contributions.map((item) => (
+          <p key={item.giftId} className={styles.lineRow}>
+            <span>{item.giftName}</span>
+            <b>{formatGiftAmount(item.amount)}</b>
           </p>
-          <p className="flex items-center justify-between gap-3 text-muted">
-            <span>{feeAmount > 0 ? "עמלת שירות" : "ללא עמלת שירות"}</span>
-            {feeAmount > 0 ? <span>{formatGiftAmount(feeAmount)}</span> : <span />}
-          </p>
-        </div>
-        <p className="mt-4 text-xl font-bold text-brand">
-          {paid ? "שולם" : "סה״כ"} {formatGiftAmount(chargedAmount)}
+        ))}
+        <p className={styles.lineRow}>
+          <span>השתתפות במתנה</span>
+          <b>{formatGiftAmount(contributionAmount)}</b>
+        </p>
+        <p className={styles.lineRow}>
+          <span>{feeAmount > 0 ? "עמלת שירות" : "ללא עמלת שירות"}</span>
+          {feeAmount > 0 ? <b>{formatGiftAmount(feeAmount)}</b> : null}
+        </p>
+        <p className={styles.totalLine}>
+          <span>{paid ? "שולם" : "סה״כ"}</span>
+          <span>{formatGiftAmount(chargedAmount)}</span>
         </p>
         {demoPaid && paymentReference ? (
-          <p className="mt-3 text-xs text-muted" dir="ltr">
+          <p className={styles.quietLine} dir="ltr">
             {paymentReference}
           </p>
         ) : null}
-        <p className="mt-5 text-sm leading-relaxed text-foreground">
+        <p className={styles.quietLine}>
           {paid
             ? "ההשתתפות נוספה למתנה. תודה שחגגתם יחד."
             : failed
               ? "אפשר לחזור ולנסות שוב. לא בוצע חיוב."
               : "ההזמנה נשמרה. התשלום עדיין לא בוצע."}
         </p>
+        {together ? <p className={styles.quietLine}>{together}</p> : null}
       </div>
-      {failed ? (
-        <Link
-          href={guestEventPath(slug, "payment")}
-          className="mt-8 inline-flex h-12 w-full items-center justify-center rounded-full bg-brand px-6 text-base font-semibold text-white hover:bg-brand-hover"
+      <div className={styles.shareRow}>
+        <button
+          type="button"
+          className={failed ? styles.ghost : styles.cta}
+          onClick={() => void shareEvent()}
         >
+          שיתוף האירוע
+        </button>
+        <button
+          type="button"
+          className={styles.ghost}
+          onClick={() => {
+            window.open(
+              `https://wa.me/?text=${encodeURIComponent(`${shareText} ${eventUrl()}`)}`,
+              "_blank",
+              "noopener,noreferrer",
+            );
+          }}
+        >
+          וואטסאפ
+        </button>
+        <button type="button" className={styles.ghost} onClick={() => void copyLink()}>
+          העתקת קישור
+        </button>
+      </div>
+      {shareNote === "copied" ? (
+        <p className={styles.quietLine} role="status">
+          הקישור הועתק
+        </p>
+      ) : null}
+      {failed ? (
+        <Link href={guestEventPath(slug, "payment")} className={styles.cta}>
           חזרה לתשלום
         </Link>
       ) : (
-        <Link
-          href={guestEventPath(slug)}
-          className="mt-8 inline-flex h-12 w-full items-center justify-center rounded-full bg-brand px-6 text-base font-semibold text-white hover:bg-brand-hover"
-        >
+        <Link href={guestEventPath(slug)} className={styles.ghost}>
           חזרה לאירוע
         </Link>
       )}

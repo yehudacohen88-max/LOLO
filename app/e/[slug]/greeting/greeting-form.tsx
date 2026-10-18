@@ -13,6 +13,13 @@ import {
   saveGuestGreeting,
   type GuestContribution,
 } from "@/lib/guest-draft";
+import styles from "../flagship.module.css";
+
+const greetingPrompts = [
+  "מזל טוב! שיהיה יום מלא שמחה.",
+  "אוהבים ושמחים לחגוג איתך.",
+  "מאחלים שנה של רגעים יפים.",
+];
 
 const actionClass =
   "inline-flex h-12 cursor-pointer items-center justify-center rounded-full border border-border bg-white px-4 text-sm font-semibold text-foreground hover:bg-brand-soft";
@@ -141,52 +148,66 @@ export default function GuestGreetingForm() {
   }
 
   if (!ready) {
-    return null;
+    return <p className={styles.quietLine}>טוענים את הברכה...</p>;
+  }
+
+  function applyPrompt(prompt: string) {
+    setText((current) => {
+      if (!current.trim() || greetingPrompts.includes(current)) {
+        return prompt;
+      }
+      return current;
+    });
   }
 
   return (
     <form
-      className="mt-10 flex flex-col gap-7 pb-8"
+      className={styles.flowBody}
       onSubmit={(event) => {
         event.preventDefault();
         persistGreeting();
         router.push(guestEventPath(slug, "details"));
       }}
     >
-      <section className="rounded-3xl border border-border bg-white p-5">
-        <h2 className="text-base font-bold text-foreground">המתנה שלכם</h2>
+      <section className={styles.card}>
+        <h2>המתנה שלכם</h2>
         {contributions.length === 0 ? (
-          <p className="mt-2 text-sm text-muted">עדיין לא נבחרה מתנה.</p>
+          <p className={styles.quietLine}>עדיין לא נבחרה מתנה.</p>
         ) : (
-          <ul className="mt-3 flex flex-col gap-2">
-            {contributions.map((item) => (
-              <li
-                key={item.giftId}
-                className="flex items-center justify-between gap-3 text-sm"
-              >
-                <span className="font-medium text-foreground">{item.giftName}</span>
-                <span className="font-semibold text-brand">
-                  {formatGiftAmount(item.amount)}
-                </span>
-              </li>
-            ))}
-          </ul>
+          contributions.map((item) => (
+            <p key={item.giftId} className={styles.lineRow}>
+              <span>{item.giftName}</span>
+              <b>{formatGiftAmount(item.amount)}</b>
+            </p>
+          ))
         )}
-        <p className="mt-4 text-base font-bold text-brand">
-          סה״כ: {formatGiftAmount(total)}
+        <p className={styles.totalLine}>
+          <span>סה״כ</span>
+          <span>{formatGiftAmount(total)}</span>
         </p>
       </section>
 
-      <label className="flex flex-col gap-2">
-        <span className="text-sm font-semibold text-foreground">
-          ברכה בכתב (לא חובה)
-        </span>
+      <div className={styles.prompts} aria-label="הצעות לברכה">
+        {greetingPrompts.map((prompt) => (
+          <button
+            key={prompt}
+            type="button"
+            className={styles.prompt}
+            aria-pressed={text === prompt}
+            onClick={() => applyPrompt(prompt)}
+          >
+            {prompt}
+          </button>
+        ))}
+      </div>
+
+      <label className={styles.stack}>
+        <span>ברכה במילים שלכם (לא חובה)</span>
         <textarea
           value={text}
           onChange={(event) => setText(event.target.value)}
-          placeholder="מזל טוב! מאחלים לכם..."
+          placeholder="או כותבים כאן משהו אישי..."
           rows={5}
-          className="rounded-3xl border border-border bg-white px-4 py-3 text-base text-foreground outline-none placeholder:text-muted/70 focus:border-brand"
         />
       </label>
 
@@ -293,11 +314,8 @@ export default function GuestGreetingForm() {
       </section>
       ) : null}
 
-      <button
-        type="submit"
-        className="inline-flex h-12 w-full cursor-pointer items-center justify-center rounded-full bg-brand px-6 text-base font-semibold text-white hover:bg-brand-hover"
-      >
-        ממשיכים לתשלום • {formatGiftAmount(total)}
+      <button type="submit" className={styles.cta}>
+        ממשיכים · {formatGiftAmount(total)}
       </button>
       <button
         type="button"
@@ -305,7 +323,7 @@ export default function GuestGreetingForm() {
           persistGreeting();
           router.push(guestEventPath(slug));
         }}
-        className="inline-flex h-12 w-full cursor-pointer items-center justify-center rounded-full border border-border bg-white px-6 text-base font-semibold text-foreground hover:bg-brand-soft"
+        className={styles.ghost}
       >
         חזרה לבחירת המתנות
       </button>

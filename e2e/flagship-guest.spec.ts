@@ -92,6 +92,8 @@ test("guest page keeps contribution flow and hides an empty invitation", async (
   await expect(page.getByText("השנה החלטנו להפתיע את דנה")).toBeVisible();
   await expect(page.getByText("הזמנה מאת נועה לוי")).toBeVisible();
   await expect(page.getByRole("heading", { name: "כבר 23 חברים הצטרפו" })).toBeVisible();
+  await expect(page.getByText("93.75%")).toBeVisible();
+  await expect(page.getByText("הזמנה אישית מאת נועה לוי")).toBeVisible();
   await expect(page.getByText("יונתן")).toHaveCount(0);
   const join = page.getByRole("button", { name: "מצטרפים למתנה" });
   await expect(join).toBeEnabled();

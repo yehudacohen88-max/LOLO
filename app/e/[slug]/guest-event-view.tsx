@@ -22,6 +22,7 @@ import {
   ProgressRibbon,
   WishThumb,
 } from "./flagship-ui";
+import { giftProgressCopy } from "./progress-copy";
 import styles from "./flagship.module.css";
 
 const DEFAULT_AMOUNTS = [150, 250, 350, 500];
@@ -91,25 +92,6 @@ function coverObjectPosition(event: StoredEvent) {
     }
   }
   return "center 28%";
-}
-
-function moneyLeft(target: number, raised: number) {
-  if (!(target > 0)) {
-    return null;
-  }
-  const left = Math.round((target - raised) * 100) / 100;
-  return left > 0 ? left : 0;
-}
-
-function friendCount(count: number) {
-  const safe = Number.isFinite(count) && count > 0 ? Math.floor(count) : 0;
-  if (safe === 0) {
-    return "";
-  }
-  if (safe === 1) {
-    return "חבר אחד";
-  }
-  return `${safe.toLocaleString("he-IL")} חברים`;
 }
 
 function CheckIcon() {
@@ -423,72 +405,76 @@ export default function GuestEventView() {
       return null;
     }
 
-    const raised = progress.raisedAmount;
-    const count = progress.contributorCount;
-    const percent = progress.percentOfTarget;
-    const target = gift.price > 0 ? gift.price : null;
-    const left = target == null ? null : moneyLeft(target, raised);
-    const friends = friendCount(count);
-    const hasActivity = raised > 0 || count > 0;
-    const showBar = percent != null && target != null;
-    if (!hasActivity && !showBar && !target) {
+    const copy = giftProgressCopy({
+      raisedAmount: progress.raisedAmount,
+      contributorCount: progress.contributorCount,
+      percentOfTarget: progress.percentOfTarget,
+      targetAmount: gift.price > 0 ? gift.price : null,
+      prominent,
+    });
+    const visible =
+      copy.countText ||
+      copy.showEmptyGuests ||
+      copy.raisedText ||
+      copy.targetText ||
+      copy.percentText ||
+      copy.reached;
+    if (!visible) {
       return null;
     }
 
-    const summary = [
-      raised > 0 ? `נאסף ${formatGiftAmount(raised)}` : "",
-      target ? `יעד ${formatGiftAmount(target)}` : "",
-      friends,
-    ]
-      .filter(Boolean)
-      .join(", ");
-
     return (
       <div>
-        {count > 1 ? (
+        {copy.countNumber ? (
           <h2 className={styles.joined}>
-            כבר <b>{count.toLocaleString("he-IL")}</b> חברים הצטרפו
+            כבר <b>{copy.countNumber}</b> חברים הצטרפו
           </h2>
-        ) : count === 1 ? (
+        ) : copy.singleGuest ? (
           <h2 className={styles.joined}>
             <b>חבר אחד</b> כבר הצטרף
           </h2>
-        ) : prominent ? (
+        ) : copy.showEmptyGuests ? (
           <p className={styles.quiet}>אין עדיין משתתפים</p>
         ) : null}
 
-        {hasActivity ? (
+        {copy.raisedText ? (
           <div className={styles.nums}>
             <span className={styles.got}>
-              <CountAmount value={raised} />
+              <CountAmount value={progress.raisedAmount} />
             </span>
-            {target ? (
-              <span className={styles.of}>מתוך {formatGiftAmount(target)}</span>
+            {copy.targetText ? (
+              <span className={styles.of}>מתוך {copy.targetText}</span>
+            ) : null}
+            {copy.percentText ? (
+              <span className={styles.pct}>{copy.percentText}</span>
             ) : null}
           </div>
-        ) : target ? (
+        ) : copy.targetText ? (
           <p className={styles.nums}>
-            <span className={styles.of}>יעד {formatGiftAmount(target)}</span>
+            <span className={styles.of}>יעד {copy.targetText}</span>
+            {copy.percentText ? (
+              <span className={styles.pct}>{copy.percentText}</span>
+            ) : null}
           </p>
         ) : null}
 
-        {showBar && percent != null ? (
-          <ProgressRibbon percent={percent} label={summary || "התקדמות המתנה"} />
+        {copy.bar != null && copy.percentValue != null ? (
+          <ProgressRibbon percent={copy.percentValue} label={copy.summary} />
         ) : null}
 
-        {percent != null && percent >= 100 ? (
+        {copy.reached ? (
           <p className={styles.reached}>
-            {percent > 100 ? "היעד הושג ואף יותר" : "היעד הושג"}
+            {copy.reached === "over" ? "היעד הושג ואף יותר" : "היעד הושג"}
           </p>
-        ) : left != null && left > 0 && raised > 0 ? (
+        ) : copy.remainingText ? (
           <p className={styles.remain}>
-            {percent != null && percent >= 80 ? (
+            {copy.closeToGoal ? (
               <>
-                עוד <b>{formatGiftAmount(left)}</b> — והמתנה יוצאת לדרך
+                עוד <b>{copy.remainingText}</b> — והמתנה יוצאת לדרך
               </>
             ) : (
               <>
-                נותרו <b>{formatGiftAmount(left)}</b>
+                נותרו <b>{copy.remainingText}</b>
               </>
             )}
           </p>
@@ -533,19 +519,20 @@ export default function GuestEventView() {
   const message = event.message.trim();
   const quoted = /^[״"“«]/.test(message);
   const primaryFunding = primary ? funding?.[primary.id] : undefined;
-  const primaryLeft =
-    primary && primary.price > 0 && primaryFunding
-      ? moneyLeft(primary.price, primaryFunding.raisedAmount)
+  const primaryCopy =
+    primary && primaryFunding
+      ? giftProgressCopy({
+          raisedAmount: primaryFunding.raisedAmount,
+          contributorCount: primaryFunding.contributorCount,
+          percentOfTarget: primaryFunding.percentOfTarget,
+          targetAmount: primary.price > 0 ? primary.price : null,
+          prominent: true,
+        })
       : null;
-  const primaryFriends = friendCount(primaryFunding?.contributorCount ?? 0);
   const showMini =
     Boolean(primaryFunding) &&
     ((primaryFunding?.raisedAmount ?? 0) > 0 ||
       (primaryFunding?.contributorCount ?? 0) > 0);
-  const miniRatio =
-    primaryFunding?.percentOfTarget == null
-      ? 0
-      : Math.min(1, Math.max(0, primaryFunding.percentOfTarget / 100));
 
   return (
     <Frame>
@@ -627,7 +614,15 @@ export default function GuestEventView() {
         ) : null}
 
         {message ? (
-          <blockquote className={`${styles.note} ${styles.rise} ${styles.d1}`}>
+          <blockquote
+            id="host-invitation"
+            className={`${styles.note} ${styles.rise} ${styles.d1}`}
+          >
+            <p className={styles.noteKicker}>
+              {event.hostName.trim()
+                ? `הזמנה אישית מאת ${event.hostName.trim()}`
+                : "הזמנה אישית"}
+            </p>
             <p>{quoted ? message : `״${message}״`}</p>
             {event.hostName.trim() ? (
               <footer className={styles.sig}>
@@ -666,30 +661,26 @@ export default function GuestEventView() {
           <p className={styles.ease}>בוחרים סכום, כותבים ברכה — וזהו.</p>
 
           <div className={styles.join} data-join="">
-            {showMini && primaryFunding && primary ? (
+            {showMini && primaryCopy && primary ? (
               <>
                 <div className={styles.mini}>
                   <span>
                     {others.length > 0 ? `${primary.name}: ` : null}
-                    <b>
-                      {formatGiftAmount(primaryFunding.raisedAmount)}
-                    </b>
-                    {primary.price > 0
-                      ? ` מתוך ${formatGiftAmount(primary.price)}`
-                      : null}
-                    {primaryFriends ? ` · ${primaryFriends}` : null}
+                    {primaryCopy.raisedText ? <b>{primaryCopy.raisedText}</b> : null}
+                    {primaryCopy.targetText ? ` מתוך ${primaryCopy.targetText}` : null}
+                    {primaryCopy.countShort ? ` · ${primaryCopy.countShort}` : null}
                   </span>
-                  {primaryLeft != null && primaryLeft > 0 ? (
+                  {primaryCopy.remainingText ? (
                     <span className={styles.miniAside}>
-                      עוד {formatGiftAmount(primaryLeft)}
+                      עוד {primaryCopy.remainingText}
                     </span>
                   ) : null}
                 </div>
-                {primaryFunding.percentOfTarget != null ? (
+                {primaryCopy.bar != null ? (
                   <div className={styles.miniBar} aria-hidden="true">
                     <span
                       className={styles.miniFill}
-                      style={{ ["--fs-p" as string]: String(miniRatio) }}
+                      style={{ ["--fs-p" as string]: String(primaryCopy.bar) }}
                     />
                   </div>
                 ) : null}
