@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { formatGiftAmount } from "@/lib/guest-draft";
-import { giftProgressCopy } from "@/app/e/[slug]/progress-copy";
+import { giftProgressCopy, participationLine } from "@/app/e/[slug]/progress-copy";
 
 test("guest progress copy uses only the supplied figures", async (t) => {
   await t.test("zero guests show the target and no invented activity", () => {
@@ -81,6 +81,28 @@ test("guest progress copy uses only the supplied figures", async (t) => {
     assert.equal(copy.percentText, "\u2066104.17%\u2069");
     assert.equal(copy.bar, 1);
     assert.equal(copy.raisedText, formatGiftAmount(5000));
+    const line = participationLine(copy);
+    assert.equal(line.includes("המטרה הושגה!"), true);
+    assert.equal(line.includes(formatGiftAmount(5000)), true);
+    assert.equal(line.includes("104.17%"), false);
+  });
+
+  await t.test("a percent far above the target stays on the amount, not a wrapped percent", () => {
+    const copy = giftProgressCopy({
+      raisedAmount: 5000,
+      contributorCount: 8,
+      percentOfTarget: 500,
+      targetAmount: 1000,
+    });
+    const line = participationLine(copy);
+    assert.equal(copy.reached, "over");
+    assert.equal(copy.percentValue, 500);
+    assert.equal(copy.bar, 1);
+    assert.equal(line.startsWith("המטרה הושגה!"), true);
+    assert.equal(line.includes(formatGiftAmount(5000)), true);
+    assert.equal(line.includes(formatGiftAmount(1000)), true);
+    assert.equal(line.includes("500%"), false);
+    assert.equal(copy.summary.includes("500%"), false);
   });
 
   await t.test("a missing percent is omitted instead of calculated", () => {

@@ -17,7 +17,7 @@ import { clearGuestOrderRef } from "@/lib/orders/guest-ref";
 import { thankYouAfterLoad } from "@/lib/orders/thank-you-ref";
 import type { PaymentStatus } from "@/lib/orders/types";
 import { GiftReveal } from "../flagship-ui";
-import { giftProgressCopy } from "../progress-copy";
+import { giftProgressCopy, participationLine } from "../progress-copy";
 import styles from "../flagship.module.css";
 
 export default function ThankYouView() {
@@ -31,7 +31,7 @@ export default function ThankYouView() {
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus | "">("");
   const [paymentProvider, setPaymentProvider] = useState<string | null>(null);
   const [paymentReference, setPaymentReference] = useState<string | null>(null);
-  const [ready, setReady] = useState(false);
+  const [settled, setSettled] = useState(false);
   const [together, setTogether] = useState("");
   const [shareNote, setShareNote] = useState("");
   const confirmedPaid = useRef(false);
@@ -48,9 +48,17 @@ export default function ThankYouView() {
         return;
       }
 
-      const stored = await getEventBySlug(slug);
-      const order = await loadPendingGuestOrder(slug);
       const local = loadContributions(slug);
+      const localTotal = getContributionsTotal(local);
+      setGuestName(loadGuestDetails(slug).name);
+      setContributions(local);
+      setContributionAmount(localTotal);
+      setChargedAmount(localTotal);
+
+      const [stored, order] = await Promise.all([
+        getEventBySlug(slug),
+        loadPendingGuestOrder(slug),
+      ]);
       const decision = thankYouAfterLoad(
         order ? { ok: true, paymentStatus: order.paymentStatus } : { ok: false },
         confirmedPaid.current,
@@ -98,6 +106,9 @@ export default function ThankYouView() {
       if (decision.clearRef) {
         clearGuestOrderRef(slug);
       }
+      if (!cancelled) {
+        setSettled(true);
+      }
 
       const gift = [...(stored?.gifts ?? [])]
         .filter((item) => item.active !== false)
@@ -119,29 +130,24 @@ export default function ThankYouView() {
             };
             const row = body.gifts?.find((item) => item.giftId === gift.id);
             if (row && !cancelled) {
-              const copy = giftProgressCopy({
-                raisedAmount: Number(row.raisedAmount),
-                contributorCount: Number(row.contributorCount),
-                percentOfTarget:
-                  row.percentOfTarget == null ? null : Number(row.percentOfTarget),
-                targetAmount: gift.targetAmount > 0 ? gift.targetAmount : null,
-              });
-              const parts = [
-                copy.countText,
-                copy.raisedText && copy.targetText
-                  ? `${copy.raisedText} מתוך ${copy.targetText}`
-                  : copy.raisedText,
-                copy.percentText,
-              ].filter(Boolean);
-              setTogether(parts.join(" · "));
+              setTogether(
+                participationLine(
+                  giftProgressCopy({
+                    raisedAmount: Number(row.raisedAmount),
+                    contributorCount: Number(row.contributorCount),
+                    percentOfTarget:
+                      row.percentOfTarget == null ? null : Number(row.percentOfTarget),
+                    targetAmount: gift.targetAmount > 0 ? gift.targetAmount : null,
+                  }),
+                ),
+              );
             }
           }
         } catch {
-          setTogether("");
+          if (!cancelled) {
+            setTogether("");
+          }
         }
-      }
-      if (!cancelled) {
-        setReady(true);
       }
     })();
 
@@ -150,13 +156,11 @@ export default function ThankYouView() {
     };
   }, [slug]);
 
-  if (!ready) {
-    return <p className={styles.quietLine}>טוענים את פרטי המתנה...</p>;
-  }
-
   const paid = paymentStatus === "paid";
   const failed = paymentStatus === "failed";
   const demoPaid = paid && paymentProvider === "demo";
+  const known = settled || contributions.length > 0;
+  const giftLabel = contributions[0]?.giftName || eventName || "המתנה";
   const shareText = eventName ? `בואו לחגוג: ${eventName}` : "בואו לחגוג ב-LOLO";
 
   async function shareEvent() {
@@ -184,94 +188,112 @@ export default function ThankYouView() {
   }
 
   return (
-    <div className={styles.flowBody}>
-      {paid ? <GiftReveal label={contributions[0]?.giftName || eventName || "המתנה"} /> : null}
-      <div className={styles.card}>
-        <p className={styles.notice}>גרסת בטא — תשלומים מדומים בלבד</p>
-        {paid ? (
-          <p className={styles.lineRow}>התשלום התקבל</p>
-        ) : failed ? (
-          <p className={styles.lineRow}>התשלום לא הושלם</p>
+    <div className={styles.thanksLayout}>
+      <div className={styles.thanksHero}>
+        <GiftReveal label={giftLabel} caption={eventName} untie={paid} />
+      </div>
+      <div className={styles.thanksMain}>
+        <div className={styles.card}>
+          <p className={styles.notice}>גרסת בטא — תשלומים מדומים בלבד</p>
+          {!settled && !known ? (
+            <div className={styles.bones} aria-busy="true" aria-label="טוענים את פרטי המתנה">
+              <span />
+              <span />
+              <span />
+            </div>
+          ) : !settled ? (
+            <p className={styles.quietLine}>מאשרים את התשלום...</p>
+          ) : paid ? (
+            <p className={styles.lineRow}>התשלום התקבל</p>
+          ) : failed ? (
+            <p className={styles.lineRow}>התשלום לא הושלם</p>
+          ) : (
+            <p className={styles.lineRow}>ממתינים לתשלום</p>
+          )}
+          {demoPaid ? <p className={styles.quietLine}>תשלום הדגמה</p> : null}
+          {demoPaid ? (
+            <p className={styles.notice}>תשלום הדגמה — לא מתבצע חיוב אמיתי</p>
+          ) : null}
+          {known && eventName ? <p className={styles.lineRow}>{eventName}</p> : null}
+          {known && guestName ? <p className={styles.quietLine}>מאת {guestName}</p> : null}
+          {contributions.map((item) => (
+            <p key={item.giftId} className={styles.lineRow}>
+              <span>{item.giftName}</span>
+              <b>{formatGiftAmount(item.amount)}</b>
+            </p>
+          ))}
+          {known ? (
+            <>
+              <p className={styles.lineRow}>
+                <span>השתתפות במתנה</span>
+                <b>{formatGiftAmount(contributionAmount)}</b>
+              </p>
+              <p className={styles.lineRow}>
+                <span>{feeAmount > 0 ? "עמלת שירות" : "ללא עמלת שירות"}</span>
+                {feeAmount > 0 ? <b>{formatGiftAmount(feeAmount)}</b> : null}
+              </p>
+              <p className={styles.totalLine}>
+                <span>{paid ? "שולם" : "סה״כ"}</span>
+                <span>{formatGiftAmount(chargedAmount)}</span>
+              </p>
+            </>
+          ) : null}
+          {demoPaid && paymentReference ? (
+            <p className={styles.quietLine} dir="ltr">
+              {paymentReference}
+            </p>
+          ) : null}
+          {settled ? (
+            <p className={styles.quietLine}>
+              {paid
+                ? "ההשתתפות נוספה למתנה. תודה שחגגתם יחד."
+                : failed
+                  ? "אפשר לחזור ולנסות שוב. לא בוצע חיוב."
+                  : "ההזמנה נשמרה. התשלום עדיין לא בוצע."}
+            </p>
+          ) : null}
+          {together ? <p className={styles.quietLine}>{together}</p> : null}
+        </div>
+        <div className={styles.shareRow}>
+          <button
+            type="button"
+            className={failed ? styles.ghost : styles.cta}
+            onClick={() => void shareEvent()}
+          >
+            שיתוף האירוע
+          </button>
+          <button
+            type="button"
+            className={styles.ghost}
+            onClick={() => {
+              window.open(
+                `https://wa.me/?text=${encodeURIComponent(`${shareText} ${eventUrl()}`)}`,
+                "_blank",
+                "noopener,noreferrer",
+              );
+            }}
+          >
+            וואטסאפ
+          </button>
+          <button type="button" className={styles.ghost} onClick={() => void copyLink()}>
+            העתקת קישור
+          </button>
+        </div>
+        {shareNote === "copied" ? (
+          <p className={styles.quietLine} role="status">
+            הקישור הועתק
+          </p>
+        ) : null}
+        {failed ? (
+          <Link href={guestEventPath(slug, "payment")} className={styles.cta}>
+            חזרה לתשלום
+          </Link>
         ) : (
-          <p className={styles.lineRow}>ממתינים לתשלום</p>
+          <Link href={guestEventPath(slug)} className={styles.ghost}>
+            חזרה לאירוע
+          </Link>
         )}
-        {demoPaid ? <p className={styles.quietLine}>תשלום הדגמה</p> : null}
-        {demoPaid ? (
-          <p className={styles.notice}>תשלום הדגמה — לא מתבצע חיוב אמיתי</p>
-        ) : null}
-        {eventName ? <p className={styles.lineRow}>{eventName}</p> : null}
-        {guestName ? <p className={styles.quietLine}>מאת {guestName}</p> : null}
-        {contributions.map((item) => (
-          <p key={item.giftId} className={styles.lineRow}>
-            <span>{item.giftName}</span>
-            <b>{formatGiftAmount(item.amount)}</b>
-          </p>
-        ))}
-        <p className={styles.lineRow}>
-          <span>השתתפות במתנה</span>
-          <b>{formatGiftAmount(contributionAmount)}</b>
-        </p>
-        <p className={styles.lineRow}>
-          <span>{feeAmount > 0 ? "עמלת שירות" : "ללא עמלת שירות"}</span>
-          {feeAmount > 0 ? <b>{formatGiftAmount(feeAmount)}</b> : null}
-        </p>
-        <p className={styles.totalLine}>
-          <span>{paid ? "שולם" : "סה״כ"}</span>
-          <span>{formatGiftAmount(chargedAmount)}</span>
-        </p>
-        {demoPaid && paymentReference ? (
-          <p className={styles.quietLine} dir="ltr">
-            {paymentReference}
-          </p>
-        ) : null}
-        <p className={styles.quietLine}>
-          {paid
-            ? "ההשתתפות נוספה למתנה. תודה שחגגתם יחד."
-            : failed
-              ? "אפשר לחזור ולנסות שוב. לא בוצע חיוב."
-              : "ההזמנה נשמרה. התשלום עדיין לא בוצע."}
-        </p>
-        {together ? <p className={styles.quietLine}>{together}</p> : null}
       </div>
-      <div className={styles.shareRow}>
-        <button
-          type="button"
-          className={failed ? styles.ghost : styles.cta}
-          onClick={() => void shareEvent()}
-        >
-          שיתוף האירוע
-        </button>
-        <button
-          type="button"
-          className={styles.ghost}
-          onClick={() => {
-            window.open(
-              `https://wa.me/?text=${encodeURIComponent(`${shareText} ${eventUrl()}`)}`,
-              "_blank",
-              "noopener,noreferrer",
-            );
-          }}
-        >
-          וואטסאפ
-        </button>
-        <button type="button" className={styles.ghost} onClick={() => void copyLink()}>
-          העתקת קישור
-        </button>
-      </div>
-      {shareNote === "copied" ? (
-        <p className={styles.quietLine} role="status">
-          הקישור הועתק
-        </p>
-      ) : null}
-      {failed ? (
-        <Link href={guestEventPath(slug, "payment")} className={styles.cta}>
-          חזרה לתשלום
-        </Link>
-      ) : (
-        <Link href={guestEventPath(slug)} className={styles.ghost}>
-          חזרה לאירוע
-        </Link>
-      )}
     </div>
   );
 }

@@ -118,7 +118,7 @@ export function FlowPage({
       <header className={styles.header}>
         <Wordmark />
       </header>
-      <div className={styles.flow}>
+      <div className={`${styles.flow} ${step === "thanks" ? styles.flowThanks : ""}`}>
         <aside className={styles.flowAside}>
           <div className={styles.continuity}>
             {mark?.cover ? (

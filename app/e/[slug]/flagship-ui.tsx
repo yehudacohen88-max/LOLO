@@ -114,10 +114,12 @@ export function CornerRibbon({
   still = false,
   small = false,
   untie = false,
+  center = false,
 }: {
   still?: boolean;
   small?: boolean;
   untie?: boolean;
+  center?: boolean;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const band = useSvgId("wrap");
@@ -139,7 +141,7 @@ export function CornerRibbon({
   return (
     <div
       ref={ref}
-      className={`${styles.ribbon} ${small ? styles.ribbonSm : ""} ${still ? styles.ribbonStill : ""} ${untie ? styles.ribbonUntie : ""}`}
+      className={`${styles.ribbon} ${small ? styles.ribbonSm : ""} ${still ? styles.ribbonStill : ""} ${untie || center ? styles.ribbonUntie : ""}`}
       aria-hidden="true"
     >
       <svg className={`${styles.ribbonBand} ${untie ? styles.untieBand : ""}`} viewBox="0 0 120 120">
@@ -176,7 +178,7 @@ export function Portrait({
   const showPhoto = Boolean(src) && !broken;
 
   return (
-    <div className={styles.portrait}>
+    <div className={`${styles.portrait} ${showPhoto ? "" : styles.portraitEmpty}`}>
       {showPhoto ? (
         <img
           src={src}
@@ -192,6 +194,8 @@ export function Portrait({
         />
       ) : (
         <div className={styles.fallback} aria-hidden="true">
+          <span className={styles.fallbackRibbon} />
+          <SatinBow className={styles.fallbackBow} />
           <span className={styles.monogram}>{monogram}</span>
         </div>
       )}
@@ -221,7 +225,10 @@ export function GiftScene({
   const showPhoto = Boolean(src) && !broken;
 
   return (
-    <div className={styles.scene} data-gift-scene={primary ? "" : undefined}>
+    <div
+      className={`${styles.scene} ${showPhoto ? "" : styles.sceneEmpty}`}
+      data-gift-scene={primary ? "" : undefined}
+    >
       <div className={styles.sceneLight} aria-hidden="true" />
       <div className={styles.sceneEdge} aria-hidden="true" />
       {showPhoto ? (
@@ -236,7 +243,11 @@ export function GiftScene({
         </div>
       ) : (
         <div className={styles.sceneFallback} aria-hidden="true">
-          <SatinBow className={styles.sceneBow} />
+          <div className={styles.parcel}>
+            <span className={styles.parcelV} />
+            <span className={styles.parcelH} />
+            <SatinBow className={styles.sceneBow} />
+          </div>
           <span className={styles.sceneShadow} />
         </div>
       )}
@@ -318,7 +329,6 @@ export function ProgressRibbon({
           fill="#fff"
           stroke="#F2553F"
           strokeWidth="1.5"
-          strokeDasharray="2.4 2"
         />
         <circle cx="20" cy="15" r="3" fill="#F2553F" opacity="0.55" />
       </svg>
@@ -326,15 +336,26 @@ export function ProgressRibbon({
   );
 }
 
-export function GiftReveal({ label }: { label: string }) {
+export function GiftReveal({
+  label,
+  caption,
+  untie = true,
+}: {
+  label: string;
+  caption?: string;
+  untie?: boolean;
+}) {
   return (
     <div className={styles.revealStage}>
       <div className={styles.untie} aria-hidden="true">
-        <CornerRibbon untie />
+        <CornerRibbon untie={untie} still={!untie} center />
       </div>
-      <p className={styles.revealCard} data-reveal-card="">
-        {label}
-      </p>
+      <div className={styles.revealCopy}>
+        <p className={styles.revealCard} data-reveal-card="">
+          {label}
+        </p>
+        {caption ? <p className={styles.revealCaption}>{caption}</p> : null}
+      </div>
     </div>
   );
 }

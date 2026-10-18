@@ -445,14 +445,14 @@ export default function GuestEventView() {
             {copy.targetText ? (
               <span className={styles.of}>מתוך {copy.targetText}</span>
             ) : null}
-            {copy.percentText ? (
+            {copy.percentText && copy.reached !== "over" ? (
               <span className={styles.pct}>{copy.percentText}</span>
             ) : null}
           </div>
         ) : copy.targetText ? (
           <p className={styles.nums}>
             <span className={styles.of}>יעד {copy.targetText}</span>
-            {copy.percentText ? (
+            {copy.percentText && copy.reached !== "over" ? (
               <span className={styles.pct}>{copy.percentText}</span>
             ) : null}
           </p>
@@ -464,7 +464,7 @@ export default function GuestEventView() {
 
         {copy.reached ? (
           <p className={styles.reached}>
-            {copy.reached === "over" ? "היעד הושג ואף יותר" : "היעד הושג"}
+            {copy.reached === "over" ? "המטרה הושגה!" : "היעד הושג"}
           </p>
         ) : copy.remainingText ? (
           <p className={styles.remain}>
@@ -624,14 +624,6 @@ export default function GuestEventView() {
                 : "הזמנה אישית"}
             </p>
             <p>{quoted ? message : `״${message}״`}</p>
-            {event.hostName.trim() ? (
-              <footer className={styles.sig}>
-                <span className={styles.avatar} aria-hidden="true">
-                  {event.hostName.trim().charAt(0)}
-                </span>
-                <span>{event.hostName.trim()}</span>
-              </footer>
-            ) : null}
           </blockquote>
         ) : null}
 

@@ -90,9 +90,10 @@ export function giftProgressCopy(input: GiftProgressInput): GiftProgressCopy {
   const bar =
     percent != null && target != null ? Math.min(1, Math.max(0, percent / 100)) : null;
   const summary = [
+    reached === "over" ? "המטרה הושגה!" : "",
     raisedText ? `נאסף ${raisedText}` : "",
     targetText ? `יעד ${targetText}` : "",
-    percentText ?? "",
+    reached === "over" ? "" : (percentText ?? ""),
     countText ?? "",
   ]
     .filter(Boolean)
@@ -114,4 +115,21 @@ export function giftProgressCopy(input: GiftProgressInput): GiftProgressCopy {
     bar,
     summary: summary || "התקדמות המתנה",
   };
+}
+
+export function participationLine(copy: GiftProgressCopy) {
+  const amount =
+    copy.raisedText && copy.targetText
+      ? `${copy.raisedText} מתוך ${copy.targetText}`
+      : copy.raisedText;
+  if (copy.reached === "over") {
+    return ["המטרה הושגה!", amount, copy.countText].filter(Boolean).join(" · ");
+  }
+  return [
+    copy.countText,
+    amount,
+    copy.reached === "met" ? "היעד הושג" : copy.percentText,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 }
