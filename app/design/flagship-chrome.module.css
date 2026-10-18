@@ -1,0 +1,14 @@
+.mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 44px;
+  padding: 4px 2px;
+  direction: ltr;
+  color: var(--fs-navy);
+  font-weight: 700;
+  font-size: 1.55rem;
+  letter-spacing: -0.045em;
+  line-height: 1;
+  text-decoration: none;
+}

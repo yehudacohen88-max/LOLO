@@ -1,14 +1,5 @@
 .root {
-  --fs-paper: #fcfaf7;
-  --fs-blush: #fbe7e4;
-  --fs-coral: #f2553f;
-  --fs-coral-ink: #b8321c;
-  --fs-navy: #16204d;
-  --fs-navy-2: #525b82;
-  --fs-navy-3: #5e688c;
-  --fs-hair: rgba(22, 32, 77, 0.09);
-  --fs-sans: var(--font-flagship-sans), var(--font-heebo), "Arial Hebrew", Arial, sans-serif;
-  --fs-serif: var(--font-flagship-serif), "Times New Roman", serif;
+  composes: theme from "../../design/flagship-tokens.module.css";
   min-height: 100dvh;
   background-color: var(--fs-paper);
   background-image: radial-gradient(420px 240px at 100% 0%, #fff1ea 0%, transparent 72%);
@@ -38,17 +29,7 @@
 }
 
 .wordmark {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  min-height: 44px;
-  padding: 4px 2px;
-  direction: ltr;
-  color: var(--fs-navy);
-  font-weight: 700;
-  font-size: 1.55rem;
-  letter-spacing: -0.045em;
-  line-height: 1;
+  composes: mark from "../../design/flagship-chrome.module.css";
 }
 
 .spread {

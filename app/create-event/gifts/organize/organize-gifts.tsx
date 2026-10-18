@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { visibleHostStores } from "@/app/design/host-stores";
 import GiftMedia from "@/components/gift-media";
 import {
   deleteDraftGift,
@@ -46,9 +47,24 @@ export default function OrganizeGifts() {
         if (cancelled) {
           return;
         }
-        setStores(nextStores);
+        const visible = visibleHostStores(nextStores);
+        const hiddenIds = new Set(
+          nextStores
+            .filter((store) => !visible.some((item) => item.id === store.id))
+            .map((store) => store.id),
+        );
+        if (hiddenIds.size > 0) {
+          const current = loadDraftGifts();
+          for (const gift of current) {
+            if (gift.storeId && hiddenIds.has(gift.storeId)) {
+              setDraftGiftStore(gift.id, null);
+            }
+          }
+          setGifts(loadDraftGifts());
+        }
+        setStores(visible);
         setStoresReady(true);
-        if (nextStores.length === 0) {
+        if (visible.length === 0) {
           setStoresNote("אין כרגע חנויות פעילות. אפשר להמשיך בלי חנות.");
         }
       } catch {

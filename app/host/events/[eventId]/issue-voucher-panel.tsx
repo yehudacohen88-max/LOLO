@@ -12,6 +12,7 @@ import {
   validityTermLabel,
   voucherStatusLabel,
 } from "@/lib/vouchers/labels";
+import { visibleHostStores } from "@/app/design/host-stores";
 import type { HostDashboardGift } from "@/lib/host/dashboard";
 import type { VoucherStoreOption } from "@/lib/vouchers/types";
 
@@ -27,8 +28,9 @@ export default function IssueVoucherPanel({
   stores,
 }: IssueVoucherPanelProps) {
   const router = useRouter();
+  const hostStores = visibleHostStores(stores);
   const fixedStore = gift.storeId
-    ? stores.find((store) => store.id === gift.storeId) ?? null
+    ? hostStores.find((store) => store.id === gift.storeId) ?? null
     : null;
   const [storeId, setStoreId] = useState(fixedStore?.id ?? "");
   const [open, setOpen] = useState(false);
@@ -36,9 +38,9 @@ export default function IssueVoucherPanel({
   const [saving, setSaving] = useState(false);
   const idempotencyKey = useRef("");
 
-  const selected = fixedStore ?? stores.find((store) => store.id === storeId) ?? null;
+  const selected = fixedStore ?? hostStores.find((store) => store.id === storeId) ?? null;
   const needsChoice = !fixedStore;
-  const canStart = gift.availableAmount > 0 && (Boolean(fixedStore) || stores.length > 0);
+  const canStart = gift.availableAmount > 0 && (Boolean(fixedStore) || hostStores.length > 0);
   const issuedBefore = gift.voucheredAmount > 0;
 
   function openConfirmation() {
@@ -124,7 +126,7 @@ export default function IssueVoucherPanel({
         </p>
       ) : null}
 
-      {gift.availableAmount > 0 && needsChoice && stores.length === 0 ? (
+      {gift.availableAmount > 0 && needsChoice && hostStores.length === 0 ? (
         <p className="mt-3 text-sm text-muted">אין כרגע בית עסק פעיל שאפשר לשייך לשובר.</p>
       ) : null}
 
@@ -188,7 +190,7 @@ export default function IssueVoucherPanel({
                 className="h-12 rounded-2xl border border-border bg-white px-4 text-base outline-none focus:border-brand"
               >
                 <option value="">בחירה</option>
-                {stores.map((store) => (
+                {hostStores.map((store) => (
                   <option key={store.id} value={store.id}>
                     {store.name}
                   </option>

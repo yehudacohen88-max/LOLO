@@ -10,11 +10,12 @@ import {
   resetEventCreationDraft,
   type EventDraft,
 } from "@/lib/event-draft";
+import { holdCreatedAccess } from "@/app/create-event/created-access-memory";
 import { publishHostEvent } from "@/lib/events";
-import { saveCreatedHostAccessCode } from "@/lib/host/created-code";
 import { loadDraftGifts, type DraftGift } from "@/lib/draft-gifts";
 import { formatPrice } from "@/lib/gifts";
 import GiftMedia from "@/components/gift-media";
+import { visibleHostStores } from "@/app/design/host-stores";
 import { fetchActiveStoreOptions } from "@/lib/stores/active-stores-client";
 
 type PreviewGift = DraftGift & {
@@ -49,7 +50,7 @@ export default function EventPreview() {
       const selected = loadDraftGifts();
       let storeNames = new Map<string, string>();
       try {
-        const stores = await fetchActiveStoreOptions();
+        const stores = visibleHostStores(await fetchActiveStoreOptions());
         storeNames = new Map(stores.map((store) => [store.id, store.name.trim()]));
       } catch {
         storeNames = new Map();
@@ -274,7 +275,7 @@ export default function EventPreview() {
               const created = await publishHostEvent();
               resetEventCreationDraft();
               if (created.accessCode) {
-                saveCreatedHostAccessCode(created.slug, created.accessCode);
+                holdCreatedAccess(created.slug, created.accessCode);
               }
               router.push(
                 `/create-event/success?slug=${encodeURIComponent(created.slug)}`,

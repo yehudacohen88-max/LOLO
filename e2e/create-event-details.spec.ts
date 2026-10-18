@@ -12,7 +12,7 @@ test("an empty details step can continue", async ({ page }) => {
   await page.goto("/create-event/details");
   await page.getByRole("button", { name: "ממשיכים להזמנת האורחים" }).click();
   await expect(page).toHaveURL(/\/create-event\/guests/);
-  await expect(page.getByText("שלב 4 מתוך 4")).toBeVisible();
+  await expect(page.getByText("שלב 4 מתוך 5")).toBeVisible();
 });
 
 test("a failed cover upload explains the problem and does not trap the step", async ({ page }) => {
@@ -23,7 +23,9 @@ test("a failed cover upload explains the problem and does not trap the step", as
     buffer: TINY_JPEG,
   });
   await expect(page.getByRole("alert").filter({ hasText: "העלאת התמונה נכשלה" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "הסרת תמונה" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "נסו שוב" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "החלפת תמונה" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "הסרת תמונה" })).toBeVisible();
   await page.getByRole("button", { name: "ממשיכים להזמנת האורחים" }).click();
   await expect(page).toHaveURL(/\/create-event\/guests/);
 });
@@ -74,16 +76,9 @@ test("a chosen cover can be replaced or removed without clearing the other field
   );
   await expect(page.getByLabel("שם המקום / האולם")).toHaveValue("בית שלנו");
 
-  await page.locator('input[accept="video/*"]').setInputFiles({
-    name: "greeting.mp4",
-    mimeType: "video/mp4",
-    buffer: Buffer.from("not-a-real-video"),
-  });
-  await expect(page.getByRole("button", { name: "החלפת סרטון" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "הסרת סרטון" })).toBeVisible();
-  await page.getByRole("button", { name: "הסרת סרטון" }).click();
-  await expect(page.getByText("greeting.mp4")).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "בחירת סרטון" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "בחירת סרטון" })).toHaveCount(0);
+  await expect(page.locator('input[accept="video/*"]')).toHaveCount(0);
+  await expect(page.getByText("סרטון קצר לאורחים")).toHaveCount(0);
 
   await page.getByRole("button", { name: "הסרת תמונה" }).click();
   await expect(page.getByText("עדיין לא נבחרה תמונה")).toBeVisible();
@@ -103,7 +98,7 @@ test("a chosen cover can be replaced or removed without clearing the other field
 
   await page.getByRole("button", { name: "ממשיכים להזמנת האורחים" }).click();
   await expect(page).toHaveURL(/\/create-event\/guests/);
-  await expect(page.getByText("שלב 4 מתוך 4")).toBeVisible();
+  await expect(page.getByText("שלב 4 מתוך 5")).toBeVisible();
 });
 
 test("a cover that cannot be stored blocks continue, scrolls, and explains in Hebrew", async ({
