@@ -1,6 +1,21 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { Frank_Ruhl_Libre, Rubik } from "next/font/google";
 import GuestEventView from "./guest-event-view";
+import styles from "./flagship.module.css";
+
+const rubik = Rubik({
+  subsets: ["hebrew", "latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-flagship-sans",
+  display: "swap",
+});
+
+const frankRuhl = Frank_Ruhl_Libre({
+  subsets: ["hebrew", "latin"],
+  weight: ["400", "500", "700"],
+  variable: "--font-flagship-serif",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "האירוע | LOLO",
@@ -8,18 +23,8 @@ export const metadata: Metadata = {
 
 export default function GuestEventPage() {
   return (
-    <div className="flex flex-1 flex-col">
-      <main className="mx-auto flex w-full max-w-lg flex-1 flex-col px-5 py-10 sm:max-w-2xl sm:px-8 sm:py-16">
-        <header className="flex flex-col items-center text-center">
-          <Link
-            href="/"
-            className="text-4xl font-extrabold tracking-[0.28em] text-brand sm:text-5xl"
-          >
-            LOLO
-          </Link>
-        </header>
-        <GuestEventView />
-      </main>
+    <div className={`${styles.root} ${rubik.variable} ${frankRuhl.variable}`}>
+      <GuestEventView />
     </div>
   );
 }
