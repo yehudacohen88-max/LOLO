@@ -542,6 +542,7 @@ export default function GuestEventView() {
           alt={event.title ? `תמונה לאירוע ${event.title}` : "תמונת האירוע"}
           monogram={monogramFor(event.title)}
           hostName={event.hostName.trim()}
+          nameOnChip={!message}
           objectPosition={coverObjectPosition(event)}
         />
 
@@ -591,6 +592,7 @@ export default function GuestEventView() {
           ) : null}
         </div>
 
+        <div className={styles.story}>
         {primary ? (
           <section className={`${styles.feature} ${styles.rise} ${styles.d2}`} id={`gift-${primary.id}`}>
             <GiftScene src={primary.imageUrl} alt={primary.name} primary />
@@ -626,6 +628,7 @@ export default function GuestEventView() {
             <p>{quoted ? message : `״${message}״`}</p>
           </blockquote>
         ) : null}
+        </div>
 
         <aside className={styles.panel}>
           {primary ? renderProgress(primary, true) : (

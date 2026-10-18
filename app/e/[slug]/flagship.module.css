@@ -1006,8 +1006,7 @@
     grid-template-columns: minmax(320px, 400px) minmax(220px, 1fr) minmax(360px, 480px);
     grid-template-areas:
       "copy copy portrait"
-      "panel note portrait"
-      "panel feature portrait"
+      "panel story portrait"
       "more more more"
       "footer footer footer";
     column-gap: 28px;
@@ -1025,8 +1024,17 @@
     padding: 12px 0 0;
   }
 
+  .story {
+    grid-area: story;
+    gap: 16px;
+  }
+
+  .story .note {
+    order: -1;
+    margin: 0;
+  }
+
   .note {
-    grid-area: note;
     margin: 8px 0 0;
     padding: 4px 8px 4px 18px;
     border-radius: 0;
@@ -1071,10 +1079,9 @@
     font-size: 1.85rem;
   }
 
-  .feature {
-    grid-area: feature;
+  .story .feature {
     z-index: 2;
-    margin: 8px -40px 0 0;
+    margin: 0 -28px 0 0;
   }
 
   .scene {
@@ -1501,17 +1508,56 @@
   cursor: pointer;
 }
 
+.story {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
 .revealStage {
-  position: relative;
-  display: grid;
-  min-height: 220px;
-  place-items: center;
-  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 12px;
   border-radius: 28px;
   background:
-    radial-gradient(80% 60% at 80% 0%, #fff 0%, transparent 55%),
-    radial-gradient(70% 50% at 10% 30%, #ffe9df 0%, transparent 70%),
+    radial-gradient(80% 50% at 80% 0%, #fff 0%, transparent 55%),
+    radial-gradient(70% 50% at 10% 20%, #ffe9df 0%, transparent 70%),
     linear-gradient(180deg, #f7f3f1, #f3e8e6);
+}
+
+.revealStage .scene {
+  height: 210px;
+}
+
+.revealMeta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.revealCover,
+.revealMark {
+  width: 64px;
+  height: 80px;
+  flex: none;
+  border-radius: 16px;
+  object-fit: cover;
+  object-position: center 28%;
+}
+
+.revealMark {
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(90% 80% at 80% 0%, #ffe3d3 0%, transparent 56%),
+    linear-gradient(165deg, #fbf7f4, #f3e6ea);
+  color: var(--fs-navy);
+  font-family: var(--fs-serif);
+  font-size: 1.8rem;
+  font-weight: 700;
 }
 
 .untie {
@@ -1547,34 +1593,23 @@
 }
 
 .revealCopy {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  justify-items: center;
-  gap: 8px;
-  max-width: 18rem;
+  min-width: 0;
 }
 
 .revealCard {
-  position: relative;
-  z-index: 1;
-  max-width: 16rem;
   margin: 0;
-  padding: 16px 18px;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.94);
   font-family: var(--fs-serif);
-  font-size: 1.45rem;
+  font-size: 1.35rem;
   font-weight: 700;
   line-height: 1.25;
-  text-align: center;
 }
 
-.revealCaption {
-  margin: 0;
+.revealCaption,
+.revealFunding {
+  margin: 4px 0 0;
   color: var(--fs-navy-2);
-  font-size: 0.95rem;
-  text-align: center;
+  font-size: 0.92rem;
+  line-height: 1.4;
 }
 
 .thanksLayout {
@@ -1677,9 +1712,6 @@
     animation: untieBow 1.4s cubic-bezier(0.2, 0.8, 0.2, 1) both;
   }
 
-  .revealCard {
-    animation: revealCard 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) both;
-  }
 }
 
 @keyframes untieBand {
@@ -1782,12 +1814,15 @@
     grid-row: 1 / span 2;
     position: sticky;
     top: 24px;
-    align-self: stretch;
+    align-self: start;
   }
 
-  .flowThanks .revealStage {
-    min-height: 560px;
-    height: 100%;
+  .flowThanks .revealStage .scene {
+    height: 240px;
+  }
+
+  .flowThanks .revealStage .scene.sceneEmpty {
+    height: 200px;
   }
 
   .thumb,

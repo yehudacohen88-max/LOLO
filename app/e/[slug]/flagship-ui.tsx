@@ -166,12 +166,14 @@ export function Portrait({
   alt,
   monogram,
   hostName,
+  nameOnChip = true,
   objectPosition = "center 28%",
 }: {
   src: string;
   alt: string;
   monogram: string;
   hostName: string;
+  nameOnChip?: boolean;
   objectPosition?: string;
 }) {
   const [broken, setBroken] = useState(false);
@@ -202,10 +204,12 @@ export function Portrait({
       <CornerRibbon />
       {hostName ? (
         <p className={styles.host}>
-          <span className={styles.avatar} aria-hidden="true">
-            {hostName.trim().charAt(0)}
-          </span>
-          <span>הזמנה מאת {hostName}</span>
+          {nameOnChip ? (
+            <span className={styles.avatar} aria-hidden="true">
+              {hostName.trim().charAt(0)}
+            </span>
+          ) : null}
+          <span>{nameOnChip ? `הזמנה מאת ${hostName}` : "הזמנה"}</span>
         </p>
       ) : null}
     </div>
@@ -216,10 +220,12 @@ export function GiftScene({
   src,
   alt,
   primary = false,
+  untie = false,
 }: {
   src: string;
   alt: string;
   primary?: boolean;
+  untie?: boolean;
 }) {
   const [broken, setBroken] = useState(false);
   const showPhoto = Boolean(src) && !broken;
@@ -237,13 +243,14 @@ export function GiftScene({
             src={src}
             alt={alt}
             className={styles.sceneImage}
+            data-gift-photo=""
             decoding="async"
             onError={() => setBroken(true)}
           />
         </div>
       ) : (
         <div className={styles.sceneFallback} aria-hidden="true">
-          <div className={styles.parcel}>
+          <div className={styles.parcel} data-parcel="">
             <span className={styles.parcelV} />
             <span className={styles.parcelH} />
             <SatinBow className={styles.sceneBow} />
@@ -251,7 +258,7 @@ export function GiftScene({
           <span className={styles.sceneShadow} />
         </div>
       )}
-      <CornerRibbon still small />
+      <CornerRibbon still={!untie} small={!untie} untie={untie} center={untie} />
     </div>
   );
 }
@@ -339,22 +346,43 @@ export function ProgressRibbon({
 export function GiftReveal({
   label,
   caption,
+  image,
+  cover,
+  funding,
   untie = true,
 }: {
   label: string;
   caption?: string;
+  image?: string;
+  cover?: string;
+  funding?: string;
   untie?: boolean;
 }) {
+  const letter = (caption || label || "ל").trim().charAt(0) || "ל";
   return (
-    <div className={styles.revealStage}>
-      <div className={styles.untie} aria-hidden="true">
-        <CornerRibbon untie={untie} still={!untie} center />
-      </div>
-      <div className={styles.revealCopy}>
-        <p className={styles.revealCard} data-reveal-card="">
-          {label}
-        </p>
-        {caption ? <p className={styles.revealCaption}>{caption}</p> : null}
+    <div className={styles.revealStage} data-reveal="">
+      <GiftScene src={image || ""} alt={label || "המתנה"} untie={untie} />
+      <div className={styles.revealMeta}>
+        {cover ? (
+          <img
+            className={styles.revealCover}
+            src={cover}
+            alt=""
+            width={72}
+            height={90}
+          />
+        ) : (
+          <span className={styles.revealMark} aria-hidden="true">
+            {letter}
+          </span>
+        )}
+        <div className={styles.revealCopy}>
+          <p className={styles.revealCard} data-reveal-card="">
+            {label}
+          </p>
+          {caption ? <p className={styles.revealCaption}>{caption}</p> : null}
+          {funding ? <p className={styles.revealFunding}>{funding}</p> : null}
+        </div>
       </div>
     </div>
   );

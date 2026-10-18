@@ -10,6 +10,7 @@ import {
   getContributionsTotal,
   loadContributions,
   loadGuestDetails,
+  saveContributions,
   type GuestContribution,
 } from "@/lib/guest-draft";
 import { loadPendingGuestOrder } from "@/lib/orders/client";
@@ -32,6 +33,8 @@ export default function ThankYouView() {
   const [paymentProvider, setPaymentProvider] = useState<string | null>(null);
   const [paymentReference, setPaymentReference] = useState<string | null>(null);
   const [settled, setSettled] = useState(false);
+  const [coverImage, setCoverImage] = useState("");
+  const [giftImage, setGiftImage] = useState("");
   const [together, setTogether] = useState("");
   const [shareNote, setShareNote] = useState("");
   const confirmedPaid = useRef(false);
@@ -105,6 +108,18 @@ export default function ThankYouView() {
 
       if (decision.clearRef) {
         clearGuestOrderRef(slug);
+        saveContributions(slug, []);
+      }
+
+      const gifts = [...(stored?.gifts ?? [])].filter((item) => item.active !== false);
+      const chosenId = (order?.items?.[0]?.giftId || local[0]?.giftId) ?? "";
+      const pictured =
+        gifts.find((item) => item.id === chosenId) ??
+        gifts.sort((a, b) => a.priority - b.priority)[0];
+      if (!cancelled && stored) {
+        setEventName((current) => current || stored.title);
+        setCoverImage(stored.coverImage || "");
+        setGiftImage(pictured?.imageUrl || "");
       }
       if (!cancelled) {
         setSettled(true);
@@ -190,7 +205,14 @@ export default function ThankYouView() {
   return (
     <div className={styles.thanksLayout}>
       <div className={styles.thanksHero}>
-        <GiftReveal label={giftLabel} caption={eventName} untie={paid} />
+        <GiftReveal
+          label={giftLabel}
+          caption={eventName}
+          image={giftImage}
+          cover={coverImage}
+          funding={together}
+          untie={paid}
+        />
       </div>
       <div className={styles.thanksMain}>
         <div className={styles.card}>
@@ -252,7 +274,6 @@ export default function ThankYouView() {
                   : "ההזמנה נשמרה. התשלום עדיין לא בוצע."}
             </p>
           ) : null}
-          {together ? <p className={styles.quietLine}>{together}</p> : null}
         </div>
         <div className={styles.shareRow}>
           <button

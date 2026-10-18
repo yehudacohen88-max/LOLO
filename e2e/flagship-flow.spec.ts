@@ -5,7 +5,7 @@ const artifactDir = process.env.FLAGSHIP_ARTIFACT_DIR || "/opt/cursor/artifacts"
 const portraitPath = path.join(__dirname, "fixtures/flagship/portrait.jpg");
 const giftPath = path.join(__dirname, "fixtures/flagship/gift.png");
 
-function eventPayload() {
+function eventPayload(withImages = true) {
   return {
     event: {
       id: "flagship-fixture-id",
@@ -18,7 +18,7 @@ function eventPayload() {
       venueName: "תל אביב",
       address: "",
       message: "השנה החלטנו להפתיע את דנה במשהו שהיא באמת חולמת עליו.",
-      coverImage: "/__flagship_fixture/portrait.jpg",
+      coverImage: withImages ? "/__flagship_fixture/portrait.jpg" : "",
       giftMode: "catalog",
       moneyAmounts: [200, 350, 500],
       allowCustomAmount: true,
@@ -31,7 +31,7 @@ function eventPayload() {
           description: "מכונה לבית.",
           targetAmount: 4800,
           icon: "",
-          imageUrl: "/__flagship_fixture/gift.png",
+          imageUrl: withImages ? "/__flagship_fixture/gift.png" : "",
           source: "custom",
           priority: 0,
           active: true,
@@ -55,7 +55,7 @@ const fundingPayload = {
   ],
 };
 
-async function installFlow(page: Page) {
+async function installFlow(page: Page, withImages = true) {
   let paid = false;
   let order: Record<string, unknown> | null = null;
 
@@ -63,7 +63,7 @@ async function installFlow(page: Page) {
     await route.fulfill({ json: fundingPayload });
   });
   await page.route("**/api/events/flagship-fixture", async (route) => {
-    await route.fulfill({ json: eventPayload() });
+    await route.fulfill({ json: eventPayload(withImages) });
   });
   await page.route("**/__flagship_fixture/portrait.jpg", async (route) => {
     await route.fulfill({ path: portraitPath, contentType: "image/jpeg" });
@@ -175,6 +175,8 @@ for (const viewport of [
     await installFlow(page);
     await page.setViewportSize({ width: viewport.width, height: viewport.height });
     await page.goto("/e/flagship-fixture");
+    await expect(page.getByText("הזמנה אישית מאת נועה לוי")).toBeVisible();
+    await expect(page.getByText("הזמנה מאת נועה לוי")).toHaveCount(0);
     await page.getByRole("button", { name: /350/ }).click();
     await page.getByRole("button", { name: "מצטרפים למתנה" }).click();
     await expect(page.getByRole("heading", { name: "משאירים ברכה" })).toBeVisible();
@@ -212,8 +214,41 @@ for (const viewport of [
     await expect(page.getByText("תשלום הדגמה", { exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "שיתוף האירוע" })).toBeVisible();
     await expect(page.getByText("כבר 23 חברים הצטרפו")).toBeVisible();
+    await expect(page.locator("[data-reveal] [data-gift-photo]")).toBeVisible();
     await page.screenshot({
       path: path.join(artifactDir, `flagship_thanks_${viewport.name}.png`),
+      fullPage: true,
+    });
+
+    await page.getByRole("link", { name: "חזרה לאירוע" }).click();
+    await expect(page.getByText("עדיין לא נבחרה מתנה")).toBeVisible();
+    await expect(page.getByRole("button", { name: /350/ })).toHaveAttribute("aria-pressed", "false");
+  });
+}
+
+for (const viewport of [
+  { name: "390", width: 390, height: 844 },
+  { name: "1440", width: 1440, height: 900 },
+] as const) {
+  test(`guest flow without images ${viewport.name}`, async ({ page }) => {
+    test.setTimeout(60_000);
+    await installFlow(page, false);
+    await page.setViewportSize({ width: viewport.width, height: viewport.height });
+    await page.goto("/e/flagship-fixture");
+    await page.getByRole("button", { name: /350/ }).click();
+    await page.getByRole("button", { name: "מצטרפים למתנה" }).click();
+    await page.getByRole("button", { name: /ממשיכים/ }).click();
+    await page.getByLabel("שם מלא").fill("יעל כהן");
+    await page.getByLabel("מספר טלפון").fill("0501234567");
+    await page.getByLabel("אימייל").fill("yael@example.com");
+    await page.getByRole("button", { name: "מעבר לתשלום" }).click();
+    await page.getByRole("button", { name: "אישור תשלום הדגמה" }).click();
+    await expect(page.getByRole("heading", { name: "תודה" })).toBeVisible();
+    await expect(page.locator("[data-reveal] [data-parcel]")).toBeVisible();
+    await expect(page.locator("[data-reveal] [data-gift-photo]")).toHaveCount(0);
+    await expect(page.getByText("כבר 23 חברים הצטרפו")).toBeVisible();
+    await page.screenshot({
+      path: path.join(artifactDir, `flagship_thanks_${viewport.name}_without_images.png`),
       fullPage: true,
     });
   });
