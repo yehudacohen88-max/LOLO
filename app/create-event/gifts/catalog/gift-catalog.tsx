@@ -21,7 +21,7 @@ export default function GiftCatalog() {
 
   return (
     <div className={styles.spread}>
-      <div className={`${styles.main} flex flex-1 flex-col`}>
+      <main className={`${styles.main} flex flex-1 flex-col`}>
       <header className={styles.header}>
         <Link href="/" className={styles.wordmark}>
           <LoloMark />
@@ -95,7 +95,7 @@ export default function GiftCatalog() {
       >
         חזרה למתנות שלי
       </Link>
-      </div>
+      </main>
       <CreateSummary step={2} />
     </div>
   );

@@ -12,7 +12,7 @@ test("an empty details step can continue", async ({ page }) => {
   await page.goto("/create-event/details");
   await page.getByRole("button", { name: "ממשיכים להזמנת האורחים" }).click();
   await expect(page).toHaveURL(/\/create-event\/guests/);
-  await expect(page.getByText("שלב 4 מתוך 5")).toBeVisible();
+  await expect(page.getByRole("main").getByText("שלב 4 מתוך 5")).toBeVisible();
 });
 
 test("a failed cover upload explains the problem and does not trap the step", async ({ page }) => {
@@ -100,7 +100,7 @@ test("a chosen cover can be replaced or removed without clearing the other field
 
   await page.getByRole("button", { name: "ממשיכים להזמנת האורחים" }).click();
   await expect(page).toHaveURL(/\/create-event\/guests/);
-  await expect(page.getByText("שלב 4 מתוך 5")).toBeVisible();
+  await expect(page.getByRole("main").getByText("שלב 4 מתוך 5")).toBeVisible();
 });
 
 test("a cover that cannot be stored blocks continue, scrolls, and explains in Hebrew", async ({

@@ -101,15 +101,15 @@ test.describe("host experience", () => {
         } else if (url === "/host") {
           await expect(page.getByRole("heading", { name: "כניסה לניהול האירוע" })).toBeVisible();
         } else if (url.includes("/preview")) {
-          await expect(page.getByText("שלב 5 מתוך 5")).toBeVisible();
+          await expect(page.getByRole("main").getByText("שלב 5 מתוך 5")).toBeVisible();
         } else if (url.includes("/details")) {
-          await expect(page.getByText("שלב 3 מתוך 5")).toBeVisible();
+          await expect(page.getByRole("main").getByText("שלב 3 מתוך 5")).toBeVisible();
         } else if (url.includes("/guests")) {
-          await expect(page.getByText("שלב 4 מתוך 5")).toBeVisible();
+          await expect(page.getByRole("main").getByText("שלב 4 מתוך 5")).toBeVisible();
         } else if (url.includes("/gifts")) {
-          await expect(page.getByText("שלב 2 מתוך 5")).toBeVisible();
+          await expect(page.getByRole("main").getByText("שלב 2 מתוך 5")).toBeVisible();
         } else {
-          await expect(page.getByText("שלב 1 מתוך 5")).toBeVisible();
+          await expect(page.getByRole("main").getByText("שלב 1 מתוך 5")).toBeVisible();
         }
         await shot(page, name);
         if (name === "create-preview-1440") {
@@ -131,7 +131,7 @@ test.describe("host experience", () => {
     await page.getByLabel("מתי חוגגים?").fill("2026-11-12");
     await page.getByLabel("שם בעל/ת האירוע").fill("נועה");
     await page.getByRole("button", { name: "ממשיכים לבחירת המתנות" }).click();
-    await expect(page.getByText("שלב 2 מתוך 5")).toBeVisible();
+    await expect(page.getByRole("main").getByText("שלב 2 מתוך 5")).toBeVisible();
     await page.getByRole("button", { name: /מתנה כספית/ }).click();
     await page.getByRole("button", { name: "ממשיכים" }).click();
     await expect(page).toHaveURL(/\/create-event\/gifts\/money/);
@@ -151,7 +151,7 @@ test.describe("host experience", () => {
     });
     await expect(page.getByText("דנה כהן")).toBeVisible();
     await page.getByRole("button", { name: "תצוגה מקדימה של האירוע" }).click();
-    await expect(page.getByText("שלב 5 מתוך 5")).toBeVisible();
+    await expect(page.getByRole("main").getByText("שלב 5 מתוך 5")).toBeVisible();
 
     await page.getByRole("button", { name: "יצירת האירוע" }).click();
     await expect(page).toHaveURL(/\/create-event\/success\?slug=event-host-demo$/);
