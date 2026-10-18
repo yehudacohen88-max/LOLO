@@ -1,4 +1,4 @@
-import Link from "next/link";
+import BrandMark from "@/components/brand-mark";
 import FundingProgress from "@/components/funding-progress";
 import GiftMedia from "@/components/gift-media";
 import GiftTimeline from "@/components/gift-timeline";
@@ -96,24 +96,25 @@ export default function HostDashboard({
 }: HostDashboardProps) {
   return (
     <div className="flex flex-1 flex-col">
-      <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-6 px-5 py-10 sm:max-w-3xl sm:px-8 sm:py-16">
+      <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-6 px-5 py-8 sm:max-w-3xl sm:px-8 sm:py-14">
         <header className="flex flex-col items-center text-center">
-          <Link
-            href="/"
-            className="text-4xl font-extrabold tracking-[0.28em] text-brand sm:text-5xl"
-          >
-            LOLO
-          </Link>
-          <h1 className="mt-8 text-2xl font-bold leading-tight tracking-tight text-foreground sm:text-4xl">
-            ניהול האירוע
-          </h1>
+          <BrandMark />
+          <p className="lolo-kicker mt-6">מרכז החגיגה</p>
+          <h1 className="lolo-title mt-3">ניהול האירוע</h1>
           <p className="mt-3 text-lg font-semibold text-foreground">
             {data.title || "האירוע"}
           </p>
         </header>
 
-        <section className="rounded-3xl border border-border bg-white p-5 sm:p-6">
-          <h2 className="text-lg font-bold text-foreground">סקירת האירוע</h2>
+        <nav className="lolo-anchor-nav" aria-label="ניווט באירוע">
+          <a href="#overview">האירוע</a>
+          <a href="#progress">המתנות</a>
+          <a href="#guests">האורחים</a>
+          <a href="#greetings">הברכות</a>
+        </nav>
+
+        <section id="overview" className="lolo-card p-5 sm:p-6">
+          <h2 className="font-sans text-lg font-bold text-foreground">סקירת האירוע</h2>
           <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
             <div>
               <dt className="text-muted">שם האירוע</dt>
@@ -138,8 +139,8 @@ export default function HostDashboard({
           </div>
         </section>
 
-        <section className="rounded-3xl border border-border bg-white p-5 sm:p-6">
-          <h2 className="text-lg font-bold text-foreground">סקירה כספית</h2>
+        <section className="lolo-card p-5 sm:p-6">
+          <h2 className="font-sans text-lg font-bold text-foreground">ההשתתפות עד כה</h2>
           <p className="mt-2 text-sm leading-relaxed text-muted">
             הסכום ששולם הוא השתתפות שאושרה למתנות. עמלת שירות אינה נספרת ליעד.
             אפשר להנפיק שובר על הסכום ששולם גם לפני שהיעד הושלם, ותשלום שמגיע אחר כך נשאר פנוי לשובר נוסף.
@@ -171,8 +172,8 @@ export default function HostDashboard({
           </div>
         </section>
 
-        <section className="rounded-3xl border border-border bg-white p-5 sm:p-6">
-          <h2 className="text-lg font-bold text-foreground">התקדמות המתנות</h2>
+        <section id="progress" className="lolo-card p-5 sm:p-6">
+          <h2 className="font-sans text-lg font-bold text-foreground">התקדמות המתנות</h2>
           {data.vouchersReady ? null : (
             <p className="mt-3 text-sm text-muted">
               הנפקת שוברים עדיין לא זמינה.
@@ -193,7 +194,7 @@ export default function HostDashboard({
                         imageUrl={gift.imageUrl}
                         icon={gift.icon}
                         alt=""
-                        className="h-16 w-16 text-2xl"
+                        className="h-20 w-20 text-3xl"
                       />
                       <div className="min-w-0 flex-1">
                         <div className="flex items-start justify-between gap-3">
@@ -250,15 +251,17 @@ export default function HostDashboard({
           )}
         </section>
 
-        <HostGuestList
-          eventId={data.eventId}
-          eventTitle={data.title}
-          origin={origin}
-          guests={data.invitedGuests}
-        />
+        <div id="guests">
+          <HostGuestList
+            eventId={data.eventId}
+            eventTitle={data.title}
+            origin={origin}
+            guests={data.invitedGuests}
+          />
+        </div>
 
-        <section className="rounded-3xl border border-border bg-white p-5 sm:p-6">
-          <h2 className="text-lg font-bold text-foreground">הזמנות אורחים</h2>
+        <section id="greetings" className="lolo-card p-5 sm:p-6">
+          <h2 className="font-sans text-lg font-bold text-foreground">האורחים שכבר השתתפו</h2>
           {data.orders.length === 0 ? (
             <p className="mt-4 text-sm leading-relaxed text-muted">
               אין הזמנות עדיין. כשאורחים יבחרו מתנות, ההזמנות יופיעו כאן.

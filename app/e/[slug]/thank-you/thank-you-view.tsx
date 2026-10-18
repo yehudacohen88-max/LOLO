@@ -29,6 +29,7 @@ export default function ThankYouView() {
   const [paymentProvider, setPaymentProvider] = useState<string | null>(null);
   const [paymentReference, setPaymentReference] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
+  const [shared, setShared] = useState("");
   const confirmedPaid = useRef(false);
 
   useEffect(() => {
@@ -105,12 +106,43 @@ export default function ThankYouView() {
   const failed = paymentStatus === "failed";
   const demoPaid = paid && paymentProvider === "demo";
 
+  async function shareInvitation() {
+    const url = `${window.location.origin}${guestEventPath(slug)}`;
+    const payload = {
+      title: eventName || "LOLO",
+      text: "ביחד, אנחנו מגשימים משאלה",
+      url,
+    };
+    try {
+      if (navigator.share) {
+        await navigator.share(payload);
+        setShared("אפשר להעביר את ההזמנה הלאה");
+        return;
+      }
+    } catch {
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      setShared("הקישור להזמנה הועתק");
+    } catch {
+      setShared(url);
+    }
+  }
+
   return (
     <div className="mt-8 flex flex-col">
-      <div className="rounded-3xl border border-border bg-white px-5 py-6 text-center">
-        <p className="text-sm font-semibold leading-relaxed text-brand">
-          גרסת בטא — תשלומים מדומים בלבד
-        </p>
+      <div className="gift-scene" aria-hidden>
+        <span className="mote" />
+        <span className="mote" />
+        <span className="mote" />
+        <span className="mote" />
+        <span className="gift-base" />
+        <span className="gift-lid" />
+        <span className="gift-bow" />
+      </div>
+      <div className="lolo-card px-5 py-6 text-center">
+        <p className="lolo-demo">גרסת בטא — תשלומים מדומים בלבד</p>
         {paid ? (
           <p className="mt-3 text-base font-bold text-brand">התשלום התקבל</p>
         ) : failed ? (
@@ -162,17 +194,27 @@ export default function ThankYouView() {
               : "ההזמנה נשמרה. התשלום עדיין לא בוצע."}
         </p>
       </div>
+      <button
+        type="button"
+        onClick={() => {
+          void shareInvitation();
+        }}
+        className="mt-6 inline-flex h-12 w-full items-center justify-center rounded-full bg-brand px-6 text-base font-semibold text-white hover:bg-brand-hover"
+      >
+        שתפו את ההזמנה
+      </button>
+      {shared ? <p className="mt-3 text-center text-sm font-semibold text-brand">{shared}</p> : null}
       {failed ? (
         <Link
           href={guestEventPath(slug, "payment")}
-          className="mt-8 inline-flex h-12 w-full items-center justify-center rounded-full bg-brand px-6 text-base font-semibold text-white hover:bg-brand-hover"
+          className="mt-3 inline-flex h-12 w-full items-center justify-center rounded-full border border-border bg-ivory px-6 text-base font-semibold text-foreground hover:bg-brand-soft"
         >
           חזרה לתשלום
         </Link>
       ) : (
         <Link
           href={guestEventPath(slug)}
-          className="mt-8 inline-flex h-12 w-full items-center justify-center rounded-full bg-brand px-6 text-base font-semibold text-white hover:bg-brand-hover"
+          className="mt-3 inline-flex h-12 w-full items-center justify-center rounded-full border border-border bg-ivory px-6 text-base font-semibold text-foreground hover:bg-brand-soft"
         >
           חזרה לאירוע
         </Link>

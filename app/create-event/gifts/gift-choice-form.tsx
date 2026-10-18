@@ -58,8 +58,8 @@ export default function GiftChoiceForm() {
               aria-pressed={isSelected}
               className={`rounded-3xl border p-5 text-right transition-colors sm:p-6 ${
                 isSelected
-                  ? "border-brand bg-brand-soft"
-                  : "border-border bg-white hover:bg-brand-soft/50"
+                  ? "border-brand bg-brand-soft shadow-[var(--shadow-lift)]"
+                  : "border-border bg-ivory hover:bg-brand-soft/50"
               }`}
             >
               <div className="flex items-start gap-4">

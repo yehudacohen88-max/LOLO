@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect } from "react";
+import BrandMark from "@/components/brand-mark";
 
 export default function AppError({
   error,
@@ -19,8 +20,8 @@ export default function AppError({
 
   return (
     <main className="mx-auto flex w-full max-w-lg flex-1 flex-col items-center px-5 py-16 text-center sm:py-24">
-      <p className="text-4xl font-extrabold tracking-[0.28em] text-brand">LOLO</p>
-      <h1 className="mt-8 text-2xl font-bold leading-tight text-foreground sm:text-4xl">
+      <BrandMark as="text" />
+      <h1 className="lolo-title mt-8">
         משהו השתבש
       </h1>
       <p className="mt-3 max-w-md text-base leading-relaxed text-muted">

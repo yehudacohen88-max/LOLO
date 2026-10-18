@@ -9,7 +9,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
 
   return (
     <div className="flex flex-1 flex-col">
-      <header className="border-b border-border bg-white">
+      <header className="border-b border-border bg-ivory/90 backdrop-blur">
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-3 px-5 py-4 sm:px-8">
           <div className="flex items-center justify-between gap-4">
             <Link href="/admin" className="text-2xl font-extrabold tracking-[0.22em] text-brand">

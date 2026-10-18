@@ -44,9 +44,9 @@ export default function FundingProgress({
       ) : null}
       <p className="mt-1 text-sm text-muted">{contributorLabel(contributorCount)}</p>
       {barWidth != null ? (
-        <div className="mt-2 h-2 overflow-hidden rounded-full bg-border" aria-hidden>
+        <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-[#f3e6d0]" aria-hidden>
           <div
-            className="h-full rounded-full bg-brand"
+            className="lolo-bar h-full rounded-full"
             style={{ width: `${barWidth}%` }}
           />
         </div>

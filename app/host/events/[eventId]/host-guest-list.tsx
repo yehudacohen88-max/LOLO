@@ -100,8 +100,8 @@ export default function HostGuestList({
   }
 
   return (
-    <section className="rounded-3xl border border-border bg-white p-5 sm:p-6">
-      <h2 className="text-lg font-bold text-foreground">רשימת מוזמנים</h2>
+    <section className="lolo-card p-5 sm:p-6">
+      <h2 className="font-sans text-lg font-bold text-foreground">רשימת מוזמנים</h2>
       <p className="mt-2 text-sm text-muted">
         {guests.length === 0
           ? "אין מוזמנים ברשימה עדיין"

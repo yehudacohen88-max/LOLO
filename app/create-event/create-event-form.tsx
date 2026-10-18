@@ -116,10 +116,10 @@ export default function CreateEventForm() {
                   persistBasics({ eventType: type });
                 }}
                 aria-pressed={selected}
-                className={`rounded-2xl border px-3 py-3 text-sm font-semibold transition-colors ${
+                className={`min-h-14 rounded-2xl border px-3 py-3 text-sm font-semibold transition-colors ${
                   selected
-                    ? "border-brand bg-brand-soft text-brand"
-                    : "border-border bg-white text-foreground hover:bg-brand-soft"
+                    ? "border-brand bg-brand text-white"
+                    : "border-border bg-ivory text-foreground hover:bg-brand-soft"
                 }`}
               >
                 {type}

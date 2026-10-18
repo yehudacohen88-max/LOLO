@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import PageHeader from "@/components/page-header";
 import { betaGateModeFromEnv, safeNextPath } from "@/lib/beta/gate";
 
 export const metadata: Metadata = {
@@ -31,15 +31,10 @@ export default async function BetaPage({ searchParams }: BetaPageProps) {
 
   return (
     <main className="mx-auto flex w-full max-w-lg flex-1 flex-col px-5 py-10 sm:max-w-md sm:py-16">
-      <header className="text-center">
-        <Link href="/" className="text-4xl font-extrabold tracking-[0.28em] text-brand">
-          LOLO
-        </Link>
-        <h1 className="mt-8 text-3xl font-bold text-foreground">כניסה לבטא</h1>
-        <p className="mt-3 text-base leading-relaxed text-muted">
-          הזינו את סיסמת הבטא פעם אחת. אחר כך הקישורים שקיבלתם ייפתחו כרגיל.
-        </p>
-      </header>
+      <PageHeader
+        title="כניסה לבטא"
+        subtitle="הזינו את סיסמת הבטא פעם אחת. אחר כך הקישורים שקיבלתם ייפתחו כרגיל."
+      />
       {misconfigured ? (
         <p className="mt-10 rounded-3xl border border-border bg-white px-5 py-4 text-center text-sm leading-relaxed text-foreground">
           {message}
