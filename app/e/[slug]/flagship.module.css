@@ -988,7 +988,7 @@
   }
 
   .scene {
-    height: 148px;
+    height: 124px;
   }
 }
 
@@ -1788,9 +1788,17 @@
   min-height: 44px;
 }
 
-@media (max-height: 700px) {
+@media (max-width: 1099px) {
+  .scene,
   .scene.sceneEmpty {
-    height: 148px;
+    height: 150px;
+  }
+}
+
+@media (max-height: 700px) {
+  .scene,
+  .scene.sceneEmpty {
+    height: 124px;
   }
 
   .sceneEmpty .parcel {
@@ -1921,13 +1929,19 @@
   }
 
   .flowPay .payHero {
-    display: block;
+    display: flex;
     grid-column: 2;
     grid-row: 1 / span 2;
     position: sticky;
     top: 24px;
-    align-self: start;
+    align-self: stretch;
     min-width: 0;
+    max-height: calc(100vh - 48px);
+  }
+
+  .flowPay .revealStage {
+    flex: 1;
+    justify-content: center;
   }
 
   .flow.flowPay {
