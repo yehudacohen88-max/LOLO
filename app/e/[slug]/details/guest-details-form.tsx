@@ -11,9 +11,7 @@ import {
   saveGuestDetails,
 } from "@/lib/guest-draft";
 import { savePendingGuestOrder } from "@/lib/orders/client";
-
-const fieldClass =
-  "h-12 rounded-2xl border border-border bg-white px-4 text-base text-foreground outline-none placeholder:text-muted/70 focus:border-brand";
+import styles from "../flagship.module.css";
 
 export default function GuestDetailsForm() {
   const router = useRouter();
@@ -81,12 +79,12 @@ export default function GuestDetailsForm() {
   }, [slug]);
 
   if (!ready) {
-    return null;
+    return <p className={styles.quietLine}>טוענים את הפרטים...</p>;
   }
 
   return (
     <form
-      className="mt-10 flex flex-col gap-5"
+      className={styles.flowBody}
       noValidate
       onSubmit={async (event) => {
         event.preventDefault();
@@ -128,60 +126,45 @@ export default function GuestDetailsForm() {
         }
       }}
     >
-      <label className="flex flex-col gap-2">
-        <span className="text-sm font-semibold text-foreground">שם מלא</span>
+      <label className={styles.stack}>
+        <span>שם מלא</span>
         <input
           value={name}
           onChange={(event) => setName(event.target.value)}
-          className={fieldClass}
+          autoComplete="name"
         />
-        {errors.name ? (
-          <span className="text-sm text-brand">{errors.name}</span>
-        ) : null}
+        {errors.name ? <span className={styles.fieldError}>{errors.name}</span> : null}
       </label>
-      <label className="flex flex-col gap-2">
-        <span className="text-sm font-semibold text-foreground">מספר טלפון</span>
+      <label className={styles.stack}>
+        <span>מספר טלפון</span>
         <input
           type="tel"
           value={phone}
           onChange={(event) => setPhone(event.target.value)}
-          className={fieldClass}
+          autoComplete="tel"
         />
-        {errors.phone ? (
-          <span className="text-sm text-brand">{errors.phone}</span>
-        ) : null}
+        {errors.phone ? <span className={styles.fieldError}>{errors.phone}</span> : null}
       </label>
-      <label className="flex flex-col gap-2">
-        <span className="text-sm font-semibold text-foreground">אימייל</span>
+      <label className={styles.stack}>
+        <span>אימייל</span>
         <input
           type="email"
           value={email}
           onChange={(event) => setEmail(event.target.value)}
-          className={fieldClass}
+          autoComplete="email"
         />
-        {errors.email ? (
-          <span className="text-sm text-brand">{errors.email}</span>
-        ) : null}
+        {errors.email ? <span className={styles.fieldError}>{errors.email}</span> : null}
       </label>
-      <label className="flex items-center gap-3 rounded-3xl border border-border bg-white px-4 py-4">
+      <label className={styles.check}>
         <input
           type="checkbox"
           checked={wantReceipt}
           onChange={(event) => setWantReceipt(event.target.checked)}
-          className="h-5 w-5 accent-brand"
         />
-        <span className="text-sm font-semibold text-foreground">
-          אני רוצה לקבל אישור על המתנה
-        </span>
+        <span>אני רוצה לקבל אישור על המתנה</span>
       </label>
-      {saveError ? (
-        <p className="text-center text-sm text-brand">{saveError}</p>
-      ) : null}
-      <button
-        type="submit"
-        disabled={saving}
-        className="mt-2 inline-flex h-12 w-full items-center justify-center rounded-full bg-brand px-6 text-base font-semibold text-white hover:bg-brand-hover disabled:cursor-not-allowed disabled:bg-brand/40"
-      >
+      {saveError ? <p className={styles.fieldError}>{saveError}</p> : null}
+      <button type="submit" disabled={saving} className={styles.cta}>
         מעבר לתשלום
       </button>
     </form>

@@ -1,0 +1,3 @@
+SOURCE: copies of e2e/fixtures/flagship/portrait.jpg and gift.png.
+License: Pexels License. Commercial use is allowed.
+These photos are the bundled demo-event showcase only. They are not defaults for real events.

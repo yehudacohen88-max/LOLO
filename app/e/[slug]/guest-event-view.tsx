@@ -3,10 +3,14 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import FundingProgress from "@/components/funding-progress";
-import GiftMedia from "@/components/gift-media";
-import { formatEventDate, formatEventTime } from "@/lib/event-draft";
+import { formatEventTime } from "@/lib/event-draft";
 import { getEventBySlug, guestEventPath, type StoredEvent } from "@/lib/events";
+import {
+  DEMO_EVENT_SLUG,
+  DEMO_IMAGE_CREDIT,
+  DEMO_SAMPLE_BADGE,
+  DEMO_SAMPLE_FUNDING,
+} from "@/lib/events/demo";
 import { fromRouteParam } from "@/lib/events/slug";
 import {
   formatGiftAmount,
@@ -14,6 +18,19 @@ import {
   saveContributions,
   type GuestContribution,
 } from "@/lib/guest-draft";
+import {
+  CountAmount,
+  Frame,
+  GiftIcon,
+  GiftScene,
+  LockIcon,
+  Portrait,
+  ProgressRibbon,
+  WishThumb,
+} from "./flagship-ui";
+import { continuityFromEvent, writeContinuity, type ContinuityFunding } from "./continuity";
+import { giftProgressCopy } from "./progress-copy";
+import styles from "./flagship.module.css";
 
 const DEFAULT_AMOUNTS = [150, 250, 350, 500];
 
@@ -28,18 +45,9 @@ type DisplayGift = {
   name: string;
   description: string;
   price: number;
-  emoji: string;
   imageUrl: string;
   storeName: string;
 };
-
-function amountButtonClass(selected: boolean) {
-  return `flex cursor-pointer items-center justify-center gap-2 rounded-2xl border-2 px-3 py-3 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand ${
-    selected
-      ? "border-brand bg-brand-soft text-brand-hover shadow-md"
-      : "border-border bg-white text-foreground hover:bg-brand-soft/40"
-  }`;
-}
 
 function parseAmount(value: string) {
   const amount = Number(value.replace(/[^\d.]/g, ""));
@@ -47,6 +55,65 @@ function parseAmount(value: string) {
     return 0;
   }
   return amount;
+}
+
+function occasionDate(date: string) {
+  if (!date) {
+    return "";
+  }
+  const parsed = new Date(`${date}T00:00`);
+  if (Number.isNaN(parsed.getTime())) {
+    return date;
+  }
+  return parsed.toLocaleDateString("he-IL", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
+}
+
+function monogramFor(title: string) {
+  const letter = title.trim().charAt(0);
+  return letter || "ל";
+}
+
+function focusAxis(value: number) {
+  const percent = value >= 0 && value <= 1 ? value * 100 : value;
+  return Math.min(100, Math.max(0, percent));
+}
+
+function coverObjectPosition(event: StoredEvent) {
+  const extra = event as StoredEvent & {
+    coverFocalPoint?: { x?: number; y?: number } | null;
+    coverFocus?: { x?: number; y?: number } | string | null;
+  };
+  const raw = extra.coverFocalPoint ?? extra.coverFocus ?? null;
+  if (typeof raw === "string" && raw.trim()) {
+    return raw.trim();
+  }
+  if (raw && typeof raw === "object") {
+    const x = Number(raw.x);
+    const y = Number(raw.y);
+    if (Number.isFinite(x) && Number.isFinite(y)) {
+      return `${focusAxis(x)}% ${focusAxis(y)}%`;
+    }
+  }
+  return "center 28%";
+}
+
+function CheckIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
+      <path
+        d="M2.5 7.2 5.4 10 11.5 3.8"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
 }
 
 export default function GuestEventView() {
@@ -61,6 +128,7 @@ export default function GuestEventView() {
   const [customErrors, setCustomErrors] = useState<Record<string, string>>({});
   const [funding, setFunding] = useState<Record<string, GiftFundingView> | null>(null);
   const [fundingNote, setFundingNote] = useState("");
+  const [amountHint, setAmountHint] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -95,7 +163,6 @@ export default function GuestEventView() {
           name: gift.title,
           description: gift.description,
           price: gift.targetAmount,
-          emoji: gift.icon,
           imageUrl: gift.imageUrl,
           storeName: gift.storeName,
         }));
@@ -124,6 +191,22 @@ export default function GuestEventView() {
 
     let cancelled = false;
     void (async () => {
+      if (slug === DEMO_EVENT_SLUG) {
+        await Promise.resolve();
+        if (cancelled) {
+          return;
+        }
+        setFunding({
+          [DEMO_SAMPLE_FUNDING.giftId]: {
+            raisedAmount: DEMO_SAMPLE_FUNDING.raisedAmount,
+            contributorCount: DEMO_SAMPLE_FUNDING.contributorCount,
+            percentOfTarget: DEMO_SAMPLE_FUNDING.percentOfTarget,
+          },
+        });
+        setFundingNote("");
+        return;
+      }
+
       try {
         const response = await fetch(
           `/api/events/${encodeURIComponent(slug)}/funding`,
@@ -161,6 +244,26 @@ export default function GuestEventView() {
       cancelled = true;
     };
   }, [slug]);
+
+  useEffect(() => {
+    if (!event) {
+      return;
+    }
+    const rows: ContinuityFunding[] | null = funding
+      ? Object.entries(funding).map(([giftId, row]) => ({
+          giftId,
+          raisedAmount: row.raisedAmount,
+          contributorCount: row.contributorCount,
+          percentOfTarget: row.percentOfTarget,
+        }))
+      : null;
+    const mark = continuityFromEvent(event, rows);
+    const key = event.slug || slug;
+    writeContinuity(key, mark);
+    if (slug && slug !== key) {
+      writeContinuity(slug, mark);
+    }
+  }, [event, funding, contributions, slug]);
 
   const suggestedAmounts = useMemo(() => {
     if (!event) {
@@ -204,6 +307,7 @@ export default function GuestEventView() {
 
   function selectSuggested(gift: DisplayGift, amount: number) {
     upsertContribution(gift, amount);
+    setAmountHint(false);
     setOpenCustom((current) => ({ ...current, [gift.id]: false }));
     setCustomErrors((current) => ({ ...current, [gift.id]: "" }));
   }
@@ -219,283 +323,494 @@ export default function GuestEventView() {
     }
 
     setCustomErrors((current) => ({ ...current, [gift.id]: "" }));
+    setAmountHint(false);
     upsertContribution(gift, amount);
+  }
+
+  function renderAmounts(gift: DisplayGift) {
+    const contribution = contributionFor(gift.id);
+    const customOpen = Boolean(openCustom[gift.id]) || !showSuggested;
+    const customIsSelected =
+      Boolean(contribution) && !suggestedAmounts.includes(contribution?.amount ?? -1);
+    const errorId = `amount-error-${gift.id}`;
+
+    return (
+      <div>
+        {showSuggested ? (
+          <div className={styles.amounts}>
+            {suggestedAmounts.map((amount) => {
+              const amountSelected = contribution?.amount === amount;
+              return (
+                <button
+                  key={amount}
+                  type="button"
+                  aria-pressed={amountSelected}
+                  onClick={() => selectSuggested(gift, amount)}
+                  className={`${styles.amount} ${amountSelected ? styles.amountOn : ""}`}
+                >
+                  {amountSelected ? <CheckIcon /> : null}
+                  {formatGiftAmount(amount)}
+                </button>
+              );
+            })}
+            {allowCustom ? (
+              <button
+                type="button"
+                aria-pressed={customOpen && customIsSelected}
+                onClick={() =>
+                  setOpenCustom((current) => ({
+                    ...current,
+                    [gift.id]: true,
+                  }))
+                }
+                className={`${styles.amount} ${
+                  customOpen && (customIsSelected || !contribution) ? styles.amountOn : ""
+                }`}
+              >
+                {customIsSelected ? <CheckIcon /> : null}
+                {customIsSelected
+                  ? formatGiftAmount(contribution?.amount ?? 0)
+                  : "סכום אחר"}
+              </button>
+            ) : null}
+          </div>
+        ) : null}
+
+        {allowCustom && customOpen ? (
+          <label className={styles.custom}>
+            <span>הזינו סכום</span>
+            <span className={styles.field}>
+              <input
+                type="number"
+                min={1}
+                inputMode="numeric"
+                dir="ltr"
+                aria-invalid={Boolean(customErrors[gift.id])}
+                aria-describedby={customErrors[gift.id] ? errorId : undefined}
+                value={customDrafts[gift.id] ?? ""}
+                onChange={(input) => {
+                  const value = input.target.value;
+                  setCustomDrafts((current) => ({
+                    ...current,
+                    [gift.id]: value,
+                  }));
+                  const amount = parseAmount(value);
+                  if (amount) {
+                    applyCustom(gift, value);
+                  } else if (value.trim() !== "") {
+                    setCustomErrors((current) => ({
+                      ...current,
+                      [gift.id]: "נא להזין סכום גדול מ־0",
+                    }));
+                  }
+                }}
+              />
+              <span className={styles.shekel}>₪</span>
+            </span>
+            {customErrors[gift.id] ? (
+              <span id={errorId} className={styles.error}>
+                {customErrors[gift.id]}
+              </span>
+            ) : null}
+          </label>
+        ) : null}
+
+        {contribution ? (
+          <button
+            type="button"
+            onClick={() => removeContribution(gift.id)}
+            className={styles.remove}
+          >
+            הסרת מתנה
+          </button>
+        ) : null}
+      </div>
+    );
+  }
+
+  function renderProgress(gift: DisplayGift, prominent: boolean) {
+    if (fundingNote && prominent) {
+      return (
+        <p className={styles.quiet} role="status">
+          {fundingNote}
+        </p>
+      );
+    }
+    if (!funding && !fundingNote && prominent) {
+      return (
+        <p className={styles.quiet} role="status">
+          טוענים את ההתקדמות...
+        </p>
+      );
+    }
+    const progress = funding?.[gift.id];
+    if (!progress) {
+      return null;
+    }
+
+    const copy = giftProgressCopy({
+      raisedAmount: progress.raisedAmount,
+      contributorCount: progress.contributorCount,
+      percentOfTarget: progress.percentOfTarget,
+      targetAmount: gift.price > 0 ? gift.price : null,
+      prominent,
+    });
+    const visible =
+      copy.countText ||
+      copy.showEmptyGuests ||
+      copy.raisedText ||
+      copy.targetText ||
+      copy.percentText ||
+      copy.reached;
+    if (!visible) {
+      return null;
+    }
+
+    return (
+      <div>
+        {copy.countNumber ? (
+          <h2 className={styles.joined}>
+            כבר <b>{copy.countNumber}</b> חברים הצטרפו
+          </h2>
+        ) : copy.singleGuest ? (
+          <h2 className={styles.joined}>
+            <b>חבר אחד</b> כבר הצטרף
+          </h2>
+        ) : copy.showEmptyGuests ? (
+          <p className={styles.quiet}>אין עדיין משתתפים</p>
+        ) : null}
+
+        {copy.raisedText ? (
+          <div className={styles.nums}>
+            <span className={styles.got}>
+              <CountAmount value={progress.raisedAmount} />
+            </span>
+            {copy.targetText ? (
+              <span className={styles.of}>מתוך {copy.targetText}</span>
+            ) : null}
+            {copy.percentText && copy.reached !== "over" ? (
+              <span className={styles.pct}>{copy.percentText}</span>
+            ) : null}
+          </div>
+        ) : copy.targetText ? (
+          <p className={styles.nums}>
+            <span className={styles.of}>יעד {copy.targetText}</span>
+            {copy.percentText && copy.reached !== "over" ? (
+              <span className={styles.pct}>{copy.percentText}</span>
+            ) : null}
+          </p>
+        ) : null}
+
+        {copy.bar != null && copy.percentValue != null ? (
+          <ProgressRibbon percent={copy.percentValue} label={copy.summary} />
+        ) : null}
+
+        {copy.reached ? (
+          <p className={styles.reached}>
+            {copy.reached === "over" ? "המטרה הושגה!" : "היעד הושג"}
+          </p>
+        ) : copy.remainingText ? (
+          <p className={styles.remain}>
+            {copy.closeToGoal ? (
+              <>
+                עוד <b>{copy.remainingText}</b> — והמתנה יוצאת לדרך
+              </>
+            ) : (
+              <>
+                נותרו <b>{copy.remainingText}</b>
+              </>
+            )}
+          </p>
+        ) : null}
+      </div>
+    );
   }
 
   if (missing) {
     return (
-      <div className="mt-10 flex flex-col items-center text-center">
-        <h1 className="text-2xl font-bold text-foreground">האירוע לא נמצא</h1>
-        <p className="mt-3 max-w-sm text-base leading-relaxed text-muted">
-          הקישור לא מוביל לאירוע פעיל. בקשו מהמארח קישור חדש, או חזרו לדף הבית.
-        </p>
-        <Link
-          href="/"
-          className="mt-6 inline-flex h-12 items-center justify-center rounded-full bg-brand px-6 text-base font-semibold text-white hover:bg-brand-hover"
-        >
-          לדף הבית
-        </Link>
-      </div>
+      <Frame>
+        <div className={styles.status}>
+          <h1>האירוע לא נמצא</h1>
+          <p>הקישור לא מוביל לאירוע פעיל. בקשו מהמארח קישור חדש, או חזרו לדף הבית.</p>
+          <Link href="/" className={styles.statusLink}>
+            לדף הבית
+          </Link>
+        </div>
+      </Frame>
     );
   }
 
   if (!event) {
     return (
-      <p className="mt-10 text-center text-base text-muted">טוענים את האירוע...</p>
+      <Frame>
+        <p className={styles.status} role="status">
+          טוענים את האירוע...
+        </p>
+      </Frame>
     );
   }
 
-  const location = [event.venueName, event.address].filter(Boolean).join(", ");
+  const primary = hostGifts[0];
+  const others = hostGifts.slice(1);
+  const place = [event.venueName, event.address].filter(Boolean).join(", ");
+  const kicker = [
+    event.eventType,
+    occasionDate(event.date),
+    formatEventTime(event.time),
+    place,
+  ].filter(Boolean);
+  const message = event.message.trim();
+  const quoted = /^[״"“«]/.test(message);
+  const primaryFunding = primary ? funding?.[primary.id] : undefined;
+  const primaryCopy =
+    primary && primaryFunding
+      ? giftProgressCopy({
+          raisedAmount: primaryFunding.raisedAmount,
+          contributorCount: primaryFunding.contributorCount,
+          percentOfTarget: primaryFunding.percentOfTarget,
+          targetAmount: primary.price > 0 ? primary.price : null,
+          prominent: true,
+        })
+      : null;
+  const showMini =
+    Boolean(primaryFunding) &&
+    ((primaryFunding?.raisedAmount ?? 0) > 0 ||
+      (primaryFunding?.contributorCount ?? 0) > 0);
 
   return (
-    <div className="mt-8 flex flex-col gap-6 pb-36">
-      {event.coverImage ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={event.coverImage}
-          alt=""
-          className="h-52 w-full rounded-3xl object-cover"
-        />
-      ) : (
-        <div className="flex h-36 items-center justify-center rounded-3xl bg-brand-soft text-brand">
-          LOLO
+    <Frame>
+      {event.slug === DEMO_EVENT_SLUG ? (
+        <div className={styles.demoNote}>
+          <p className={styles.demoBadge}>{DEMO_SAMPLE_BADGE}</p>
+          <p className={styles.demoCredit}>{DEMO_IMAGE_CREDIT}</p>
         </div>
-      )}
-
-      <div className="text-center">
-        {event.hostName ? (
-          <p className="text-sm font-medium text-muted">
-            הזמנה מאת {event.hostName}
-          </p>
-        ) : null}
-        <h1 className="mt-2 text-3xl font-bold leading-tight text-foreground">
-          {event.title || "האירוע"}
-        </h1>
-        {event.date || event.time ? (
-          <p className="mt-3 text-base text-muted">
-            {[formatEventDate(event.date), formatEventTime(event.time)]
-              .filter(Boolean)
-              .join(" · ")}
-          </p>
-        ) : null}
-        {location ? (
-          <p className="mt-1 text-base text-muted">{location}</p>
-        ) : null}
-      </div>
-
-      {event.message ? (
-        <p className="rounded-3xl bg-white px-5 py-4 text-center text-base leading-relaxed text-foreground">
-          {event.message}
-        </p>
       ) : null}
+      <div className={styles.spread}>
+        <Portrait
+          src={event.coverImage}
+          alt={event.title ? `תמונה לאירוע ${event.title}` : "תמונת האירוע"}
+          monogram={monogramFor(event.title)}
+          hostName={event.hostName.trim()}
+          nameOnChip={!message}
+          objectPosition={coverObjectPosition(event)}
+        />
 
-      <section className="flex flex-col gap-4">
-        <h2 className="text-center text-lg font-bold text-foreground">
-          מה תרצו להעניק?
-        </h2>
-        {fundingNote ? (
-          <p className="text-center text-sm text-muted">{fundingNote}</p>
-        ) : null}
-        {!funding && !fundingNote ? (
-          <p className="text-center text-sm text-muted">טוענים את ההתקדמות...</p>
-        ) : null}
-        {hostGifts.map((gift) => {
-          const contribution = contributionFor(gift.id);
-          const selected = Boolean(contribution);
-          const customOpen = Boolean(openCustom[gift.id]) || !showSuggested;
-          const customIsSelected =
-            Boolean(contribution) &&
-            !suggestedAmounts.includes(contribution?.amount ?? -1);
-
-          return (
-            <article
-              key={gift.id}
-              className={`rounded-3xl border-2 p-5 ${
-                selected
-                  ? "border-brand bg-brand-soft/40"
-                  : "border-border bg-white"
-              }`}
+        <div className={`${styles.copy} ${styles.rise}`}>
+          {kicker.length > 0 ? (
+            <p className={styles.kicker}>
+              {kicker.map((part, index) => (
+                <span key={`${part}-${index}`} style={{ display: "contents" }}>
+                  {index > 0 ? <span className={styles.dot} aria-hidden="true" /> : null}
+                  <span>{part}</span>
+                </span>
+              ))}
+            </p>
+          ) : null}
+          <h1 className={styles.title}>
+            {(event.title || "האירוע").split(/(\d+)/).map((part, index) =>
+              /^\d+$/.test(part) ? (
+                <span key={`${part}-${index}`} className={styles.accent}>
+                  {part}
+                </span>
+              ) : (
+                <span key={`${part}-${index}`}>{part}</span>
+              ),
+            )}
+          </h1>
+          <p className={styles.sub}>מתנה מכל החברים</p>
+          {primary ? (
+            <button
+              type="button"
+              className={styles.wish}
+              onClick={() => {
+                const reduce = window.matchMedia(
+                  "(prefers-reduced-motion: reduce)",
+                ).matches;
+                document.getElementById(`gift-${primary.id}`)?.scrollIntoView({
+                  behavior: reduce ? "auto" : "smooth",
+                  block: "start",
+                });
+              }}
             >
-              <GiftMedia
-                imageUrl={gift.imageUrl}
-                icon={gift.emoji}
-                alt=""
-                className="h-44 w-full text-5xl"
-              />
-              <div className="mt-4">
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <h3 className="text-base font-bold text-foreground">
-                      {gift.name}
-                    </h3>
+              <WishThumb src={primary.imageUrl} />
+              <span className={styles.wishCopy}>
+                <span className={styles.wishLabel}>המשאלה</span>
+                <span className={styles.wishName}>{primary.name}</span>
+              </span>
+            </button>
+          ) : null}
+        </div>
+
+        <div className={styles.story}>
+        {primary ? (
+          <section className={`${styles.feature} ${styles.rise} ${styles.d2}`} id={`gift-${primary.id}`}>
+            <GiftScene src={primary.imageUrl} alt={primary.name} primary />
+            <div className={styles.gmeta}>
+              <p className={styles.label}>המשאלה</p>
+              <h2 className={styles.giftName}>{primary.name}</h2>
+              {primary.description ? (
+                <p className={styles.muted}>{primary.description}</p>
+              ) : null}
+              {primary.storeName ? (
+                <p className={styles.muted}>חנות: {primary.storeName}</p>
+              ) : null}
+              {primary.price > 0 ? (
+                <p className={styles.muted}>
+                  יעד: {formatGiftAmount(primary.price)}
+                  <span className={styles.muted}> אפשר להשתתף בכל סכום.</span>
+                </p>
+              ) : null}
+            </div>
+          </section>
+        ) : null}
+
+        {message ? (
+          <blockquote
+            id="host-invitation"
+            className={`${styles.note} ${styles.rise} ${styles.d1}`}
+          >
+            <p className={styles.noteKicker}>
+              {event.hostName.trim()
+                ? `הזמנה אישית מאת ${event.hostName.trim()}`
+                : "הזמנה אישית"}
+            </p>
+            <p>{quoted ? message : `״${message}״`}</p>
+          </blockquote>
+        ) : null}
+        </div>
+
+        <aside className={styles.panel}>
+          {primary ? renderProgress(primary, true) : (
+            <p className={styles.quiet}>עדיין אין מתנות באירוע.</p>
+          )}
+          {primary ? renderAmounts(primary) : null}
+
+          <section className={styles.summary}>
+            <h2>המתנה שלכם</h2>
+            {contributions.length === 0 ? (
+              <p className={styles.quiet}>עדיין לא נבחרה מתנה.</p>
+            ) : (
+              <ul>
+                {contributions.map((item) => (
+                  <li key={item.giftId} className={styles.summaryRow}>
+                    <span>{item.giftName}</span>
+                    <span>{formatGiftAmount(item.amount)}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <p className={styles.total}>סה״כ: {formatGiftAmount(total)}</p>
+          </section>
+
+          <p className={styles.ease}>בוחרים סכום, כותבים ברכה — וזהו.</p>
+
+          <div className={styles.join} data-join="">
+            {showMini && primaryCopy && primary ? (
+              <>
+                <div className={styles.mini}>
+                  <span>
+                    {others.length > 0 ? `${primary.name}: ` : null}
+                    {primaryCopy.raisedText ? <b>{primaryCopy.raisedText}</b> : null}
+                    {primaryCopy.targetText ? ` מתוך ${primaryCopy.targetText}` : null}
+                    {primaryCopy.countShort ? ` · ${primaryCopy.countShort}` : null}
+                  </span>
+                  {primaryCopy.remainingText ? (
+                    <span className={styles.miniAside}>
+                      עוד {primaryCopy.remainingText}
+                    </span>
+                  ) : null}
+                </div>
+                {primaryCopy.bar != null ? (
+                  <div className={styles.miniBar} aria-hidden="true">
+                    <span
+                      className={styles.miniFill}
+                      style={{ ["--fs-p" as string]: String(primaryCopy.bar) }}
+                    />
+                  </div>
+                ) : null}
+              </>
+            ) : null}
+            {amountHint ? (
+              <p id="join-amount-hint" className={styles.hint} role="alert">
+                בחרו סכום כדי להצטרף
+              </p>
+            ) : null}
+            <button
+              type="button"
+              onClick={() => {
+                if (total <= 0) {
+                  setAmountHint(true);
+                  return;
+                }
+                saveContributions(storageSlug(), contributions);
+                if (event) {
+                  const rows: ContinuityFunding[] | null = funding
+                    ? Object.entries(funding).map(([giftId, row]) => ({
+                        giftId,
+                        raisedAmount: row.raisedAmount,
+                        contributorCount: row.contributorCount,
+                        percentOfTarget: row.percentOfTarget,
+                      }))
+                    : null;
+                  const remembered = continuityFromEvent(event, rows);
+                  const key = storageSlug();
+                  writeContinuity(key, remembered);
+                  if (slug && slug !== key) {
+                    writeContinuity(slug, remembered);
+                  }
+                }
+                router.push(guestEventPath(storageSlug(), "greeting"));
+              }}
+              className={styles.cta}
+              aria-describedby={amountHint ? "join-amount-hint" : undefined}
+            >
+              מצטרפים למתנה
+              <GiftIcon />
+            </button>
+            <p className={styles.pay}>
+              <LockIcon />
+              תשלום הדגמה — לא מתבצע חיוב אמיתי
+            </p>
+          </div>
+        </aside>
+
+        {others.length > 0 ? (
+          <section className={styles.more} aria-labelledby="more-gifts">
+            <h2 id="more-gifts" className={styles.moreTitle}>
+              עוד מתנות
+            </h2>
+            <div className={styles.moreGrid}>
+              {others.map((gift) => (
+                <article key={gift.id} className={styles.extra} id={`gift-${gift.id}`}>
+                  <GiftScene src={gift.imageUrl} alt={gift.name} />
+                  <div className={styles.gmeta}>
+                    <h3 className={styles.giftName}>{gift.name}</h3>
+                    {gift.description ? (
+                      <p className={styles.muted}>{gift.description}</p>
+                    ) : null}
                     {gift.storeName ? (
-                      <p className="mt-1 text-sm text-muted">חנות: {gift.storeName}</p>
+                      <p className={styles.muted}>חנות: {gift.storeName}</p>
+                    ) : null}
+                    {gift.price > 0 ? (
+                      <p className={styles.muted}>
+                        יעד: {formatGiftAmount(gift.price)}
+                        <span> אפשר להשתתף בכל סכום.</span>
+                      </p>
                     ) : null}
                   </div>
-                  {selected ? (
-                    <span className="text-sm font-bold text-brand">
-                      ✓ {formatGiftAmount(contribution?.amount ?? 0)}
-                    </span>
-                  ) : null}
-                </div>
-                {gift.description ? (
-                  <p className="mt-1 text-sm leading-relaxed text-muted">
-                    {gift.description}
-                  </p>
-                ) : null}
-                {gift.price > 0 ? (
-                  <p className="mt-2 text-sm font-medium text-brand">
-                    יעד: {formatGiftAmount(gift.price)}
-                    <span className="mt-1 block font-normal text-muted">
-                      אפשר להשתתף בכל סכום.
-                    </span>
-                  </p>
-                ) : null}
-                {funding?.[gift.id] ? (
-                  <FundingProgress
-                    raisedAmount={funding[gift.id].raisedAmount}
-                    percentOfTarget={funding[gift.id].percentOfTarget}
-                    contributorCount={funding[gift.id].contributorCount}
-                  />
-                ) : null}
-              </div>
+                  {renderProgress(gift, false)}
+                  {renderAmounts(gift)}
+                </article>
+              ))}
+            </div>
+          </section>
+        ) : null}
 
-              {showSuggested ? (
-                <div className="mt-4 grid grid-cols-2 gap-2">
-                  {suggestedAmounts.map((amount) => {
-                    const amountSelected = contribution?.amount === amount;
-
-                    return (
-                      <button
-                        key={amount}
-                        type="button"
-                        aria-pressed={amountSelected}
-                        onClick={() => selectSuggested(gift, amount)}
-                        className={amountButtonClass(amountSelected)}
-                      >
-                        {amountSelected ? <span aria-hidden>✓</span> : null}
-                        {formatGiftAmount(amount)}
-                      </button>
-                    );
-                  })}
-                  {allowCustom ? (
-                    <button
-                      type="button"
-                      aria-pressed={customOpen && customIsSelected}
-                      onClick={() =>
-                        setOpenCustom((current) => ({
-                          ...current,
-                          [gift.id]: true,
-                        }))
-                      }
-                      className={amountButtonClass(
-                        customOpen && (customIsSelected || !contribution),
-                      )}
-                    >
-                      {customIsSelected ? <span aria-hidden>✓</span> : null}
-                      {customIsSelected
-                        ? formatGiftAmount(contribution?.amount ?? 0)
-                        : "סכום אחר"}
-                    </button>
-                  ) : null}
-                </div>
-              ) : null}
-
-              {allowCustom && customOpen ? (
-                <label className="mt-4 flex flex-col gap-2">
-                  <span className="text-sm font-semibold text-foreground">
-                    הזינו סכום
-                  </span>
-                  <div className="flex h-12 items-center rounded-2xl border border-border bg-white px-4">
-                    <input
-                      type="number"
-                      min={1}
-                      inputMode="numeric"
-                      dir="ltr"
-                      value={customDrafts[gift.id] ?? ""}
-                      onChange={(event) => {
-                        const value = event.target.value;
-                        setCustomDrafts((current) => ({
-                          ...current,
-                          [gift.id]: value,
-                        }));
-                        const amount = parseAmount(value);
-                        if (amount) {
-                          applyCustom(gift, value);
-                        } else if (value.trim() !== "") {
-                          setCustomErrors((current) => ({
-                            ...current,
-                            [gift.id]: "נא להזין סכום גדול מ־0",
-                          }));
-                        }
-                      }}
-                      className="w-full bg-transparent text-base text-foreground outline-none"
-                    />
-                    <span className="mr-2 text-sm font-semibold text-muted">
-                      ₪
-                    </span>
-                  </div>
-                  {customErrors[gift.id] ? (
-                    <span className="text-sm text-brand">
-                      {customErrors[gift.id]}
-                    </span>
-                  ) : null}
-                </label>
-              ) : null}
-
-              {selected ? (
-                <button
-                  type="button"
-                  onClick={() => removeContribution(gift.id)}
-                  className="mt-4 cursor-pointer text-sm font-semibold text-brand hover:text-brand-hover"
-                >
-                  הסרת מתנה
-                </button>
-              ) : null}
-            </article>
-          );
-        })}
-      </section>
-
-      <section className="rounded-3xl border border-border bg-white p-5">
-        <h2 className="text-base font-bold text-foreground">המתנה שלכם</h2>
-        {contributions.length === 0 ? (
-          <p className="mt-2 text-sm text-muted">עדיין לא נבחרה מתנה.</p>
-        ) : (
-          <ul className="mt-3 flex flex-col gap-2">
-            {contributions.map((item) => (
-              <li
-                key={item.giftId}
-                className="flex items-center justify-between gap-3 text-sm"
-              >
-                <span className="font-medium text-foreground">{item.giftName}</span>
-                <span className="font-semibold text-brand">
-                  {formatGiftAmount(item.amount)}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
-        <p className="mt-4 text-base font-bold text-brand">
-          סה״כ: {formatGiftAmount(total)}
-        </p>
-      </section>
-
-      <div className="fixed inset-x-0 bottom-0 border-t border-border bg-white/95 px-5 py-4 backdrop-blur">
-        <div className="mx-auto w-full max-w-lg">
-          <button
-            type="button"
-            disabled={total <= 0}
-            onClick={() => {
-              saveContributions(storageSlug(), contributions);
-              router.push(guestEventPath(storageSlug(), "greeting"));
-            }}
-            className="inline-flex h-12 w-full cursor-pointer items-center justify-center rounded-full bg-brand px-6 text-base font-semibold text-white hover:bg-brand-hover disabled:cursor-not-allowed disabled:bg-brand/40 disabled:hover:bg-brand/40"
-          >
-            ממשיכים לברכה • {formatGiftAmount(total)}
-          </button>
-        </div>
+        <footer className={styles.footer}>
+          <span>ביחד, מגשימים למישהו משאלה</span>
+          <span>lolo · מתנות משותפות</span>
+        </footer>
       </div>
-    </div>
+    </Frame>
   );
 }
