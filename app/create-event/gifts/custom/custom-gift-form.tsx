@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import ImageFormatHint from "@/app/design/image-format-hint";
 import UploadActions from "@/app/design/upload-actions";
 import { describeImageUploadError, type UploadFailure } from "@/app/design/upload-error";
 import { userFacingMessage } from "@/app/design/user-error";
@@ -316,11 +317,13 @@ export default function CustomGiftForm() {
             void handleImage(file);
           }}
         />
-        {imageUrl ? null : (
-          <p className="text-sm leading-relaxed text-muted">
-            מומלץ להוסיף תמונה. אפשר גם להמשיך בלי, ואז תופיע מסגרת עם סמל מתנה.
-          </p>
-        )}
+        <ImageFormatHint
+          lead={
+            imageUrl
+              ? "אפשר להחליף את התמונה."
+              : "מומלץ להוסיף תמונה. אפשר גם להמשיך בלי, ואז תופיע מסגרת עם סמל מתנה."
+          }
+        />
       </section>
 
       <label className="flex flex-col gap-2">

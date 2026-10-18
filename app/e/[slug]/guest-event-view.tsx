@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { formatEventTime } from "@/lib/event-draft";
 import { getEventBySlug, guestEventPath, type StoredEvent } from "@/lib/events";
 import {
@@ -70,6 +70,29 @@ function occasionDate(date: string) {
     day: "numeric",
     month: "long",
   });
+}
+
+function standaloneNumber(parts: string[], index: number) {
+  const part = parts[index] ?? "";
+  if (!/^\d+$/.test(part)) {
+    return false;
+  }
+  const before = parts[index - 1] ?? "";
+  const after = parts[index + 1] ?? "";
+  return !/[\p{L}]$/u.test(before) && !/^[\p{L}]/u.test(after);
+}
+
+function TitleText({ title }: { title: string }) {
+  const parts = title.split(/(\d+)/);
+  return parts.map((part, index) =>
+    standaloneNumber(parts, index) ? (
+      <span key={`${part}-${index}`} className={styles.accent}>
+        {part}
+      </span>
+    ) : (
+      <Fragment key={`${part}-${index}`}>{part}</Fragment>
+    ),
+  );
 }
 
 function monogramFor(title: string) {
@@ -607,15 +630,7 @@ export default function GuestEventView() {
             </p>
           ) : null}
           <h1 className={styles.title}>
-            {(event.title || "האירוע").split(/(\d+)/).map((part, index) =>
-              /^\d+$/.test(part) ? (
-                <span key={`${part}-${index}`} className={styles.accent}>
-                  {part}
-                </span>
-              ) : (
-                <span key={`${part}-${index}`}>{part}</span>
-              ),
-            )}
+            <TitleText title={event.title || "האירוע"} />
           </h1>
           <p className={styles.sub}>מתנה מכל החברים</p>
           {primary ? (

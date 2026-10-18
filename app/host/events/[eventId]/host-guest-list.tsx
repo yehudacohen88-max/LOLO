@@ -140,14 +140,14 @@ export default function HostGuestList({
                     {guest.phone}
                   </p>
                 </div>
-                <div className="flex flex-wrap items-center gap-3">
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                   {guest.invitePath ? (
                     <>
                       <button
                         type="button"
                         disabled={saving || disabled}
                         onClick={() => copyInviteLink(guest.invitePath ?? "")}
-                        className="text-sm font-semibold text-foreground disabled:text-muted"
+                        className="inline-flex min-h-[44px] items-center justify-center rounded-full px-3 text-center text-sm font-semibold text-foreground disabled:text-muted"
                       >
                         העתק קישור אישי
                       </button>
@@ -156,17 +156,19 @@ export default function HostGuestList({
                           href={waUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-sm font-semibold text-brand"
+                          className="inline-flex min-h-[44px] items-center justify-center rounded-full px-3 text-center text-sm font-semibold text-brand"
                         >
                           שלח ב-WhatsApp
                         </a>
                       ) : null}
                       {waUrl && disabled ? (
-                        <span className="text-sm font-semibold text-muted">שלח ב-WhatsApp</span>
+                        <span className="inline-flex min-h-[44px] items-center justify-center rounded-full px-3 text-center text-sm font-semibold text-muted">
+                          שלח ב-WhatsApp
+                        </span>
                       ) : null}
                     </>
                   ) : (
-                    <p className="text-sm text-muted">
+                    <p className="text-sm text-muted sm:col-span-2">
                       הקישור שנשלח עדיין תקף, אבל לא ניתן להציג אותו שוב.
                     </p>
                   )}
@@ -174,7 +176,7 @@ export default function HostGuestList({
                     type="button"
                     disabled={saving || disabled}
                     onClick={() => removeGuest(guest.id)}
-                    className="text-sm font-semibold text-brand disabled:text-muted"
+                    className="inline-flex min-h-[44px] items-center justify-center rounded-full px-3 text-center text-sm font-semibold text-brand disabled:text-muted"
                   >
                     הסרה
                   </button>

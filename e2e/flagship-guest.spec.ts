@@ -1,3 +1,4 @@
+import { mkdirSync } from "node:fs";
 import path from "node:path";
 import { expect, test, type Page } from "@playwright/test";
 
@@ -12,12 +13,12 @@ const widths = [
   { name: "1440", width: 1440, height: 900 },
 ] as const;
 
-function eventPayload(withImages: boolean) {
+function eventPayload(withImages: boolean, title = "חוגגים 40 לדנה") {
   return {
     event: {
       id: "flagship-fixture-id",
       slug: "flagship-fixture",
-      title: "חוגגים 40 לדנה",
+      title,
       hostName: "נועה לוי",
       eventType: "יום הולדת",
       date: "2026-11-06",
@@ -62,12 +63,12 @@ const fundingPayload = {
   ],
 };
 
-async function installFixture(page: Page, withImages: boolean) {
+async function installFixture(page: Page, withImages: boolean, title?: string) {
   await page.route("**/api/events/flagship-fixture/funding", async (route) => {
     await route.fulfill({ json: fundingPayload });
   });
   await page.route("**/api/events/flagship-fixture", async (route) => {
-    await route.fulfill({ json: eventPayload(withImages) });
+    await route.fulfill({ json: eventPayload(withImages, title) });
   });
   if (withImages) {
     await page.route("**/__flagship_fixture/portrait.jpg", async (route) => {
@@ -89,6 +90,8 @@ test("guest page keeps contribution flow and hides an empty invitation", async (
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/e/flagship-fixture");
   await expect(page.getByRole("heading", { name: /חוגגים 40 לדנה/ })).toBeVisible();
+  await expect(page.locator("h1 span")).toHaveText("40");
+  await expect(page.locator("h1 span")).toHaveCSS("color", "rgb(242, 85, 63)");
   await expect(page.getByText("השנה החלטנו להפתיע את דנה")).toBeVisible();
   await expect(page.getByText("הזמנה מאת נועה לוי")).toHaveCount(0);
   await expect(page.getByText("הזמנה", { exact: true })).toHaveCount(0);
@@ -250,3 +253,16 @@ for (const viewport of widths) {
     });
   }
 }
+
+test("a digit inside a word is not colored like an age", async ({ page }) => {
+  await installFixture(page, false, "QA PR9");
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/e/flagship-fixture");
+  await expect(page.getByRole("heading", { name: "QA PR9", exact: true, level: 1 })).toBeVisible();
+  await expect(page.locator("h1 span")).toHaveCount(0);
+  mkdirSync("/opt/cursor/artifacts/host-experience", { recursive: true });
+  await page.screenshot({
+    path: "/opt/cursor/artifacts/host-experience/guest-title-pr9-390.png",
+    fullPage: true,
+  });
+});

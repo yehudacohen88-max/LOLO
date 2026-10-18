@@ -358,4 +358,68 @@ test.describe("host experience", () => {
     await expect(page).toHaveURL(/\/create-event\/success\?slug=event-host-demo/);
     expect(calls).toBe(2);
   });
+
+  test("tap targets are 44px and the photo hint keeps 5MB with the formats", async ({ page }) => {
+    await page.addInitScript(() => {
+      window.localStorage.setItem(
+        "lolo-event-draft",
+        JSON.stringify({
+          eventType: "יום הולדת",
+          eventName: "יום הולדת (יובל)",
+          eventDate: "2026-11-12",
+          hostName: "נועה",
+          guests: [{ id: "g1", name: "דנה כהן", phone: "0501234567" }],
+        }),
+      );
+    });
+    await page.setViewportSize({ width: 390, height: 844 });
+
+    await page.goto("/create-event");
+    const restart = page.getByRole("button", { name: "התחלת אירוע חדש" });
+    await expect(restart).toBeVisible();
+    expect((await restart.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44);
+    await shot(page, "tap-step1-390");
+
+    await page.goto("/create-event/guests");
+    const edit = page.getByRole("button", { name: "עריכה" });
+    const guestRemove = page.getByRole("button", { name: "הסרה" });
+    const editBox = await edit.boundingBox();
+    const guestRemoveBox = await guestRemove.boundingBox();
+    expect(editBox?.height ?? 0).toBeGreaterThanOrEqual(44);
+    expect(guestRemoveBox?.height ?? 0).toBeGreaterThanOrEqual(44);
+    expect(Math.abs((editBox?.width ?? 0) - (guestRemoveBox?.width ?? 0))).toBeLessThan(2);
+    expect(Math.abs((editBox?.y ?? 0) - (guestRemoveBox?.y ?? 0))).toBeLessThan(2);
+    await shot(page, "tap-guests-390");
+
+    await page.goto("/create-event/details");
+    const detailsTail = page.locator("span.whitespace-nowrap").filter({ hasText: "5MB" });
+    await expect(detailsTail).toBeVisible();
+    const detailsTailBox = await detailsTail.boundingBox();
+    const detailsSizeBox = await detailsTail.locator("bdi").boundingBox();
+    expect(Math.abs((detailsTailBox?.y ?? 0) - (detailsSizeBox?.y ?? 99))).toBeLessThan(2);
+    await shot(page, "hint-details-390");
+
+    await page.goto("/create-event/gifts/custom");
+    const customTail = page.locator("span.whitespace-nowrap").filter({ hasText: "5MB" });
+    await expect(customTail).toBeVisible();
+    const customTailBox = await customTail.boundingBox();
+    const customSizeBox = await customTail.locator("bdi").boundingBox();
+    expect(Math.abs((customTailBox?.y ?? 0) - (customSizeBox?.y ?? 99))).toBeLessThan(2);
+    await shot(page, "hint-custom-390");
+
+    await page.goto("/host/example");
+    const copy = page.getByRole("button", { name: "העתק קישור אישי" });
+    const dashboardRemove = page.getByRole("button", { name: "הסרה" });
+    const whatsapp = page.getByText("שלח ב-WhatsApp", { exact: true });
+    const copyBox = await copy.boundingBox();
+    const whatsappBox = await whatsapp.boundingBox();
+    const dashboardRemoveBox = await dashboardRemove.boundingBox();
+    expect(copyBox?.height ?? 0).toBeGreaterThanOrEqual(44);
+    expect(whatsappBox?.height ?? 0).toBeGreaterThanOrEqual(44);
+    expect(dashboardRemoveBox?.height ?? 0).toBeGreaterThanOrEqual(44);
+    expect(Math.abs((copyBox?.width ?? 0) - (dashboardRemoveBox?.width ?? 0))).toBeLessThan(2);
+    expect((whatsappBox?.y ?? 0) > (copyBox?.y ?? 0) + 40).toBe(true);
+    expect((dashboardRemoveBox?.y ?? 0) > (whatsappBox?.y ?? 0) + 40).toBe(true);
+    await shot(page, "tap-dashboard-390");
+  });
 });

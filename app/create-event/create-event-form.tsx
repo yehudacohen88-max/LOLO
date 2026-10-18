@@ -94,7 +94,7 @@ export default function CreateEventForm() {
         <button
           type="button"
           onClick={startNewEvent}
-          className="text-sm font-semibold text-brand hover:text-brand-hover"
+          className="inline-flex min-h-[44px] items-center self-start px-1 text-sm font-semibold text-brand hover:text-brand-hover"
         >
           התחלת אירוע חדש
         </button>

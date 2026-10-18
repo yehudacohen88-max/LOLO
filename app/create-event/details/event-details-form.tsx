@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import ImageFormatHint from "@/app/design/image-format-hint";
 import UploadActions from "@/app/design/upload-actions";
 import { describeImageUploadError, type UploadFailure } from "@/app/design/upload-error";
 import { userFacingMessage } from "@/app/design/user-error";
@@ -287,10 +288,7 @@ export default function EventDetailsForm() {
             void handleImage(file);
           }}
         />
-        <p className="text-sm text-muted">
-          התמונה תופיע בעמוד האירוע ובהזמנה. <bdi dir="ltr">JPG, PNG, WEBP</bdi> עד{" "}
-          <bdi dir="ltr">5MB</bdi>.
-        </p>
+        <ImageFormatHint lead="התמונה תופיע בעמוד האירוע ובהזמנה." />
       </section>
 
       <label className="flex flex-col gap-2">
