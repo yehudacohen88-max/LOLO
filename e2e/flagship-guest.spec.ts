@@ -91,7 +91,7 @@ test("guest page keeps contribution flow and hides an empty invitation", async (
   await expect(page.getByRole("heading", { name: /חוגגים 40 לדנה/ })).toBeVisible();
   await expect(page.getByText("השנה החלטנו להפתיע את דנה")).toBeVisible();
   await expect(page.getByText("הזמנה מאת נועה לוי")).toBeVisible();
-  await expect(page.getByText("23 חברים")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "כבר 23 חברים הצטרפו" })).toBeVisible();
   await expect(page.getByText("יונתן")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "מצטרפים למתנה" })).toBeDisabled();
 
@@ -119,8 +119,8 @@ test("bundled demo event does not invent guests or ship a stock portrait", async
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/e/demo-event");
   await expect(page.getByRole("heading", { name: "אירוע לדוגמה" })).toBeVisible();
-  await expect(page.getByText("ירח דבש")).toBeVisible();
-  await expect(page.getByText("ספה חדשה")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "ירח דבש" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "ספה חדשה" })).toBeVisible();
   await expect(page.getByText("אין עדיין משתתפים")).toBeVisible();
   await expect(page.getByText("יונתן")).toHaveCount(0);
   await expect(page.getByText("23 חברים")).toHaveCount(0);

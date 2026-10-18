@@ -209,13 +209,15 @@ export function GiftScene({ src, alt }: { src: string; alt: string }) {
       <div className={styles.sceneLight} aria-hidden="true" />
       <div className={styles.sceneEdge} aria-hidden="true" />
       {showPhoto ? (
-        <img
-          src={src}
-          alt={alt}
-          className={styles.sceneImage}
-          decoding="async"
-          onError={() => setBroken(true)}
-        />
+        <div className={styles.sceneStage}>
+          <img
+            src={src}
+            alt={alt}
+            className={styles.sceneImage}
+            decoding="async"
+            onError={() => setBroken(true)}
+          />
+        </div>
       ) : (
         <div className={styles.sceneFallback} aria-hidden="true">
           <SatinBow className={styles.sceneBow} />
