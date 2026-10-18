@@ -1,4 +1,6 @@
 import Link from "next/link";
+import LoloMark from "@/app/design/lolo-mark";
+import styles from "@/app/design/host-experience.module.css";
 import FundingProgress from "@/components/funding-progress";
 import GiftMedia from "@/components/gift-media";
 import GiftTimeline from "@/components/gift-timeline";
@@ -87,37 +89,46 @@ type HostDashboardProps = {
   data: HostDashboardData;
   guestUrl: string;
   origin: string;
+  exampleNote?: string;
 };
 
 export default function HostDashboard({
   data,
   guestUrl,
   origin,
+  exampleNote,
 }: HostDashboardProps) {
+  const readOnly = Boolean(exampleNote);
   return (
-    <div className="flex flex-1 flex-col">
-      <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-6 px-5 py-10 sm:max-w-3xl sm:px-8 sm:py-16">
-        <header className="flex flex-col items-center text-center">
-          <Link
-            href="/"
-            className="text-4xl font-extrabold tracking-[0.28em] text-brand sm:text-5xl"
-          >
-            LOLO
+    <main className={styles.board}>
+        <header className={styles.boardHead}>
+          <Link href="/" className={styles.wordmark}>
+            <LoloMark />
           </Link>
-          <h1 className="mt-8 text-2xl font-bold leading-tight tracking-tight text-foreground sm:text-4xl">
-            ניהול האירוע
-          </h1>
-          <p className="mt-3 text-lg font-semibold text-foreground">
+          <h1 className={styles.title}>ניהול האירוע</h1>
+          <p className="mt-3 text-lg font-semibold text-foreground" dir="auto">
             {data.title || "האירוע"}
           </p>
+          {exampleNote ? (
+            <>
+              <p className={styles.example} role="note">
+                {exampleNote}
+              </p>
+              <p className={styles.exampleHint}>בדוגמה זו הפעולות מושבתות</p>
+            </>
+          ) : null}
         </header>
 
+        <div className={styles.columns}>
+        <div className={styles.stack}>
         <section className="rounded-3xl border border-border bg-white p-5 sm:p-6">
           <h2 className="text-lg font-bold text-foreground">סקירת האירוע</h2>
           <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
             <div>
               <dt className="text-muted">שם האירוע</dt>
-              <dd className="mt-1 font-semibold">{data.title || "—"}</dd>
+              <dd className="mt-1 font-semibold" dir="auto">
+                {data.title || "—"}
+              </dd>
             </div>
             <div>
               <dt className="text-muted">סוג האירוע</dt>
@@ -129,12 +140,14 @@ export default function HostDashboard({
             </div>
             <div>
               <dt className="text-muted">שם המארח</dt>
-              <dd className="mt-1 font-semibold">{data.hostName || "—"}</dd>
+              <dd className="mt-1 font-semibold" dir="auto">
+                {data.hostName || "—"}
+              </dd>
             </div>
           </dl>
           <div className="mt-5">
             <p className="mb-2 text-sm text-muted">קישור האורחים</p>
-            <CopyGuestLink guestUrl={guestUrl} />
+            <CopyGuestLink guestUrl={guestUrl} disabled={readOnly} />
           </div>
         </section>
 
@@ -171,6 +184,16 @@ export default function HostDashboard({
           </div>
         </section>
 
+        <HostGuestList
+          eventId={data.eventId}
+          eventTitle={data.title}
+          origin={origin}
+          guests={data.invitedGuests}
+          disabled={readOnly}
+        />
+        </div>
+
+        <div className={styles.stack}>
         <section className="rounded-3xl border border-border bg-white p-5 sm:p-6">
           <h2 className="text-lg font-bold text-foreground">התקדמות המתנות</h2>
           {data.vouchersReady ? null : (
@@ -197,7 +220,7 @@ export default function HostDashboard({
                       />
                       <div className="min-w-0 flex-1">
                         <div className="flex items-start justify-between gap-3">
-                          <p className="font-semibold text-foreground">
+                          <p className="font-semibold text-foreground" dir="auto">
                             {gift.title || "מתנה"}
                           </p>
                           {gift.targetAmount ? (
@@ -241,6 +264,7 @@ export default function HostDashboard({
                         eventId={data.eventId}
                         gift={gift}
                         stores={data.voucherStores}
+                        disabled={readOnly}
                       />
                     ) : null}
                   </li>
@@ -249,13 +273,6 @@ export default function HostDashboard({
             </ul>
           )}
         </section>
-
-        <HostGuestList
-          eventId={data.eventId}
-          eventTitle={data.title}
-          origin={origin}
-          guests={data.invitedGuests}
-        />
 
         <section className="rounded-3xl border border-border bg-white p-5 sm:p-6">
           <h2 className="text-lg font-bold text-foreground">הזמנות אורחים</h2>
@@ -303,7 +320,8 @@ export default function HostDashboard({
             </ul>
           )}
         </section>
-      </main>
-    </div>
+        </div>
+        </div>
+    </main>
   );
 }

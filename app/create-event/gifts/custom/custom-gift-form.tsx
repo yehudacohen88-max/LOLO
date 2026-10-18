@@ -3,16 +3,15 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import ImageFormatHint from "@/app/design/image-format-hint";
+import UploadActions from "@/app/design/upload-actions";
+import { describeImageUploadError, type UploadFailure } from "@/app/design/upload-error";
+import { userFacingMessage } from "@/app/design/user-error";
+import { visibleHostStores } from "@/app/design/host-stores";
 import GiftMedia from "@/components/gift-media";
-import {
-  DraftGiftStorageError,
-  findDraftGift,
-  upsertDraftGift,
-  type DraftGiftSource,
-} from "@/lib/draft-gifts";
-import { DraftStorageError, saveEventDraft } from "@/lib/event-draft";
+import { findDraftGift, upsertDraftGift, type DraftGiftSource } from "@/lib/draft-gifts";
+import { saveEventDraft } from "@/lib/event-draft";
 import { formatPrice, getGiftById } from "@/lib/gifts";
-import { ImagePrepareError } from "@/lib/images/prepare";
 import { uploadImageFile } from "@/lib/images/upload-client";
 import {
   fetchActiveStoreOptions,
@@ -22,9 +21,6 @@ import { useIsClient } from "@/lib/use-is-client";
 
 const fieldClass =
   "h-12 rounded-2xl border border-border bg-white px-4 text-base text-foreground outline-none placeholder:text-muted/70 focus:border-brand";
-
-const actionClass =
-  "inline-flex h-12 w-full items-center justify-center rounded-full border border-border bg-white px-3 text-sm font-semibold text-foreground hover:bg-brand-soft disabled:opacity-60";
 
 type GiftFocus = "" | "image" | "title" | "target" | "form";
 
@@ -45,7 +41,7 @@ export default function CustomGiftForm() {
   const [stores, setStores] = useState<ActiveStoreOption[]>([]);
   const [storesNote, setStoresNote] = useState("");
   const [uploading, setUploading] = useState(false);
-  const [imageError, setImageError] = useState("");
+  const [imageError, setImageError] = useState<UploadFailure | null>(null);
   const [titleError, setTitleError] = useState("");
   const [targetError, setTargetError] = useState("");
   const [formError, setFormError] = useState("");
@@ -57,6 +53,7 @@ export default function CustomGiftForm() {
   const targetRef = useRef<HTMLInputElement>(null);
   const formErrorRef = useRef<HTMLParagraphElement>(null);
   const uploadAttempt = useRef(0);
+  const lastFileRef = useRef<File | null>(null);
 
   if (isClient && !ready) {
     const existingId = searchParams.get("id")?.trim() ?? "";
@@ -123,8 +120,15 @@ export default function CustomGiftForm() {
         if (cancelled) {
           return;
         }
-        setStores(nextStores);
-        if (nextStores.length === 0) {
+        const visible = visibleHostStores(nextStores);
+        setStores(visible);
+        setStoreId((current) => {
+          if (!current || visible.some((store) => store.id === current)) {
+            return current;
+          }
+          return nextStores.some((store) => store.id === current) ? "" : current;
+        });
+        if (visible.length === 0) {
           setStoresNote("אין כרגע חנויות פעילות. אפשר לשמור בלי חנות.");
         }
       } catch {
@@ -146,7 +150,8 @@ export default function CustomGiftForm() {
 
     const attempt = uploadAttempt.current + 1;
     uploadAttempt.current = attempt;
-    setImageError("");
+    lastFileRef.current = file;
+    setImageError(null);
     setFormError("");
     setUploading(true);
     try {
@@ -159,11 +164,7 @@ export default function CustomGiftForm() {
       if (uploadAttempt.current !== attempt) {
         return;
       }
-      setImageError(
-        uploadError instanceof ImagePrepareError
-          ? uploadError.message
-          : "העלאת התמונה נכשלה. נסו שוב.",
-      );
+      setImageError(describeImageUploadError(file, uploadError));
       requestFocus("image");
     } finally {
       if (uploadAttempt.current === attempt) {
@@ -174,9 +175,18 @@ export default function CustomGiftForm() {
 
   function removeImage() {
     uploadAttempt.current += 1;
+    lastFileRef.current = null;
     setUploading(false);
     setImageUrl("");
-    setImageError("");
+    setImageError(null);
+  }
+
+  function retryImage() {
+    const file = lastFileRef.current;
+    if (!file || uploading) {
+      return;
+    }
+    void handleImage(file);
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -192,9 +202,12 @@ export default function CustomGiftForm() {
     setFormError("");
 
     if (imageUrl.startsWith("data:") || imageUrl.startsWith("blob:")) {
-      setImageError(
-        "לא הצלחנו לשמור את התמונה. היא גדולה מדי, או שההעלאה לא הושלמה. הסירו אותה או בחרו תמונה אחרת.",
-      );
+      setImageError({
+        retryable: false,
+        unsupported: false,
+        message:
+          "לא הצלחנו לשמור את התמונה. היא גדולה מדי, או שההעלאה לא הושלמה. הסירו אותה או בחרו תמונה אחרת.",
+      });
       requestFocus("image");
       return;
     }
@@ -243,11 +256,7 @@ export default function CustomGiftForm() {
         moneyDisplay: "amounts",
       });
     } catch (error) {
-      const message =
-        error instanceof DraftGiftStorageError || error instanceof DraftStorageError
-          ? error.message
-          : "לא הצלחנו לשמור את המתנה. נסו שוב.";
-      setFormError(message);
+      setFormError(userFacingMessage(error, "לא הצלחנו לשמור את המתנה. נסו שוב."));
       requestFocus("form");
       return;
     }
@@ -286,25 +295,16 @@ export default function CustomGiftForm() {
           alt={title ? `תמונת ${title}` : "תצוגה מקדימה של המתנה"}
           className="h-48 w-full text-5xl"
         />
-        <div className={imageUrl ? "grid grid-cols-2 gap-2" : "grid grid-cols-1"}>
-          <button
-            ref={imageActionRef}
-            type="button"
-            onClick={() => {
-              if (!uploading) {
-                imageInputRef.current?.click();
-              }
-            }}
-            className={`${actionClass} ${uploading ? "opacity-60" : ""}`}
-          >
-            {uploading ? "מעלים את התמונה..." : imageUrl ? "החלפת תמונה" : "בחירת תמונה"}
-          </button>
-          {imageUrl ? (
-            <button type="button" onClick={removeImage} className={actionClass}>
-              הסרת תמונה
-            </button>
-          ) : null}
-        </div>
+        <UploadActions
+          hasImage={Boolean(imageUrl)}
+          uploading={uploading}
+          error={imageError?.message ?? null}
+          retryable={imageError?.retryable ?? false}
+          onPick={() => imageInputRef.current?.click()}
+          onRetry={retryImage}
+          onRemove={removeImage}
+          pickRef={imageActionRef}
+        />
         <input
           ref={imageInputRef}
           type="file"
@@ -317,16 +317,13 @@ export default function CustomGiftForm() {
             void handleImage(file);
           }}
         />
-        {imageError ? (
-          <p role="alert" className="text-sm font-medium text-brand">
-            {imageError}
-          </p>
-        ) : null}
-        {imageUrl ? null : (
-          <p className="text-sm leading-relaxed text-muted">
-            מומלץ להוסיף תמונה. אפשר גם להמשיך בלי, ואז תופיע מסגרת עם סמל מתנה.
-          </p>
-        )}
+        <ImageFormatHint
+          lead={
+            imageUrl
+              ? "אפשר להחליף את התמונה."
+              : "מומלץ להוסיף תמונה. אפשר גם להמשיך בלי, ואז תופיע מסגרת עם סמל מתנה."
+          }
+        />
       </section>
 
       <label className="flex flex-col gap-2">
@@ -339,6 +336,7 @@ export default function CustomGiftForm() {
             setTitleError("");
           }}
           placeholder="ערכת LEGO"
+          dir="auto"
           maxLength={80}
           aria-invalid={titleError ? true : undefined}
           className={fieldClass}

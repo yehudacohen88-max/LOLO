@@ -2,6 +2,10 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import LoloMark from "@/app/design/lolo-mark";
+import styles from "@/app/design/host-experience.module.css";
+import CreateSummary from "@/app/create-event/create-summary";
+import { createStepLabel } from "@/app/create-event/steps";
 import { formatPrice, giftCategories, gifts, type GiftCategory } from "@/lib/gifts";
 
 export default function GiftCatalog() {
@@ -16,19 +20,15 @@ export default function GiftCatalog() {
   );
 
   return (
-    <div className="flex flex-1 flex-col px-5 pb-10 pt-10 sm:px-8 sm:pt-16">
-      <header className="flex flex-col items-center text-center">
-        <Link
-          href="/"
-          className="text-4xl font-extrabold tracking-[0.28em] text-brand sm:text-5xl"
-        >
-          LOLO
+    <div className={styles.spread}>
+      <main className={`${styles.main} flex flex-1 flex-col`}>
+      <header className={styles.header}>
+        <Link href="/" className={styles.wordmark}>
+          <LoloMark />
         </Link>
-        <p className="mt-5 text-sm font-medium text-brand">שלב 2 מתוך 4</p>
-        <h1 className="mt-4 text-2xl font-bold leading-tight tracking-tight text-foreground sm:text-4xl">
-          רעיונות להשראה
-        </h1>
-        <p className="mt-3 max-w-md text-base leading-relaxed text-muted sm:text-lg">
+        <p className={styles.step}>{createStepLabel(2)}</p>
+        <h1 className={styles.title}>רעיונות להשראה</h1>
+        <p className={`${styles.lede} max-w-md`}>
           בחרו רעיון ונמלא עבורכם שם, תיאור וסכום מוצע. אחר כך אפשר לשנות הכל,
           כולל התמונה.
         </p>
@@ -95,6 +95,8 @@ export default function GiftCatalog() {
       >
         חזרה למתנות שלי
       </Link>
+      </main>
+      <CreateSummary step={2} />
     </div>
   );
 }

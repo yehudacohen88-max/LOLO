@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
+import { userFacingMessage } from "@/app/design/user-error";
 import {
   loadEventDraft,
   saveEventDraft,
@@ -163,9 +164,7 @@ export default function GuestsForm() {
       setImportSummary(parts.join(". "));
       setImportIssues(result.issues);
     } catch (error) {
-      setFormError(
-        error instanceof Error ? error.message : "ייבוא הקובץ נכשל.",
-      );
+      setFormError(userFacingMessage(error, "ייבוא הקובץ נכשל. בדקו את הקובץ ונסו שוב."));
     } finally {
       setImporting(false);
     }
@@ -262,25 +261,25 @@ export default function GuestsForm() {
                     </div>
                   </div>
                 ) : (
-                  <div className="flex items-center justify-between gap-3">
+                  <div className="flex flex-col gap-3">
                     <div className="min-w-0">
                       <p className="font-semibold text-foreground">{guest.name}</p>
                       <p className="mt-1 text-sm text-muted" dir="ltr">
                         {guest.phone}
                       </p>
                     </div>
-                    <div className="flex shrink-0 gap-3">
+                    <div className="grid grid-cols-2 gap-2">
                       <button
                         type="button"
                         onClick={() => startEdit(guest)}
-                        className="text-sm font-semibold text-foreground"
+                        className="inline-flex min-h-[44px] items-center justify-center rounded-full px-3 text-sm font-semibold text-foreground"
                       >
                         עריכה
                       </button>
                       <button
                         type="button"
                         onClick={() => removeGuest(guest.id)}
-                        className="text-sm font-semibold text-brand"
+                        className="inline-flex min-h-[44px] items-center justify-center rounded-full px-3 text-sm font-semibold text-brand"
                       >
                         הסרה
                       </button>

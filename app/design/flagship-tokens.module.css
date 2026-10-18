@@ -1,0 +1,15 @@
+/* Single source for the Flagship palette and type.
+   Guest `.root` and the host/create shell both compose `.theme`.
+   Do not copy these values into another stylesheet. */
+.theme {
+  --fs-paper: #fcfaf7;
+  --fs-blush: #fbe7e4;
+  --fs-coral: #f2553f;
+  --fs-coral-ink: #b8321c;
+  --fs-navy: #16204d;
+  --fs-navy-2: #525b82;
+  --fs-navy-3: #5e688c;
+  --fs-hair: rgba(22, 32, 77, 0.09);
+  --fs-sans: var(--font-flagship-sans), var(--font-heebo), "Arial Hebrew", Arial, sans-serif;
+  --fs-serif: var(--font-flagship-serif), "Times New Roman", serif;
+}

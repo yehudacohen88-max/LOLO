@@ -2,30 +2,36 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import ImageFormatHint from "@/app/design/image-format-hint";
+import UploadActions from "@/app/design/upload-actions";
+import { describeImageUploadError, type UploadFailure } from "@/app/design/upload-error";
+import { userFacingMessage } from "@/app/design/user-error";
 import {
-  DraftStorageError,
   formatEventDate,
-  getVideoPreviewUrl,
   loadEventDraft,
   saveEventDraft,
   setVideoPreviewUrl,
 } from "@/lib/event-draft";
-import { ImagePrepareError } from "@/lib/images/prepare";
 import { uploadImageFile } from "@/lib/images/upload-client";
 import { useIsClient } from "@/lib/use-is-client";
 
 const fieldClass =
   "h-12 rounded-2xl border border-border bg-white px-4 text-base text-foreground outline-none placeholder:text-muted/70 focus:border-brand";
 
-const actionClass =
-  "inline-flex h-12 w-full items-center justify-center rounded-full border border-border bg-white px-3 text-sm font-semibold text-foreground hover:bg-brand-soft disabled:opacity-60";
-
-const COVER_BLOCKED =
-  "לא הצלחנו לשמור את התמונה. היא גדולה מדי, או שההעלאה לא הושלמה. הסירו אותה או בחרו תמונה אחרת.";
-const COVER_UPLOADING = "התמונה עדיין עולה. המתינו רגע, ואז המשיכו.";
+const COVER_BLOCKED: UploadFailure = {
+  retryable: false,
+  unsupported: false,
+  message:
+    "לא הצלחנו לשמור את התמונה. היא גדולה מדי, או שההעלאה לא הושלמה. הסירו אותה או בחרו תמונה אחרת.",
+};
+const COVER_UPLOADING: UploadFailure = {
+  retryable: false,
+  unsupported: false,
+  message: "התמונה עדיין עולה. המתינו רגע, ואז המשיכו.",
+};
 const SAVE_FAILED = "לא הצלחנו לשמור את הפרטים. נסו שוב.";
 
-type FocusTarget = "" | "image" | "video" | "form";
+type FocusTarget = "" | "image" | "form";
 
 function isUnsavedCover(value: string) {
   return value.startsWith("data:") || value.startsWith("blob:");
@@ -38,33 +44,31 @@ export default function EventDetailsForm() {
   const [eventDate, setEventDate] = useState("");
   const [imageDataUrl, setImageDataUrl] = useState("");
   const [imagePreview, setImagePreview] = useState("");
-  const [videoName, setVideoName] = useState("");
-  const [videoUrl, setVideoUrl] = useState("");
   const [message, setMessage] = useState("");
   const [venueName, setVenueName] = useState("");
   const [address, setAddress] = useState("");
   const [eventTime, setEventTime] = useState("");
   const [imageUploading, setImageUploading] = useState(false);
-  const [imageError, setImageError] = useState("");
-  const [videoError, setVideoError] = useState("");
+  const [imageError, setImageError] = useState<UploadFailure | null>(null);
   const [formError, setFormError] = useState("");
   const [focusRequest, setFocusRequest] = useState(0);
   const focusTargetRef = useRef<FocusTarget>("");
   const coverInputRef = useRef<HTMLInputElement>(null);
   const coverActionRef = useRef<HTMLButtonElement>(null);
-  const videoInputRef = useRef<HTMLInputElement>(null);
-  const videoActionRef = useRef<HTMLButtonElement>(null);
   const formErrorRef = useRef<HTMLParagraphElement>(null);
   const uploadAttempt = useRef(0);
   const localPreviewRef = useRef("");
+  const lastFileRef = useRef<File | null>(null);
 
   if (isClient && !ready) {
     const draft = loadEventDraft();
     setEventDate(draft.eventDate);
     setImageDataUrl(draft.imageDataUrl);
     setImagePreview(draft.imageDataUrl);
-    setVideoName(draft.videoName);
-    setVideoUrl(getVideoPreviewUrl());
+    if (draft.videoName) {
+      saveEventDraft({ videoName: "" });
+    }
+    setVideoPreviewUrl("");
     setMessage(draft.message);
     setVenueName(draft.venueName);
     setAddress(draft.address);
@@ -81,12 +85,7 @@ export default function EventDetailsForm() {
     }
 
     const target = focusTargetRef.current;
-    const node =
-      target === "image"
-        ? coverActionRef.current
-        : target === "video"
-          ? videoActionRef.current
-          : formErrorRef.current;
+    const node = target === "image" ? coverActionRef.current : formErrorRef.current;
     node?.scrollIntoView({ behavior: "auto", block: "center" });
     node?.focus({ preventScroll: true });
   }, [focusRequest]);
@@ -119,19 +118,14 @@ export default function EventDetailsForm() {
       setFormError("");
       return true;
     } catch (error) {
-      const messageText = error instanceof DraftStorageError ? error.message : SAVE_FAILED;
+      const messageText = userFacingMessage(error, SAVE_FAILED);
       const imageProblem =
         typeof patch.imageDataUrl === "string" &&
         (isUnsavedCover(patch.imageDataUrl) || patch.imageDataUrl.length > 2000);
       if (imageProblem) {
-        setImageError(messageText);
+        setImageError({ message: messageText, retryable: true, unsupported: false });
         if (focus) {
           requestFocus("image");
-        }
-      } else if (Object.keys(patch).length === 1 && typeof patch.videoName === "string") {
-        setVideoError(messageText);
-        if (focus) {
-          requestFocus("video");
         }
       } else {
         setFormError(messageText);
@@ -150,7 +144,8 @@ export default function EventDetailsForm() {
 
     const attempt = uploadAttempt.current + 1;
     uploadAttempt.current = attempt;
-    setImageError("");
+    lastFileRef.current = file;
+    setImageError(null);
     setFormError("");
     releaseLocalPreview();
     const localUrl = URL.createObjectURL(file);
@@ -177,9 +172,7 @@ export default function EventDetailsForm() {
       }
       releaseLocalPreview();
       setImagePreview(imageDataUrl);
-      setImageError(
-        error instanceof ImagePrepareError ? error.message : "העלאת התמונה נכשלה. נסו שוב.",
-      );
+      setImageError(describeImageUploadError(file, error));
       requestFocus("image");
     } finally {
       if (uploadAttempt.current === attempt) {
@@ -190,33 +183,21 @@ export default function EventDetailsForm() {
 
   function removeImage() {
     uploadAttempt.current += 1;
+    lastFileRef.current = null;
     releaseLocalPreview();
     setImageUploading(false);
     setImageDataUrl("");
     setImagePreview("");
-    setImageError("");
+    setImageError(null);
     persistDetails({ imageDataUrl: "" }, false);
   }
 
-  function handleVideo(file?: File) {
-    if (!file) {
+  function retryImage() {
+    const file = lastFileRef.current;
+    if (!file || imageUploading) {
       return;
     }
-
-    setVideoError("");
-    setVideoName(file.name);
-    const url = URL.createObjectURL(file);
-    setVideoUrl(url);
-    setVideoPreviewUrl(url);
-    persistDetails({ videoName: file.name }, false);
-  }
-
-  function removeVideo() {
-    setVideoName("");
-    setVideoUrl("");
-    setVideoPreviewUrl("");
-    setVideoError("");
-    persistDetails({ videoName: "" }, false);
+    void handleImage(file);
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -234,7 +215,7 @@ export default function EventDetailsForm() {
       requestFocus("image");
       persistDetails(
         {
-          videoName,
+          videoName: "",
           message,
           venueName,
           address,
@@ -245,11 +226,11 @@ export default function EventDetailsForm() {
       return;
     }
 
-    setVideoPreviewUrl(videoUrl);
+    setVideoPreviewUrl("");
     const saved = persistDetails(
       {
         imageDataUrl,
-        videoName,
+        videoName: "",
         message,
         venueName,
         address,
@@ -268,7 +249,6 @@ export default function EventDetailsForm() {
   }
 
   const displayImage = imagePreview || imageDataUrl;
-  const hasVideo = Boolean(videoUrl || videoName);
 
   return (
     <form onSubmit={handleSubmit} className="mt-10 flex flex-col gap-8">
@@ -286,29 +266,16 @@ export default function EventDetailsForm() {
             עדיין לא נבחרה תמונה
           </div>
         )}
-        <div className={displayImage ? "grid grid-cols-2 gap-2" : "grid grid-cols-1"}>
-          <button
-            ref={coverActionRef}
-            type="button"
-            onClick={() => {
-              if (!imageUploading) {
-                coverInputRef.current?.click();
-              }
-            }}
-            className={`${actionClass} ${imageUploading ? "opacity-60" : ""}`}
-          >
-            {imageUploading
-              ? "מעלים את התמונה..."
-              : displayImage
-                ? "החלפת תמונה"
-                : "בחירת תמונה"}
-          </button>
-          {displayImage ? (
-            <button type="button" onClick={removeImage} className={actionClass}>
-              הסרת תמונה
-            </button>
-          ) : null}
-        </div>
+        <UploadActions
+          hasImage={Boolean(displayImage)}
+          uploading={imageUploading}
+          error={imageError?.message ?? null}
+          retryable={imageError?.retryable ?? false}
+          onPick={() => coverInputRef.current?.click()}
+          onRetry={retryImage}
+          onRemove={removeImage}
+          pickRef={coverActionRef}
+        />
         <input
           ref={coverInputRef}
           type="file"
@@ -321,58 +288,7 @@ export default function EventDetailsForm() {
             void handleImage(file);
           }}
         />
-        {imageError ? (
-          <p role="alert" className="text-sm font-medium text-brand">
-            {imageError}
-          </p>
-        ) : null}
-        <p className="text-sm text-muted">התמונה תופיע בעמוד האירוע ובהזמנה</p>
-      </section>
-
-      <section className="flex flex-col gap-3">
-        <h2 className="text-base font-bold text-foreground">סרטון קצר לאורחים</h2>
-        {videoUrl ? (
-          <video
-            src={videoUrl}
-            controls
-            className="h-44 w-full rounded-3xl bg-black object-cover"
-          />
-        ) : null}
-        <div className={hasVideo ? "grid grid-cols-2 gap-2" : "grid grid-cols-1"}>
-          <button
-            ref={videoActionRef}
-            type="button"
-            onClick={() => videoInputRef.current?.click()}
-            className={actionClass}
-          >
-            {hasVideo ? "החלפת סרטון" : "בחירת סרטון"}
-          </button>
-          {hasVideo ? (
-            <button type="button" onClick={removeVideo} className={actionClass}>
-              הסרת סרטון
-            </button>
-          ) : null}
-        </div>
-        <input
-          ref={videoInputRef}
-          type="file"
-          accept="video/*"
-          className="sr-only"
-          onChange={(event) => {
-            const file = event.target.files?.[0];
-            event.target.value = "";
-            handleVideo(file);
-          }}
-        />
-        {videoName ? <p className="text-sm font-medium text-foreground">{videoName}</p> : null}
-        {videoError ? (
-          <p role="alert" className="text-sm font-medium text-brand">
-            {videoError}
-          </p>
-        ) : null}
-        <p className="text-sm text-muted">
-          לא חובה — אפשר להוסיף סרטון אישי של עד 30 שניות
-        </p>
+        <ImageFormatHint lead="התמונה תופיע בעמוד האירוע ובהזמנה." />
       </section>
 
       <label className="flex flex-col gap-2">
