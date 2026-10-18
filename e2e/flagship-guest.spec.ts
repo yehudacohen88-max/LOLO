@@ -93,11 +93,15 @@ test("guest page keeps contribution flow and hides an empty invitation", async (
   await expect(page.getByText("הזמנה מאת נועה לוי")).toBeVisible();
   await expect(page.getByRole("heading", { name: "כבר 23 חברים הצטרפו" })).toBeVisible();
   await expect(page.getByText("יונתן")).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "מצטרפים למתנה" })).toBeDisabled();
-
-  await page.getByRole("button", { name: /350/ }).click();
   const join = page.getByRole("button", { name: "מצטרפים למתנה" });
   await expect(join).toBeEnabled();
+  const ctaColor = await join.evaluate((element) => getComputedStyle(element).backgroundColor);
+  expect(ctaColor).toBe("rgb(242, 85, 63)");
+  await join.click();
+  await expect(page.getByRole("alert")).toHaveText("בחרו סכום כדי להצטרף");
+  await expect(page).toHaveURL(/\/e\/flagship-fixture$/);
+
+  await page.getByRole("button", { name: /350/ }).click();
   await join.click();
   await expect(page).toHaveURL(/\/e\/flagship-fixture\/greeting/);
   await expect(page.getByRole("heading", { name: "משאירים ברכה" })).toBeVisible();
@@ -113,6 +117,33 @@ test("guest page keeps contribution flow and hides an empty invitation", async (
   await expect(page.getByRole("heading", { name: /חוגגים 40 לדנה/ })).toBeVisible();
   await expect(page.getByText("השנה החלטנו להפתיע את דנה")).toHaveCount(0);
   await expect(page.getByText("הזמנה מאת")).toHaveCount(0);
+});
+
+test("a host focal point sets the celebrant crop", async ({ page }) => {
+  await page.route("**/api/events/flagship-fixture/funding", async (route) => {
+    await route.fulfill({ json: fundingPayload });
+  });
+  await page.route("**/api/events/flagship-fixture", async (route) => {
+    const body = eventPayload(true);
+    (body.event as { coverFocalPoint?: { x: number; y: number } }).coverFocalPoint = {
+      x: 40,
+      y: 35,
+    };
+    await route.fulfill({ json: body });
+  });
+  await page.route("**/__flagship_fixture/portrait.jpg", async (route) => {
+    await route.fulfill({ path: portraitPath, contentType: "image/jpeg" });
+  });
+  await page.route("**/__flagship_fixture/gift.png", async (route) => {
+    await route.fulfill({ path: giftPath, contentType: "image/png" });
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/e/flagship-fixture");
+  await expect(page.locator("[data-portrait]")).toBeVisible();
+  const position = await page
+    .locator("[data-portrait]")
+    .evaluate((element) => getComputedStyle(element).objectPosition);
+  expect(position).toBe("40% 35%");
 });
 
 test("bundled demo event does not invent guests or ship a stock portrait", async ({ page }) => {
@@ -149,6 +180,39 @@ for (const viewport of widths) {
         await expect(page.locator("img[alt='תמונה לאירוע חוגגים 40 לדנה']")).toHaveCount(0);
       }
       await settle(page);
+      if (withImages) {
+        const crop = await page.locator("[data-portrait]").evaluate((element) => {
+          const box = element.getBoundingClientRect();
+          return {
+            ratio: box.width / box.height,
+            position: getComputedStyle(element).objectPosition,
+          };
+        });
+        expect(crop.ratio).toBeGreaterThan(0.74);
+        expect(crop.ratio).toBeLessThan(0.86);
+        expect(crop.position).toMatch(/28%/);
+      }
+      if (viewport.name === "390" || viewport.name === "320") {
+        const gift = await page.evaluate(() => {
+          const scene = document.querySelector("[data-gift-scene]");
+          const bar = document.querySelector("[data-join]");
+          if (!scene || !bar) {
+            return null;
+          }
+          const sceneBox = scene.getBoundingClientRect();
+          const barBox = bar.getBoundingClientRect();
+          return {
+            top: sceneBox.top,
+            bottom: sceneBox.bottom,
+            height: sceneBox.height,
+            barTop: barBox.top,
+          };
+        });
+        expect(gift).not.toBeNull();
+        expect(gift!.top).toBeGreaterThan(40);
+        expect(gift!.height).toBeGreaterThan(120);
+        expect(gift!.bottom).toBeLessThanOrEqual(gift!.barTop + 1);
+      }
       const file = path.join(
         artifactDir,
         `flagship_guest_${viewport.name}_${label}.png`,

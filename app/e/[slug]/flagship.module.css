@@ -59,8 +59,10 @@
 
 .portrait {
   position: relative;
-  height: clamp(148px, 24vh, 196px);
-  margin: 0 12px;
+  width: clamp(176px, 64vw, 268px);
+  aspect-ratio: 4 / 5;
+  height: auto;
+  margin: 2px auto 0;
   overflow: hidden;
   border-radius: 28px;
   background: #f4ece8;
@@ -71,7 +73,7 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center 22%;
+  object-position: center 28%;
 }
 
 .fallback {
@@ -98,8 +100,8 @@
   top: 0;
   left: 0;
   z-index: 2;
-  width: 108px;
-  height: 108px;
+  width: 84px;
+  height: 84px;
   pointer-events: none;
 }
 
@@ -173,7 +175,7 @@
 }
 
 .copy {
-  padding: 20px 20px 0;
+  padding: 14px 20px 0;
 }
 
 .kicker {
@@ -231,7 +233,7 @@
 }
 
 .wish {
-  display: flex;
+  display: none;
   align-items: center;
   gap: 12px;
   width: fit-content;
@@ -331,13 +333,13 @@
 }
 
 .feature {
-  margin: 26px 12px 0;
+  margin: 12px 12px 0;
   scroll-margin-top: 16px;
 }
 
 .scene {
   position: relative;
-  height: 220px;
+  height: 188px;
   overflow: hidden;
   border-radius: 26px;
   background:
@@ -412,7 +414,7 @@
 }
 
 .gmeta {
-  padding: 14px 8px 0;
+  padding: 10px 8px 0;
 }
 
 .label {
@@ -682,9 +684,18 @@
   bottom: 0;
   left: 0;
   z-index: 20;
-  padding: 10px 16px calc(12px + env(safe-area-inset-bottom));
+  padding: 8px 16px calc(8px + env(safe-area-inset-bottom));
   border-top: 1px solid var(--fs-hair);
   background: rgba(252, 250, 247, 0.96);
+}
+
+.hint {
+  margin: 0 0 8px;
+  color: var(--fs-coral-ink);
+  font-size: 0.84rem;
+  font-weight: 600;
+  line-height: 1.35;
+  text-align: center;
 }
 
 .mini {
@@ -733,30 +744,23 @@
   justify-content: center;
   gap: 10px;
   width: 100%;
-  min-height: 56px;
+  min-height: 52px;
   overflow: hidden;
   border: 0;
   border-radius: 999px;
-  background: #d63e2a;
+  background: #f2553f;
   color: #fff;
-  font-weight: 600;
-  font-size: 1.12rem;
+  font-weight: 700;
+  font-size: 1.2rem;
   letter-spacing: -0.005em;
   box-shadow:
-    0 14px 28px -14px rgba(201, 54, 31, 0.75),
+    0 14px 28px -14px rgba(242, 85, 63, 0.7),
     inset 0 1px 0 rgba(255, 255, 255, 0.28);
   cursor: pointer;
 }
 
-.cta:disabled {
-  background: #f3d4ce;
-  color: var(--fs-navy);
-  box-shadow: none;
-  cursor: not-allowed;
-}
-
-.cta:active:not(:disabled) {
-  background: #c9361f;
+.cta:active {
+  background: #d63e2a;
 }
 
 .pay {
@@ -837,15 +841,18 @@
   font-weight: 600;
 }
 
-@media (max-width: 359px) {
+@media (max-width: 359px), (max-height: 700px) {
   .portrait {
-    height: 148px;
-    margin-inline: 10px;
+    width: clamp(156px, 52vw, 196px);
+  }
+
+  .scene {
+    height: 156px;
   }
 
   .ribbon:not(.ribbonSm) {
-    width: 84px;
-    height: 84px;
+    width: 72px;
+    height: 72px;
   }
 
   .copy,
@@ -924,8 +931,9 @@
 
   .portrait {
     grid-area: portrait;
-    height: min(68vh, 680px);
-    min-height: 560px;
+    width: 100%;
+    aspect-ratio: 4 / 5;
+    height: auto;
     margin: 0;
     border-radius: 34px;
     box-shadow: 0 40px 80px -50px rgba(22, 32, 77, 0.45);
@@ -938,8 +946,8 @@
   }
 
   .ribbon:not(.ribbonSm) {
-    width: 132px;
-    height: 132px;
+    width: 112px;
+    height: 112px;
   }
 
   .title {
@@ -950,10 +958,6 @@
   .sub {
     margin-top: 10px;
     font-size: 1.85rem;
-  }
-
-  .wish {
-    display: none;
   }
 
   .feature {
@@ -1026,7 +1030,7 @@
     animation: fill 900ms cubic-bezier(0.3, 0.7, 0.2, 1) both;
   }
 
-  .cta:not(:disabled)::after {
+  .cta::after {
     content: "";
     position: absolute;
     top: 0;
@@ -1039,7 +1043,7 @@
     animation: sheen 700ms 1.2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
   }
 
-  .cta:active:not(:disabled) {
+  .cta:active {
     transform: scale(0.98);
   }
 }

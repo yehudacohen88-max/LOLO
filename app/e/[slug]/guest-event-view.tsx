@@ -69,6 +69,30 @@ function monogramFor(title: string) {
   return letter || "ל";
 }
 
+function focusAxis(value: number) {
+  const percent = value >= 0 && value <= 1 ? value * 100 : value;
+  return Math.min(100, Math.max(0, percent));
+}
+
+function coverObjectPosition(event: StoredEvent) {
+  const extra = event as StoredEvent & {
+    coverFocalPoint?: { x?: number; y?: number } | null;
+    coverFocus?: { x?: number; y?: number } | string | null;
+  };
+  const raw = extra.coverFocalPoint ?? extra.coverFocus ?? null;
+  if (typeof raw === "string" && raw.trim()) {
+    return raw.trim();
+  }
+  if (raw && typeof raw === "object") {
+    const x = Number(raw.x);
+    const y = Number(raw.y);
+    if (Number.isFinite(x) && Number.isFinite(y)) {
+      return `${focusAxis(x)}% ${focusAxis(y)}%`;
+    }
+  }
+  return "center 28%";
+}
+
 function moneyLeft(target: number, raised: number) {
   if (!(target > 0)) {
     return null;
@@ -115,6 +139,7 @@ export default function GuestEventView() {
   const [customErrors, setCustomErrors] = useState<Record<string, string>>({});
   const [funding, setFunding] = useState<Record<string, GiftFundingView> | null>(null);
   const [fundingNote, setFundingNote] = useState("");
+  const [amountHint, setAmountHint] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -257,6 +282,7 @@ export default function GuestEventView() {
 
   function selectSuggested(gift: DisplayGift, amount: number) {
     upsertContribution(gift, amount);
+    setAmountHint(false);
     setOpenCustom((current) => ({ ...current, [gift.id]: false }));
     setCustomErrors((current) => ({ ...current, [gift.id]: "" }));
   }
@@ -272,6 +298,7 @@ export default function GuestEventView() {
     }
 
     setCustomErrors((current) => ({ ...current, [gift.id]: "" }));
+    setAmountHint(false);
     upsertContribution(gift, amount);
   }
 
@@ -528,6 +555,7 @@ export default function GuestEventView() {
           alt={event.title ? `תמונה לאירוע ${event.title}` : "תמונת האירוע"}
           monogram={monogramFor(event.title)}
           hostName={event.hostName.trim()}
+          objectPosition={coverObjectPosition(event)}
         />
 
         <div className={`${styles.copy} ${styles.rise}`}>
@@ -576,23 +604,9 @@ export default function GuestEventView() {
           ) : null}
         </div>
 
-        {message ? (
-          <blockquote className={`${styles.note} ${styles.rise} ${styles.d1}`}>
-            <p>{quoted ? message : `״${message}״`}</p>
-            {event.hostName.trim() ? (
-              <footer className={styles.sig}>
-                <span className={styles.avatar} aria-hidden="true">
-                  {event.hostName.trim().charAt(0)}
-                </span>
-                <span>{event.hostName.trim()}</span>
-              </footer>
-            ) : null}
-          </blockquote>
-        ) : null}
-
         {primary ? (
           <section className={`${styles.feature} ${styles.rise} ${styles.d2}`} id={`gift-${primary.id}`}>
-            <GiftScene src={primary.imageUrl} alt={primary.name} />
+            <GiftScene src={primary.imageUrl} alt={primary.name} primary />
             <div className={styles.gmeta}>
               <p className={styles.label}>המשאלה</p>
               <h2 className={styles.giftName}>{primary.name}</h2>
@@ -610,6 +624,20 @@ export default function GuestEventView() {
               ) : null}
             </div>
           </section>
+        ) : null}
+
+        {message ? (
+          <blockquote className={`${styles.note} ${styles.rise} ${styles.d1}`}>
+            <p>{quoted ? message : `״${message}״`}</p>
+            {event.hostName.trim() ? (
+              <footer className={styles.sig}>
+                <span className={styles.avatar} aria-hidden="true">
+                  {event.hostName.trim().charAt(0)}
+                </span>
+                <span>{event.hostName.trim()}</span>
+              </footer>
+            ) : null}
+          </blockquote>
         ) : null}
 
         <aside className={styles.panel}>
@@ -637,7 +665,7 @@ export default function GuestEventView() {
 
           <p className={styles.ease}>בוחרים סכום, כותבים ברכה — וזהו.</p>
 
-          <div className={styles.join}>
+          <div className={styles.join} data-join="">
             {showMini && primaryFunding && primary ? (
               <>
                 <div className={styles.mini}>
@@ -667,14 +695,23 @@ export default function GuestEventView() {
                 ) : null}
               </>
             ) : null}
+            {amountHint ? (
+              <p id="join-amount-hint" className={styles.hint} role="alert">
+                בחרו סכום כדי להצטרף
+              </p>
+            ) : null}
             <button
               type="button"
-              disabled={total <= 0}
               onClick={() => {
+                if (total <= 0) {
+                  setAmountHint(true);
+                  return;
+                }
                 saveContributions(storageSlug(), contributions);
                 router.push(guestEventPath(storageSlug(), "greeting"));
               }}
               className={styles.cta}
+              aria-describedby={amountHint ? "join-amount-hint" : undefined}
             >
               מצטרפים למתנה
               <GiftIcon />

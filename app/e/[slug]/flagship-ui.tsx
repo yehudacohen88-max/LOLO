@@ -162,11 +162,13 @@ export function Portrait({
   alt,
   monogram,
   hostName,
+  objectPosition = "center 28%",
 }: {
   src: string;
   alt: string;
   monogram: string;
   hostName: string;
+  objectPosition?: string;
 }) {
   const [broken, setBroken] = useState(false);
   const showPhoto = Boolean(src) && !broken;
@@ -178,6 +180,8 @@ export function Portrait({
           src={src}
           alt={alt}
           className={styles.photo}
+          data-portrait=""
+          style={{ objectPosition }}
           fetchPriority="high"
           decoding="async"
           onError={() => setBroken(true)}
@@ -200,12 +204,20 @@ export function Portrait({
   );
 }
 
-export function GiftScene({ src, alt }: { src: string; alt: string }) {
+export function GiftScene({
+  src,
+  alt,
+  primary = false,
+}: {
+  src: string;
+  alt: string;
+  primary?: boolean;
+}) {
   const [broken, setBroken] = useState(false);
   const showPhoto = Boolean(src) && !broken;
 
   return (
-    <div className={styles.scene}>
+    <div className={styles.scene} data-gift-scene={primary ? "" : undefined}>
       <div className={styles.sceneLight} aria-hidden="true" />
       <div className={styles.sceneEdge} aria-hidden="true" />
       {showPhoto ? (
