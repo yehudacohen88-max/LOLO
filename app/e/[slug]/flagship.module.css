@@ -841,7 +841,7 @@
   font-weight: 600;
 }
 
-@media (max-width: 359px), (max-height: 700px) {
+@media (max-width: 359px) {
   .portrait {
     width: clamp(156px, 52vw, 196px);
   }
@@ -871,6 +871,37 @@
 
   .wishName {
     font-size: 1rem;
+  }
+}
+
+@media (max-height: 700px) {
+  .header {
+    height: 48px;
+  }
+
+  .portrait {
+    width: min(42vw, 150px);
+  }
+
+  .copy {
+    padding-top: 6px;
+  }
+
+  .title {
+    margin-top: 2px;
+    font-size: 1.65rem;
+  }
+
+  .sub {
+    margin-top: 2px;
+  }
+
+  .feature {
+    margin-top: 6px;
+  }
+
+  .scene {
+    height: 148px;
   }
 }
 

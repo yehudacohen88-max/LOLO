@@ -98,7 +98,7 @@ test("guest page keeps contribution flow and hides an empty invitation", async (
   const ctaColor = await join.evaluate((element) => getComputedStyle(element).backgroundColor);
   expect(ctaColor).toBe("rgb(242, 85, 63)");
   await join.click();
-  await expect(page.getByRole("alert")).toHaveText("בחרו סכום כדי להצטרף");
+  await expect(page.locator("#join-amount-hint")).toHaveText("בחרו סכום כדי להצטרף");
   await expect(page).toHaveURL(/\/e\/flagship-fixture$/);
 
   await page.getByRole("button", { name: /350/ }).click();
