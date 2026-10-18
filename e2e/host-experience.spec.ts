@@ -203,16 +203,17 @@ test.describe("host experience", () => {
       mimeType: "image/heic",
       buffer: Buffer.from("not-an-image"),
     });
-    await expect(page.getByRole("alert")).toContainText("HEIC");
+    const uploadAlert = page.getByRole("alert").filter({ hasText: "לא נתמך" });
+    await expect(uploadAlert).toContainText("HEIC");
     await page.getByRole("button", { name: "הסרת תמונה" }).click();
-    await expect(page.getByRole("alert")).toHaveCount(0);
+    await expect(uploadAlert).toHaveCount(0);
 
     await page.locator('input[accept="image/*"]').setInputFiles({
       name: "notes.txt",
       mimeType: "text/plain",
       buffer: Buffer.from("hello"),
     });
-    await expect(page.getByRole("alert")).toContainText("לא נתמך");
+    await expect(uploadAlert).toContainText("לא נתמך");
     await page.getByRole("button", { name: "הסרת תמונה" }).click();
 
     await page.goto("/create-event/gifts/custom");
