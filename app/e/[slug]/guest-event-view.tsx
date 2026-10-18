@@ -5,6 +5,12 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { formatEventTime } from "@/lib/event-draft";
 import { getEventBySlug, guestEventPath, type StoredEvent } from "@/lib/events";
+import {
+  DEMO_EVENT_SLUG,
+  DEMO_IMAGE_CREDIT,
+  DEMO_SAMPLE_BADGE,
+  DEMO_SAMPLE_FUNDING,
+} from "@/lib/events/demo";
 import { fromRouteParam } from "@/lib/events/slug";
 import {
   formatGiftAmount,
@@ -185,6 +191,22 @@ export default function GuestEventView() {
 
     let cancelled = false;
     void (async () => {
+      if (slug === DEMO_EVENT_SLUG) {
+        await Promise.resolve();
+        if (cancelled) {
+          return;
+        }
+        setFunding({
+          [DEMO_SAMPLE_FUNDING.giftId]: {
+            raisedAmount: DEMO_SAMPLE_FUNDING.raisedAmount,
+            contributorCount: DEMO_SAMPLE_FUNDING.contributorCount,
+            percentOfTarget: DEMO_SAMPLE_FUNDING.percentOfTarget,
+          },
+        });
+        setFundingNote("");
+        return;
+      }
+
       try {
         const response = await fetch(
           `/api/events/${encodeURIComponent(slug)}/funding`,
@@ -557,6 +579,12 @@ export default function GuestEventView() {
 
   return (
     <Frame>
+      {event.slug === DEMO_EVENT_SLUG ? (
+        <div className={styles.demoNote}>
+          <p className={styles.demoBadge}>{DEMO_SAMPLE_BADGE}</p>
+          <p className={styles.demoCredit}>{DEMO_IMAGE_CREDIT}</p>
+        </div>
+      ) : null}
       <div className={styles.spread}>
         <Portrait
           src={event.coverImage}

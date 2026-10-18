@@ -223,6 +223,8 @@ for (const viewport of [
     await expect(page.getByText("תשלום הדגמה", { exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "שיתוף האירוע" })).toBeVisible();
     await expect(page.getByText("כבר 23 חברים הצטרפו")).toBeVisible();
+    await expect(page.locator("[data-order-status]")).toHaveText("שולם בהדגמה");
+    await expect(page.getByText("תשלום הדגמה — לא מתבצע חיוב אמיתי")).toBeVisible();
     await expect(page.locator("[data-reveal] [data-gift-photo]")).toBeVisible();
     await page.screenshot({
       path: path.join(artifactDir, `flagship_thanks_${viewport.name}.png`),
@@ -262,8 +264,89 @@ for (const viewport of [
     await expect(page.locator("[data-reveal] [data-parcel]")).toBeVisible();
     await expect(page.locator("[data-reveal] [data-gift-photo]")).toHaveCount(0);
     await expect(page.getByText("כבר 23 חברים הצטרפו")).toBeVisible();
+    await expect(page.locator("[data-order-status]")).toHaveText("שולם בהדגמה");
     await page.screenshot({
       path: path.join(artifactDir, `flagship_thanks_${viewport.name}_without_images.png`),
+      fullPage: true,
+    });
+  });
+}
+
+test("thank-you shows an error when the order read fails", async ({ page }) => {
+  await page.addInitScript(() => {
+    window.localStorage.setItem(
+      "lolo-guest-order:flagship-fixture",
+      JSON.stringify({ id: "order-flagship", accessToken: "token-flagship" }),
+    );
+  });
+  await page.route("**/api/events/flagship-fixture/funding", async (route) => {
+    await route.fulfill({ json: fundingPayload });
+  });
+  await page.route("**/api/events/flagship-fixture", async (route) => {
+    await route.fulfill({ json: eventPayload(false) });
+  });
+  await page.route("**/api/orders**", async (route) => {
+    await route.fulfill({ status: 500, json: { error: "טעינת ההזמנה נכשלה." } });
+  });
+  await page.goto("/e/flagship-fixture/thank-you");
+  await expect(page.locator("[data-order-status]")).toHaveText(
+    "לא הצלחנו לקרוא את סטטוס התשלום מהשרת.",
+  );
+  await expect(page.getByText("שולם בהדגמה")).toHaveCount(0);
+  await expect(page.getByText("התשלום התקבל")).toHaveCount(0);
+  await expect(page.getByText("תשלום הדגמה — לא מתבצע חיוב אמיתי")).toBeVisible();
+  await expect(page.getByText("גרסת בטא — תשלומים מדומים בלבד")).toBeVisible();
+});
+
+for (const viewport of [
+  { name: "390", width: 390, height: 844 },
+  { name: "1440", width: 1440, height: 900 },
+] as const) {
+  test(`demo showcase ${viewport.name}`, async ({ page }) => {
+    test.setTimeout(60_000);
+    await page.setViewportSize({ width: viewport.width, height: viewport.height });
+    await page.goto("/e/demo-event");
+    await expect(page.getByRole("heading", { name: /חוגגים 40 לדנה/ })).toBeVisible();
+    await expect(page.getByText("אירוע הדגמה — נתונים לדוגמה").first()).toBeVisible();
+    await expect(page.getByText("Pexels License")).toBeVisible();
+    await expect(page.getByText("כבר 18 חברים הצטרפו")).toBeVisible();
+    await page.screenshot({
+      path: path.join(artifactDir, `flagship_demo_guest_${viewport.name}.png`),
+      fullPage: true,
+    });
+
+    await page.getByRole("button", { name: /350/ }).click();
+    await page.getByRole("button", { name: "מצטרפים למתנה" }).click();
+    await expect(page.locator("[data-continuity-title]")).toHaveText(
+      "חוגגים 40 לדנה — מתנה מכל החברים",
+    );
+    await page.screenshot({
+      path: path.join(artifactDir, `flagship_demo_greeting_${viewport.name}.png`),
+      fullPage: true,
+    });
+
+    await page.getByRole("button", { name: /ממשיכים/ }).click();
+    await page.getByLabel("שם מלא").fill("יעל כהן");
+    await page.getByLabel("מספר טלפון").fill("0501234567");
+    await page.getByLabel("אימייל").fill("yael@example.com");
+    await page.getByRole("button", { name: "מעבר לתשלום" }).click();
+    await expect(page.getByRole("heading", { name: "תשלום", exact: true })).toBeVisible();
+    await expect(page.getByText("תשלום הדגמה — לא מתבצע חיוב אמיתי")).toBeVisible();
+    await page.screenshot({
+      path: path.join(artifactDir, `flagship_demo_payment_${viewport.name}.png`),
+      fullPage: true,
+    });
+    await page.getByRole("button", { name: "אישור תשלום הדגמה" }).click();
+    await expect(page.getByText("תשלום הדגמה זמין באירוע שפורסם.")).toBeVisible();
+
+    await page.goto("/e/demo-event/thank-you");
+    await expect(page.locator("[data-order-status]")).toHaveText("עדיין אין אישור תשלום מהשרת.");
+    await expect(page.getByText("שולם בהדגמה")).toHaveCount(0);
+    await expect(page.getByText("כבר 18 חברים הצטרפו")).toBeVisible();
+    await expect(page.getByText("אירוע הדגמה — נתונים לדוגמה").first()).toBeVisible();
+    await expect(page.getByText("תשלום הדגמה — לא מתבצע חיוב אמיתי")).toBeVisible();
+    await page.screenshot({
+      path: path.join(artifactDir, `flagship_demo_thanks_${viewport.name}.png`),
       fullPage: true,
     });
   });

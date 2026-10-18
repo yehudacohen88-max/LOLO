@@ -6,6 +6,12 @@
 import { useParams } from "next/navigation";
 import { useEffect, useSyncExternalStore, type ReactNode } from "react";
 import { getEventBySlug } from "@/lib/events";
+import {
+  DEMO_EVENT_SLUG,
+  DEMO_IMAGE_CREDIT,
+  DEMO_SAMPLE_BADGE,
+  DEMO_SAMPLE_FUNDING,
+} from "@/lib/events/demo";
 import { fromRouteParam } from "@/lib/events/slug";
 import {
   continuityFromEvent,
@@ -55,7 +61,10 @@ export function FlowPage({
         return;
       }
       const cached = readContinuity(slug);
-      const known = continuityFromEvent(stored, null);
+      const known = continuityFromEvent(
+        stored,
+        slug === DEMO_EVENT_SLUG ? [{ ...DEMO_SAMPLE_FUNDING }] : null,
+      );
       const immediate = {
         ...known,
         progress: known.progress || cached?.progress || "",
@@ -69,17 +78,23 @@ export function FlowPage({
       }
 
       try {
-        const response = await fetch(`/api/events/${encodeURIComponent(slug)}/funding`, {
-          cache: "no-store",
-        });
-        if (!response.ok || cancelled) {
+        const fundingRows: ContinuityFunding[] =
+          slug === DEMO_EVENT_SLUG
+            ? [{ ...DEMO_SAMPLE_FUNDING }]
+            : await (async () => {
+                const response = await fetch(`/api/events/${encodeURIComponent(slug)}/funding`, {
+                  cache: "no-store",
+                });
+                if (!response.ok) {
+                  return [];
+                }
+                const body = (await response.json()) as { gifts?: ContinuityFunding[] };
+                return body.gifts ?? [];
+              })();
+        if (cancelled || fundingRows.length === 0) {
           return;
         }
-        const body = (await response.json()) as { gifts?: ContinuityFunding[] };
-        if (cancelled) {
-          return;
-        }
-        const withFunding = continuityFromEvent(stored, body.gifts ?? []);
+        const withFunding = continuityFromEvent(stored, fundingRows);
         writeContinuity(slug, withFunding);
         if (stored.slug && stored.slug !== slug) {
           writeContinuity(stored.slug, withFunding);
@@ -102,6 +117,12 @@ export function FlowPage({
       <header className={styles.header}>
         <Wordmark />
       </header>
+      {slug === DEMO_EVENT_SLUG ? (
+        <div className={styles.demoNote}>
+          <p className={styles.demoBadge}>{DEMO_SAMPLE_BADGE}</p>
+          <p className={styles.demoCredit}>{DEMO_IMAGE_CREDIT}</p>
+        </div>
+      ) : null}
       <div
         className={`${styles.flow} ${step === "thanks" ? styles.flowThanks : ""} ${step === "payment" ? styles.flowPay : ""}`}
       >

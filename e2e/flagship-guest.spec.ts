@@ -162,19 +162,22 @@ test("a host focal point sets the celebrant crop", async ({ page }) => {
   expect(position).toBe("40% 35%");
 });
 
-test("bundled demo event does not invent guests or ship a stock portrait", async ({ page }) => {
+test("bundled demo event is a labeled showcase and cannot invent guest names", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/e/demo-event");
-  await expect(page.getByRole("heading", { name: "אירוע לדוגמה" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "ירח דבש" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "ספה חדשה" })).toBeVisible();
-  await expect(page.getByText("אין עדיין משתתפים")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "חוגגים 40 לדנה — מתנה מכל החברים" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "מכונת אספרסו פרימיום" })).toBeVisible();
+  await expect(page.getByText("הזמנה אישית מאת נועה")).toBeVisible();
+  await expect(page.getByText("השנה החלטנו להפתיע את דנה במשהו שהיא באמת חולמת עליו.")).toBeVisible();
+  await expect(page.getByText("אירוע הדגמה — נתונים לדוגמה").first()).toBeVisible();
+  await expect(page.getByText("Pexels License")).toBeVisible();
+  await expect(page.getByText("כבר 18 חברים הצטרפו")).toBeVisible();
   await expect(page.getByText("יונתן")).toHaveCount(0);
-  await expect(page.getByText("23 חברים")).toHaveCount(0);
   const srcs = await page.locator("img").evaluateAll((images) =>
     images.map((image) => (image as HTMLImageElement).currentSrc || image.getAttribute("src") || ""),
   );
-  expect(srcs.join(" ")).not.toMatch(/dana|pexels|7244751/i);
+  expect(srcs.join(" ")).toContain("/demo/celebrant.jpg");
+  expect(srcs.join(" ")).toContain("/demo/espresso.png");
   await page.screenshot({
     path: path.join(artifactDir, "flagship_guest_demo_390.png"),
     fullPage: true,

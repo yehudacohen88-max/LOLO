@@ -46,7 +46,8 @@ test("a bad store address does not become a server error", async ({ page }) => {
 
 test("the bundled sample event renders without a database", async ({ page }) => {
   await page.goto("/e/demo-event");
-  await expect(page.getByRole("heading", { name: "ירח דבש" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "מכונת אספרסו פרימיום" })).toBeVisible();
+  await expect(page.getByText("אירוע הדגמה — נתונים לדוגמה").first()).toBeVisible();
   await expect(page.getByRole("button", { name: "מצטרפים למתנה" })).toBeVisible();
   await expect(page.getByText("תשלום הדגמה — לא מתבצע חיוב אמיתי")).toBeVisible();
 });
