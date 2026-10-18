@@ -22,6 +22,7 @@ import {
   ProgressRibbon,
   WishThumb,
 } from "./flagship-ui";
+import { continuityFromEvent, writeContinuity, type ContinuityFunding } from "./continuity";
 import { giftProgressCopy } from "./progress-copy";
 import styles from "./flagship.module.css";
 
@@ -221,6 +222,26 @@ export default function GuestEventView() {
       cancelled = true;
     };
   }, [slug]);
+
+  useEffect(() => {
+    if (!event) {
+      return;
+    }
+    const rows: ContinuityFunding[] | null = funding
+      ? Object.entries(funding).map(([giftId, row]) => ({
+          giftId,
+          raisedAmount: row.raisedAmount,
+          contributorCount: row.contributorCount,
+          percentOfTarget: row.percentOfTarget,
+        }))
+      : null;
+    const mark = continuityFromEvent(event, rows);
+    const key = event.slug || slug;
+    writeContinuity(key, mark);
+    if (slug && slug !== key) {
+      writeContinuity(slug, mark);
+    }
+  }, [event, funding, contributions, slug]);
 
   const suggestedAmounts = useMemo(() => {
     if (!event) {
@@ -694,6 +715,22 @@ export default function GuestEventView() {
                   return;
                 }
                 saveContributions(storageSlug(), contributions);
+                if (event) {
+                  const rows: ContinuityFunding[] | null = funding
+                    ? Object.entries(funding).map(([giftId, row]) => ({
+                        giftId,
+                        raisedAmount: row.raisedAmount,
+                        contributorCount: row.contributorCount,
+                        percentOfTarget: row.percentOfTarget,
+                      }))
+                    : null;
+                  const remembered = continuityFromEvent(event, rows);
+                  const key = storageSlug();
+                  writeContinuity(key, remembered);
+                  if (slug && slug !== key) {
+                    writeContinuity(slug, remembered);
+                  }
+                }
                 router.push(guestEventPath(storageSlug(), "greeting"));
               }}
               className={styles.cta}

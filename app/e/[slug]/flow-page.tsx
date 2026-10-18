@@ -4,12 +4,17 @@
 /* eslint-disable @next/next/no-img-element */
 
 import { useParams } from "next/navigation";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useSyncExternalStore, type ReactNode } from "react";
 import { getEventBySlug } from "@/lib/events";
 import { fromRouteParam } from "@/lib/events/slug";
-import { formatGiftAmount } from "@/lib/guest-draft";
-import { Wordmark } from "./flagship-ui";
-import { giftProgressCopy } from "./progress-copy";
+import {
+  continuityFromEvent,
+  readContinuity,
+  subscribeContinuity,
+  writeContinuity,
+  type ContinuityFunding,
+} from "./continuity";
+import { GiftReveal, Wordmark } from "./flagship-ui";
 import styles from "./flagship.module.css";
 
 const steps = [
@@ -20,14 +25,6 @@ const steps = [
 ] as const;
 
 type StepId = (typeof steps)[number]["id"] | "thanks";
-
-type Mark = {
-  title: string;
-  cover: string;
-  giftName: string;
-  giftImage: string;
-  progress: string;
-};
 
 export function FlowPage({
   step,
@@ -41,7 +38,11 @@ export function FlowPage({
   children: ReactNode;
 }) {
   const slug = fromRouteParam(useParams<{ slug: string }>().slug);
-  const [mark, setMark] = useState<Mark | null>(null);
+  const mark = useSyncExternalStore(
+    subscribeContinuity,
+    () => (slug ? readContinuity(slug) : null),
+    () => null,
+  );
 
   useEffect(() => {
     if (!slug) {
@@ -53,55 +54,38 @@ export function FlowPage({
       if (cancelled || !stored) {
         return;
       }
-      const gift = [...stored.gifts]
-        .filter((item) => item.active !== false)
-        .sort((a, b) => a.priority - b.priority)[0];
-      let progress = "";
+      const cached = readContinuity(slug);
+      const known = continuityFromEvent(stored, null);
+      const immediate = {
+        ...known,
+        progress: known.progress || cached?.progress || "",
+        fundingLine: known.fundingLine || cached?.fundingLine || "",
+      };
+      if (!cancelled) {
+        writeContinuity(slug, immediate);
+        if (stored.slug && stored.slug !== slug) {
+          writeContinuity(stored.slug, immediate);
+        }
+      }
+
       try {
         const response = await fetch(`/api/events/${encodeURIComponent(slug)}/funding`, {
           cache: "no-store",
         });
-        if (response.ok && gift) {
-          const body = (await response.json()) as {
-            gifts?: Array<{
-              giftId: string;
-              raisedAmount: number;
-              contributorCount: number;
-              percentOfTarget: number | null;
-            }>;
-          };
-          const row = body.gifts?.find((item) => item.giftId === gift.id);
-          if (row) {
-            const copy = giftProgressCopy({
-              raisedAmount: Number(row.raisedAmount),
-              contributorCount: Number(row.contributorCount),
-              percentOfTarget:
-                row.percentOfTarget == null ? null : Number(row.percentOfTarget),
-              targetAmount: gift.targetAmount > 0 ? gift.targetAmount : null,
-            });
-            progress = [
-              copy.raisedText && copy.targetText
-                ? `${copy.raisedText} מתוך ${copy.targetText}`
-                : copy.targetText
-                  ? `יעד ${copy.targetText}`
-                  : "",
-              copy.countShort ?? "",
-            ]
-              .filter(Boolean)
-              .join(" · ");
-          }
+        if (!response.ok || cancelled) {
+          return;
+        }
+        const body = (await response.json()) as { gifts?: ContinuityFunding[] };
+        if (cancelled) {
+          return;
+        }
+        const withFunding = continuityFromEvent(stored, body.gifts ?? []);
+        writeContinuity(slug, withFunding);
+        if (stored.slug && stored.slug !== slug) {
+          writeContinuity(stored.slug, withFunding);
         }
       } catch {
-        progress = gift && gift.targetAmount > 0 ? `יעד ${formatGiftAmount(gift.targetAmount)}` : "";
-      }
-      if (!cancelled) {
-        setMark({
-          title: stored.title,
-          cover: stored.coverImage,
-          giftName: gift?.title ?? "",
-          giftImage: gift?.imageUrl ?? "",
-          progress,
-        });
+        // The event name is already on screen. Funding can stay blank.
       }
     })();
     return () => {
@@ -111,16 +95,18 @@ export function FlowPage({
 
   const current = step === "thanks" ? steps.length : steps.findIndex((item) => item.id === step);
   const fill = step === "thanks" ? 1 : (current + 1) / steps.length;
-  const letter = (mark?.title || "ל").trim().charAt(0) || "ל";
+  const letter = mark?.title.trim().charAt(0) ?? "";
 
   return (
     <>
       <header className={styles.header}>
         <Wordmark />
       </header>
-      <div className={`${styles.flow} ${step === "thanks" ? styles.flowThanks : ""}`}>
+      <div
+        className={`${styles.flow} ${step === "thanks" ? styles.flowThanks : ""} ${step === "payment" ? styles.flowPay : ""}`}
+      >
         <aside className={styles.flowAside}>
-          <div className={styles.continuity}>
+          <div className={styles.continuity} aria-busy={mark ? undefined : true}>
             {mark?.cover ? (
               <img
                 className={styles.thumb}
@@ -130,7 +116,11 @@ export function FlowPage({
                 height={280}
               />
             ) : (
-              <span className={styles.thumbFallback} aria-hidden="true">
+              <span
+                className={styles.thumbFallback}
+                data-continuity-letter={mark ? "" : undefined}
+                aria-hidden="true"
+              >
                 {letter}
               </span>
             )}
@@ -140,7 +130,16 @@ export function FlowPage({
               <span className={styles.thumbGift} aria-hidden="true" />
             )}
             <div className={styles.continuityCopy}>
-              <p className={styles.continuityTitle}>{mark?.title || "האירוע"}</p>
+              {mark ? (
+                <p className={styles.continuityTitle} data-continuity-title="">
+                  {mark.title}
+                </p>
+              ) : (
+                <div className={styles.bones} aria-label="טוענים את פרטי האירוע">
+                  <span />
+                  <span />
+                </div>
+              )}
               {mark?.giftName ? <p className={styles.continuityMeta}>{mark.giftName}</p> : null}
               {mark?.progress ? <p className={styles.continuityMeta}>{mark.progress}</p> : null}
             </div>
@@ -156,6 +155,18 @@ export function FlowPage({
             <span className={styles.stepFill} style={{ ["--fs-step" as string]: String(fill) }} />
           </div>
         </aside>
+        {step === "payment" && mark ? (
+          <div className={styles.payHero} data-pay-hero="">
+            <GiftReveal
+              label={mark.giftName || mark.title}
+              caption={mark.title}
+              image={mark.giftImage}
+              cover={mark.cover}
+              funding={mark.fundingLine || mark.progress}
+              untie={false}
+            />
+          </div>
+        ) : null}
         <div className={`${styles.flowHead} ${styles.flowIn}`}>
           <h1 className={styles.flowTitle}>{title}</h1>
           {lede ? <p className={styles.flowLede}>{lede}</p> : null}

@@ -202,14 +202,12 @@ export function Portrait({
         </div>
       )}
       <CornerRibbon />
-      {hostName ? (
+      {hostName && nameOnChip ? (
         <p className={styles.host}>
-          {nameOnChip ? (
-            <span className={styles.avatar} aria-hidden="true">
-              {hostName.trim().charAt(0)}
-            </span>
-          ) : null}
-          <span>{nameOnChip ? `הזמנה מאת ${hostName}` : "הזמנה"}</span>
+          <span className={styles.avatar} aria-hidden="true">
+            {hostName.trim().charAt(0)}
+          </span>
+          <span>{`הזמנה מאת ${hostName}`}</span>
         </p>
       ) : null}
     </div>

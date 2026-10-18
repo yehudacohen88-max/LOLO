@@ -1612,6 +1612,10 @@
   line-height: 1.4;
 }
 
+.payHero {
+  display: none;
+}
+
 .thanksLayout {
   display: flex;
   flex-direction: column;
@@ -1794,8 +1798,27 @@
     margin-top: 8px;
   }
 
-  .flowThanks .flowAside {
+  .flowThanks .flowAside,
+  .flowPay .flowAside {
     display: none;
+  }
+
+  .flowPay .payHero {
+    display: block;
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    position: sticky;
+    top: 24px;
+    align-self: start;
+    min-width: 0;
+  }
+
+  .flowPay .revealStage .scene {
+    height: 240px;
+  }
+
+  .flowPay .revealStage .scene.sceneEmpty {
+    height: 200px;
   }
 
   .flowThanks > .flowBody,

@@ -91,6 +91,7 @@ test("guest page keeps contribution flow and hides an empty invitation", async (
   await expect(page.getByRole("heading", { name: /חוגגים 40 לדנה/ })).toBeVisible();
   await expect(page.getByText("השנה החלטנו להפתיע את דנה")).toBeVisible();
   await expect(page.getByText("הזמנה מאת נועה לוי")).toHaveCount(0);
+  await expect(page.getByText("הזמנה", { exact: true })).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "כבר 23 חברים הצטרפו" })).toBeVisible();
   await expect(page.getByText("93.75%")).toBeVisible();
   await expect(page.getByText("הזמנה אישית מאת נועה לוי")).toBeVisible();
@@ -107,6 +108,8 @@ test("guest page keeps contribution flow and hides an empty invitation", async (
   await join.click();
   await expect(page).toHaveURL(/\/e\/flagship-fixture\/greeting/);
   await expect(page.getByRole("heading", { name: "משאירים ברכה" })).toBeVisible();
+  await expect(page.locator("[data-continuity-title]")).toHaveText("חוגגים 40 לדנה");
+  await expect(page.locator("[data-continuity-letter]")).toHaveText("ח");
 
   await page.unroute("**/api/events/flagship-fixture");
   await page.route("**/api/events/flagship-fixture", async (route) => {
@@ -119,6 +122,17 @@ test("guest page keeps contribution flow and hides an empty invitation", async (
   await expect(page.getByRole("heading", { name: /חוגגים 40 לדנה/ })).toBeVisible();
   await expect(page.getByText("השנה החלטנו להפתיע את דנה")).toHaveCount(0);
   await expect(page.getByText("הזמנה מאת")).toHaveCount(0);
+
+  await page.unroute("**/api/events/flagship-fixture");
+  await page.route("**/api/events/flagship-fixture", async (route) => {
+    const body = eventPayload(false);
+    body.event.message = "";
+    body.event.hostName = "נועה לוי";
+    await route.fulfill({ json: body });
+  });
+  await page.goto("/e/flagship-fixture");
+  await expect(page.getByText("הזמנה מאת נועה לוי")).toBeVisible();
+  await expect(page.getByText("הזמנה אישית")).toHaveCount(0);
 });
 
 test("a host focal point sets the celebrant crop", async ({ page }) => {
