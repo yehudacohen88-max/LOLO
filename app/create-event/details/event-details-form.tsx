@@ -3,9 +3,9 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import UploadActions from "@/app/design/upload-actions";
-import { describeImageUploadError } from "@/app/design/upload-error";
+import { describeImageUploadError, type UploadFailure } from "@/app/design/upload-error";
+import { userFacingMessage } from "@/app/design/user-error";
 import {
-  DraftStorageError,
   formatEventDate,
   loadEventDraft,
   saveEventDraft,
@@ -17,9 +17,17 @@ import { useIsClient } from "@/lib/use-is-client";
 const fieldClass =
   "h-12 rounded-2xl border border-border bg-white px-4 text-base text-foreground outline-none placeholder:text-muted/70 focus:border-brand";
 
-const COVER_BLOCKED =
-  "לא הצלחנו לשמור את התמונה. היא גדולה מדי, או שההעלאה לא הושלמה. הסירו אותה או בחרו תמונה אחרת.";
-const COVER_UPLOADING = "התמונה עדיין עולה. המתינו רגע, ואז המשיכו.";
+const COVER_BLOCKED: UploadFailure = {
+  retryable: false,
+  unsupported: false,
+  message:
+    "לא הצלחנו לשמור את התמונה. היא גדולה מדי, או שההעלאה לא הושלמה. הסירו אותה או בחרו תמונה אחרת.",
+};
+const COVER_UPLOADING: UploadFailure = {
+  retryable: false,
+  unsupported: false,
+  message: "התמונה עדיין עולה. המתינו רגע, ואז המשיכו.",
+};
 const SAVE_FAILED = "לא הצלחנו לשמור את הפרטים. נסו שוב.";
 
 type FocusTarget = "" | "image" | "form";
@@ -40,7 +48,7 @@ export default function EventDetailsForm() {
   const [address, setAddress] = useState("");
   const [eventTime, setEventTime] = useState("");
   const [imageUploading, setImageUploading] = useState(false);
-  const [imageError, setImageError] = useState("");
+  const [imageError, setImageError] = useState<UploadFailure | null>(null);
   const [formError, setFormError] = useState("");
   const [focusRequest, setFocusRequest] = useState(0);
   const focusTargetRef = useRef<FocusTarget>("");
@@ -109,12 +117,12 @@ export default function EventDetailsForm() {
       setFormError("");
       return true;
     } catch (error) {
-      const messageText = error instanceof DraftStorageError ? error.message : SAVE_FAILED;
+      const messageText = userFacingMessage(error, SAVE_FAILED);
       const imageProblem =
         typeof patch.imageDataUrl === "string" &&
         (isUnsavedCover(patch.imageDataUrl) || patch.imageDataUrl.length > 2000);
       if (imageProblem) {
-        setImageError(messageText);
+        setImageError({ message: messageText, retryable: true, unsupported: false });
         if (focus) {
           requestFocus("image");
         }
@@ -136,7 +144,7 @@ export default function EventDetailsForm() {
     const attempt = uploadAttempt.current + 1;
     uploadAttempt.current = attempt;
     lastFileRef.current = file;
-    setImageError("");
+    setImageError(null);
     setFormError("");
     releaseLocalPreview();
     const localUrl = URL.createObjectURL(file);
@@ -179,7 +187,7 @@ export default function EventDetailsForm() {
     setImageUploading(false);
     setImageDataUrl("");
     setImagePreview("");
-    setImageError("");
+    setImageError(null);
     persistDetails({ imageDataUrl: "" }, false);
   }
 
@@ -260,7 +268,8 @@ export default function EventDetailsForm() {
         <UploadActions
           hasImage={Boolean(displayImage)}
           uploading={imageUploading}
-          error={imageError}
+          error={imageError?.message ?? null}
+          retryable={imageError?.retryable ?? false}
           onPick={() => coverInputRef.current?.click()}
           onRetry={retryImage}
           onRemove={removeImage}
@@ -278,7 +287,10 @@ export default function EventDetailsForm() {
             void handleImage(file);
           }}
         />
-        <p className="text-sm text-muted">התמונה תופיע בעמוד האירוע ובהזמנה. JPG, PNG או WEBP עד 5MB.</p>
+        <p className="text-sm text-muted">
+          התמונה תופיע בעמוד האירוע ובהזמנה. <bdi dir="ltr">JPG, PNG, WEBP</bdi> עד{" "}
+          <bdi dir="ltr">5MB</bdi>.
+        </p>
       </section>
 
       <label className="flex flex-col gap-2">

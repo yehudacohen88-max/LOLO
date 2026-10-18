@@ -4,16 +4,12 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import UploadActions from "@/app/design/upload-actions";
-import { describeImageUploadError } from "@/app/design/upload-error";
+import { describeImageUploadError, type UploadFailure } from "@/app/design/upload-error";
+import { userFacingMessage } from "@/app/design/user-error";
 import { visibleHostStores } from "@/app/design/host-stores";
 import GiftMedia from "@/components/gift-media";
-import {
-  DraftGiftStorageError,
-  findDraftGift,
-  upsertDraftGift,
-  type DraftGiftSource,
-} from "@/lib/draft-gifts";
-import { DraftStorageError, saveEventDraft } from "@/lib/event-draft";
+import { findDraftGift, upsertDraftGift, type DraftGiftSource } from "@/lib/draft-gifts";
+import { saveEventDraft } from "@/lib/event-draft";
 import { formatPrice, getGiftById } from "@/lib/gifts";
 import { uploadImageFile } from "@/lib/images/upload-client";
 import {
@@ -44,7 +40,7 @@ export default function CustomGiftForm() {
   const [stores, setStores] = useState<ActiveStoreOption[]>([]);
   const [storesNote, setStoresNote] = useState("");
   const [uploading, setUploading] = useState(false);
-  const [imageError, setImageError] = useState("");
+  const [imageError, setImageError] = useState<UploadFailure | null>(null);
   const [titleError, setTitleError] = useState("");
   const [targetError, setTargetError] = useState("");
   const [formError, setFormError] = useState("");
@@ -154,7 +150,7 @@ export default function CustomGiftForm() {
     const attempt = uploadAttempt.current + 1;
     uploadAttempt.current = attempt;
     lastFileRef.current = file;
-    setImageError("");
+    setImageError(null);
     setFormError("");
     setUploading(true);
     try {
@@ -181,7 +177,7 @@ export default function CustomGiftForm() {
     lastFileRef.current = null;
     setUploading(false);
     setImageUrl("");
-    setImageError("");
+    setImageError(null);
   }
 
   function retryImage() {
@@ -205,9 +201,12 @@ export default function CustomGiftForm() {
     setFormError("");
 
     if (imageUrl.startsWith("data:") || imageUrl.startsWith("blob:")) {
-      setImageError(
-        "לא הצלחנו לשמור את התמונה. היא גדולה מדי, או שההעלאה לא הושלמה. הסירו אותה או בחרו תמונה אחרת.",
-      );
+      setImageError({
+        retryable: false,
+        unsupported: false,
+        message:
+          "לא הצלחנו לשמור את התמונה. היא גדולה מדי, או שההעלאה לא הושלמה. הסירו אותה או בחרו תמונה אחרת.",
+      });
       requestFocus("image");
       return;
     }
@@ -256,11 +255,7 @@ export default function CustomGiftForm() {
         moneyDisplay: "amounts",
       });
     } catch (error) {
-      const message =
-        error instanceof DraftGiftStorageError || error instanceof DraftStorageError
-          ? error.message
-          : "לא הצלחנו לשמור את המתנה. נסו שוב.";
-      setFormError(message);
+      setFormError(userFacingMessage(error, "לא הצלחנו לשמור את המתנה. נסו שוב."));
       requestFocus("form");
       return;
     }
@@ -302,7 +297,8 @@ export default function CustomGiftForm() {
         <UploadActions
           hasImage={Boolean(imageUrl)}
           uploading={uploading}
-          error={imageError}
+          error={imageError?.message ?? null}
+          retryable={imageError?.retryable ?? false}
           onPick={() => imageInputRef.current?.click()}
           onRetry={retryImage}
           onRemove={removeImage}
@@ -337,6 +333,7 @@ export default function CustomGiftForm() {
             setTitleError("");
           }}
           placeholder="ערכת LEGO"
+          dir="auto"
           maxLength={80}
           aria-invalid={titleError ? true : undefined}
           className={fieldClass}

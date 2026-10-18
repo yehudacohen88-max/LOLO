@@ -154,7 +154,9 @@ export default function OrganizeGifts() {
                         <p className="text-xs font-semibold text-brand">
                           עדיפות {index + 1}
                         </p>
-                        <p className="font-bold text-foreground">{gift.title}</p>
+                        <p className="font-bold text-foreground" dir="auto">
+                          {gift.title}
+                        </p>
                       </div>
                       <p className="shrink-0 text-sm font-semibold text-brand">
                         {formatPrice(gift.targetAmount)}

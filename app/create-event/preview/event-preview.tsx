@@ -16,6 +16,8 @@ import { loadDraftGifts, type DraftGift } from "@/lib/draft-gifts";
 import { formatPrice } from "@/lib/gifts";
 import GiftMedia from "@/components/gift-media";
 import { visibleHostStores } from "@/app/design/host-stores";
+import { userFacingMessage } from "@/app/design/user-error";
+import { EmptyCover } from "@/app/e/[slug]/flagship-ui";
 import { fetchActiveStoreOptions } from "@/lib/stores/active-stores-client";
 
 type PreviewGift = DraftGift & {
@@ -104,18 +106,20 @@ export default function EventPreview() {
           className="h-52 w-full rounded-3xl object-cover"
         />
       ) : (
-        <div className="flex h-36 items-center justify-center rounded-3xl bg-brand-soft text-sm text-brand">
-          LOLO
+        <div className="flex justify-center">
+          <EmptyCover
+            monogram={(draft.hostName || draft.eventName || "ל").trim().charAt(0) || "ל"}
+          />
         </div>
       )}
 
       <div className="text-center">
         {draft.hostName ? (
           <p className="text-sm font-medium text-muted">
-            הזמנה מאת {draft.hostName}
+            הזמנה מאת <bdi dir="auto">{draft.hostName}</bdi>
           </p>
         ) : null}
-        <h2 className="mt-2 text-3xl font-bold leading-tight text-foreground">
+        <h2 className="mt-2 text-3xl font-bold leading-tight text-foreground" dir="auto">
           {draft.eventName || "האירוע שלכם"}
         </h2>
         {draft.eventDate || draft.eventTime ? (
@@ -226,7 +230,9 @@ export default function EventPreview() {
                   className="h-44 w-full text-5xl"
                 />
                 <div className="mt-4">
-                  <h4 className="text-base font-bold text-foreground">{gift.title}</h4>
+                  <h4 className="text-base font-bold text-foreground" dir="auto">
+                    {gift.title}
+                  </h4>
                   {gift.description ? (
                     <p className="mt-1 text-sm leading-relaxed text-muted">
                       {gift.description}
@@ -260,7 +266,9 @@ export default function EventPreview() {
           חזרה לעריכה
         </Link>
         {publishError ? (
-          <p className="text-center text-sm text-brand">{publishError}</p>
+          <p role="alert" className="text-center text-sm font-semibold text-brand">
+            {publishError}
+          </p>
         ) : null}
         <button
           type="button"
@@ -283,13 +291,16 @@ export default function EventPreview() {
             } catch (error) {
               setPublishing(false);
               setPublishError(
-                error instanceof Error ? error.message : "שמירת האירוע נכשלה.",
+                userFacingMessage(
+                  error,
+                  "לא הצלחנו ליצור את האירוע. בדקו את החיבור ונסו שוב.",
+                ),
               );
             }
           }}
           className="inline-flex h-12 w-full cursor-pointer items-center justify-center rounded-full bg-brand px-6 text-base font-semibold text-white transition-colors hover:bg-brand-hover disabled:cursor-not-allowed disabled:bg-brand/40"
         >
-          {publishing ? "יוצרים את האירוע..." : "יצירת האירוע"}
+          {publishing ? "יוצרים את האירוע..." : publishError ? "נסו שוב" : "יצירת האירוע"}
         </button>
       </div>
     </div>

@@ -4,9 +4,10 @@ import { useState } from "react";
 
 type CopyGuestLinkProps = {
   guestUrl: string;
+  disabled?: boolean;
 };
 
-export default function CopyGuestLink({ guestUrl }: CopyGuestLinkProps) {
+export default function CopyGuestLink({ guestUrl, disabled = false }: CopyGuestLinkProps) {
   const [toast, setToast] = useState("");
 
   async function copyLink() {
@@ -35,7 +36,8 @@ export default function CopyGuestLink({ guestUrl }: CopyGuestLinkProps) {
       <button
         type="button"
         onClick={copyLink}
-        className="inline-flex h-12 w-full items-center justify-center rounded-full bg-brand px-6 text-base font-semibold text-white hover:bg-brand-hover sm:w-auto"
+        disabled={disabled}
+        className="inline-flex h-12 w-full items-center justify-center rounded-full bg-brand px-6 text-base font-semibold text-white hover:bg-brand-hover disabled:cursor-not-allowed disabled:bg-brand/40 sm:w-auto"
       >
         העתקת קישור
       </button>

@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import LoloMark from "@/app/design/lolo-mark";
 import styles from "@/app/design/host-experience.module.css";
+import CreateSummary from "@/app/create-event/create-summary";
 import { createStepLabel } from "@/app/create-event/steps";
 import { formatPrice, giftCategories, gifts, type GiftCategory } from "@/lib/gifts";
 
@@ -18,10 +20,11 @@ export default function GiftCatalog() {
   );
 
   return (
-    <div className="flex flex-1 flex-col px-5 pb-10 pt-10 sm:px-8 sm:pt-16">
+    <div className={styles.spread}>
+      <div className={`${styles.main} flex flex-1 flex-col`}>
       <header className={styles.header}>
         <Link href="/" className={styles.wordmark}>
-          LOLO
+          <LoloMark />
         </Link>
         <p className={styles.step}>{createStepLabel(2)}</p>
         <h1 className={styles.title}>רעיונות להשראה</h1>
@@ -92,6 +95,8 @@ export default function GiftCatalog() {
       >
         חזרה למתנות שלי
       </Link>
+      </div>
+      <CreateSummary step={2} />
     </div>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
+import { userFacingMessage } from "@/app/design/user-error";
 import { absoluteAppUrl } from "@/lib/app-url";
 import type { EventGuest } from "@/lib/host/guest-fields";
 import { whatsappInviteUrl } from "@/lib/invite/whatsapp";
@@ -14,6 +15,7 @@ type HostGuestListProps = {
   eventTitle: string;
   origin: string;
   guests: EventGuest[];
+  disabled?: boolean;
 };
 
 export default function HostGuestList({
@@ -21,6 +23,7 @@ export default function HostGuestList({
   eventTitle,
   origin,
   guests,
+  disabled = false,
 }: HostGuestListProps) {
   const router = useRouter();
   const [name, setName] = useState("");
@@ -66,9 +69,7 @@ export default function HostGuestList({
       setPhone("");
       router.refresh();
     } catch (nextError) {
-      setError(
-        nextError instanceof Error ? nextError.message : "הוספת האורח נכשלה.",
-      );
+      setError(userFacingMessage(nextError, "הוספת האורח נכשלה. בדקו את החיבור ונסו שוב."));
     } finally {
       setSaving(false);
     }
@@ -91,9 +92,7 @@ export default function HostGuestList({
       }
       router.refresh();
     } catch (nextError) {
-      setError(
-        nextError instanceof Error ? nextError.message : "הסרת האורח נכשלה.",
-      );
+      setError(userFacingMessage(nextError, "הסרת האורח נכשלה. בדקו את החיבור ונסו שוב."));
     } finally {
       setSaving(false);
     }
@@ -134,7 +133,9 @@ export default function HostGuestList({
                 className="flex flex-col gap-3 rounded-2xl border border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
               >
                 <div className="min-w-0">
-                  <p className="font-semibold text-foreground">{guest.name}</p>
+                  <p className="font-semibold text-foreground" dir="auto">
+                    {guest.name}
+                  </p>
                   <p className="mt-0.5 text-sm text-muted" dir="ltr">
                     {guest.phone}
                   </p>
@@ -144,13 +145,13 @@ export default function HostGuestList({
                     <>
                       <button
                         type="button"
-                        disabled={saving}
+                        disabled={saving || disabled}
                         onClick={() => copyInviteLink(guest.invitePath ?? "")}
                         className="text-sm font-semibold text-foreground disabled:text-muted"
                       >
                         העתק קישור אישי
                       </button>
-                      {waUrl ? (
+                      {waUrl && !disabled ? (
                         <a
                           href={waUrl}
                           target="_blank"
@@ -160,6 +161,9 @@ export default function HostGuestList({
                           שלח ב-WhatsApp
                         </a>
                       ) : null}
+                      {waUrl && disabled ? (
+                        <span className="text-sm font-semibold text-muted">שלח ב-WhatsApp</span>
+                      ) : null}
                     </>
                   ) : (
                     <p className="text-sm text-muted">
@@ -168,7 +172,7 @@ export default function HostGuestList({
                   )}
                   <button
                     type="button"
-                    disabled={saving}
+                    disabled={saving || disabled}
                     onClick={() => removeGuest(guest.id)}
                     className="text-sm font-semibold text-brand disabled:text-muted"
                   >
@@ -187,6 +191,8 @@ export default function HostGuestList({
           <input
             value={name}
             onChange={(event) => setName(event.target.value)}
+            dir="auto"
+            disabled={disabled}
             className={fieldClass}
           />
         </label>
@@ -198,12 +204,13 @@ export default function HostGuestList({
             onChange={(event) => setPhone(event.target.value)}
             className={fieldClass}
             dir="ltr"
+            disabled={disabled}
           />
         </label>
         {error ? <p className="text-center text-sm text-brand">{error}</p> : null}
         <button
           type="submit"
-          disabled={saving}
+          disabled={saving || disabled}
           className="inline-flex h-12 w-full items-center justify-center rounded-full bg-brand px-6 text-base font-semibold text-white hover:bg-brand-hover disabled:cursor-not-allowed disabled:bg-brand/40"
         >
           הוספת אורח

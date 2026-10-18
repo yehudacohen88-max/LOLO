@@ -13,6 +13,7 @@ import {
   voucherStatusLabel,
 } from "@/lib/vouchers/labels";
 import { visibleHostStores } from "@/app/design/host-stores";
+import { userFacingMessage } from "@/app/design/user-error";
 import type { HostDashboardGift } from "@/lib/host/dashboard";
 import type { VoucherStoreOption } from "@/lib/vouchers/types";
 
@@ -20,12 +21,14 @@ type IssueVoucherPanelProps = {
   eventId: string;
   gift: HostDashboardGift;
   stores: VoucherStoreOption[];
+  disabled?: boolean;
 };
 
 export default function IssueVoucherPanel({
   eventId,
   gift,
   stores,
+  disabled = false,
 }: IssueVoucherPanelProps) {
   const router = useRouter();
   const hostStores = visibleHostStores(stores);
@@ -44,6 +47,9 @@ export default function IssueVoucherPanel({
   const issuedBefore = gift.voucheredAmount > 0;
 
   function openConfirmation() {
+    if (disabled) {
+      return;
+    }
     if (!idempotencyKey.current) {
       idempotencyKey.current = crypto.randomUUID();
     }
@@ -80,7 +86,9 @@ export default function IssueVoucherPanel({
       router.push(`/host/events/${eventId}/vouchers/${payload.id}`);
       router.refresh();
     } catch (nextError) {
-      setError(nextError instanceof Error ? nextError.message : "הנפקת השובר נכשלה.");
+      setError(
+        userFacingMessage(nextError, "הנפקת השובר נכשלה. בדקו את החיבור ונסו שוב."),
+      );
       setSaving(false);
     }
   }
@@ -138,7 +146,8 @@ export default function IssueVoucherPanel({
         <button
           type="button"
           onClick={openConfirmation}
-          className="mt-4 inline-flex h-12 w-full items-center justify-center rounded-full bg-brand px-6 text-base font-semibold text-white hover:bg-brand-hover"
+          disabled={disabled}
+          className="mt-4 inline-flex h-12 w-full items-center justify-center rounded-full bg-brand px-6 text-base font-semibold text-white hover:bg-brand-hover disabled:cursor-not-allowed disabled:bg-brand/40"
         >
           {issuedBefore ? "הנפקת שובר נוסף" : "הנפקת שובר"}
         </button>
@@ -223,7 +232,7 @@ export default function IssueVoucherPanel({
             <button
               type="button"
               onClick={issue}
-              disabled={saving || !selected}
+              disabled={saving || disabled || !selected}
               className="inline-flex h-12 flex-1 items-center justify-center rounded-full bg-brand px-5 text-base font-semibold text-white hover:bg-brand-hover disabled:opacity-60"
             >
               {saving ? "מנפיקים..." : "אישור והנפקת שובר"}

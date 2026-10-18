@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
+import { userFacingMessage } from "@/app/design/user-error";
 import {
   loadEventDraft,
   saveEventDraft,
@@ -163,9 +164,7 @@ export default function GuestsForm() {
       setImportSummary(parts.join(". "));
       setImportIssues(result.issues);
     } catch (error) {
-      setFormError(
-        error instanceof Error ? error.message : "ייבוא הקובץ נכשל.",
-      );
+      setFormError(userFacingMessage(error, "ייבוא הקובץ נכשל. בדקו את הקובץ ונסו שוב."));
     } finally {
       setImporting(false);
     }

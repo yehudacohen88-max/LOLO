@@ -4,6 +4,10 @@ import * as XLSX from "xlsx";
 
 const ARTIFACTS = "/opt/cursor/artifacts/host-experience";
 const ACCESS_CODE = "AB12-CD34";
+const TINY_JPEG = Buffer.from(
+  "/9j/4AAQSkZJRgABAgAAAQABAAD//gAQTGF2YzYwLjMxLjEwMgD/2wBDAAgEBAQEBAUFBQUFBQYGBgYGBgYGBgYGBgYHBwcICAgHBwcGBgcHCAgICAkJCQgICAgJCQoKCgwMCwsODg4RERT/xABLAAEBAAAAAAAAAAAAAAAAAAAABgEBAAAAAAAAAAAAAAAAAAAABhABAAAAAAAAAAAAAAAAAAAAABEBAAAAAAAAAAAAAAAAAAAAAP/AABEIAAgACAMBIgACEQADEQD/2gAMAwEAAhEDEQA/ALcApHn/2Q==",
+  "base64",
+);
 
 const viewports = [
   { name: "390", width: 390, height: 844 },
@@ -108,6 +112,12 @@ test.describe("host experience", () => {
           await expect(page.getByText("שלב 1 מתוך 5")).toBeVisible();
         }
         await shot(page, name);
+        if (name === "create-preview-1440") {
+          await shot(page, "create-preview-nocover-1440");
+        }
+        if (name === "create-preview-390") {
+          await shot(page, "create-preview-nocover-390");
+        }
       }
     });
   }
@@ -197,6 +207,7 @@ test.describe("host experience", () => {
       });
     });
 
+    await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/create-event/details");
     await page.locator('input[accept="image/*"]').setInputFiles({
       name: "photo.heic",
@@ -205,16 +216,39 @@ test.describe("host experience", () => {
     });
     const uploadAlert = page.getByRole("alert").filter({ hasText: "לא נתמך" });
     await expect(uploadAlert).toContainText("HEIC");
-    await page.getByRole("button", { name: "הסרת תמונה" }).click();
-    await expect(uploadAlert).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "נסו שוב" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "הסרת תמונה" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "החלפת תמונה" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "בחירת קובץ אחר" })).toBeVisible();
+    await shot(page, "create-details-heic-390");
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await shot(page, "create-details-heic-1440");
 
+    await page.setViewportSize({ width: 390, height: 844 });
     await page.locator('input[accept="image/*"]').setInputFiles({
       name: "notes.txt",
       mimeType: "text/plain",
       buffer: Buffer.from("hello"),
     });
     await expect(uploadAlert).toContainText("לא נתמך");
-    await page.getByRole("button", { name: "הסרת תמונה" }).click();
+    await expect(page.getByRole("button", { name: "נסו שוב" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "בחירת קובץ אחר" })).toBeVisible();
+
+    await page.locator('input[accept="image/*"]').setInputFiles({
+      name: "phone.jpg",
+      mimeType: "image/jpeg",
+      buffer: TINY_JPEG,
+    });
+    const networkAlert = page.getByRole("alert").filter({ hasText: "העלאת התמונה נכשלה" });
+    await expect(networkAlert).toBeVisible();
+    await expect(page.getByText("Failed to fetch")).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "נסו שוב" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "בחירת קובץ אחר" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "הסרת תמונה" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "החלפת תמונה" })).toHaveCount(0);
+    await shot(page, "create-details-upload-failed-390");
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await shot(page, "create-details-upload-failed-1440");
 
     await page.goto("/create-event/gifts/custom");
     await expect(page.getByRole("option", { name: "חנות הספרים" })).toBeAttached();
@@ -223,7 +257,7 @@ test.describe("host experience", () => {
     await expect(page.getByRole("option", { name: "חנות הפרחים" })).toHaveCount(0);
   });
 
-  test("host login reports a rejected code and the example dashboard keeps its actions", async ({
+  test("host login reports a rejected code and the example dashboard disables actions", async ({
     page,
   }) => {
     await page.route("**/api/host/login", async (route) => {
@@ -239,36 +273,89 @@ test.describe("host experience", () => {
     await page.getByRole("button", { name: "כניסה" }).click();
     await expect(page.getByText("קישור האירוע או קוד הניהול שגויים.")).toBeVisible();
 
+    await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/host/example");
     await expect(page.getByText("נתוני דוגמה — לא אירוע אמיתי")).toBeVisible();
-    await page.getByRole("button", { name: "הנפקת שובר" }).click();
-    await expect(page.getByRole("option", { name: "חנות הספרים" })).toBeAttached();
+    await expect(page.getByText("בדוגמה זו הפעולות מושבתות")).toBeVisible();
+    await expect(page.getByRole("button", { name: "הנפקת שובר" })).toBeDisabled();
+    await expect(page.getByRole("button", { name: "הוספת אורח" })).toBeDisabled();
+    await expect(page.getByRole("button", { name: "הסרה" })).toBeDisabled();
+    await expect(page.getByRole("button", { name: "העתקת קישור" })).toBeDisabled();
+    await expect(page.getByRole("button", { name: "העתק קישור אישי" })).toBeDisabled();
+    await expect(page.getByRole("link", { name: "שלח ב-WhatsApp" })).toHaveCount(0);
     await expect(page.getByRole("option", { name: "חנות אופניים - בדיקה" })).toHaveCount(0);
+    await shot(page, "host-example-1440");
+    await page.setViewportSize({ width: 390, height: 844 });
+    await shot(page, "host-example-390");
+  });
 
-    await page.route("**/api/host/events/**/guests", async (route) => {
-      expect(route.request().method()).toBe("POST");
-      const body = route.request().postDataJSON() as { name?: string; phone?: string };
-      expect(body.name).toBe("מיכל");
-      expect(body.phone).toBe("0540001122");
+  test("a failed publish shows Hebrew and retries without the raw error", async ({ page }) => {
+    await page.addInitScript(() => {
+      window.localStorage.setItem(
+        "lolo-event-draft",
+        JSON.stringify({
+          eventName: "יום הולדת (יובל)",
+          hostName: "נועה (כהן)",
+          eventType: "יום הולדת",
+          eventDate: "2026-11-12",
+          giftMode: "money",
+          moneyAmounts: [150],
+          allowCustomAmount: true,
+          moneyDisplay: "amounts",
+        }),
+      );
+    });
+
+    let calls = 0;
+    await page.route("**/api/events", async (route) => {
+      if (route.request().method() !== "POST") {
+        await route.continue();
+        return;
+      }
+      calls += 1;
+      if (calls === 1) {
+        await route.abort();
+        return;
+      }
       await route.fulfill({
         status: 200,
         contentType: "application/json",
-        body: JSON.stringify({ ok: true }),
+        body: JSON.stringify({
+          id: "11111111-1111-4111-8111-111111111111",
+          slug: "event-host-demo",
+          accessCode: ACCESS_CODE,
+          event: {
+            id: "11111111-1111-4111-8111-111111111111",
+            slug: "event-host-demo",
+            title: "יום הולדת (יובל)",
+            hostName: "נועה (כהן)",
+            eventType: "יום הולדת",
+            date: "2026-11-12",
+            time: "",
+            venueName: "",
+            address: "",
+            message: "",
+            coverImage: "",
+            giftMode: "money",
+            moneyAmounts: [150],
+            allowCustomAmount: true,
+            moneyDisplay: "amounts",
+            gifts: [],
+            createdAt: "2026-10-18T00:00:00.000Z",
+          },
+        }),
       });
     });
-    await page.getByLabel("שם האורח").fill("מיכל");
-    await page.getByLabel("מספר טלפון").fill("0540001122");
-    await page.getByRole("button", { name: "הוספת אורח" }).click();
 
-    await page.unroute("**/api/host/events/**/guests");
-    await page.route("**/api/host/events/**/guests/**", async (route) => {
-      expect(route.request().method()).toBe("DELETE");
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({ ok: true }),
-      });
-    });
-    await page.getByRole("button", { name: "הסרה" }).click();
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/create-event/preview");
+    await expect(page.getByRole("heading", { name: "יום הולדת (יובל)" })).toBeVisible();
+    await expect(page.locator("bdi", { hasText: "נועה (כהן)" })).toBeVisible();
+    await page.getByRole("button", { name: "יצירת האירוע" }).click();
+    await expect(page.getByRole("alert").filter({ hasText: "לא הצלחנו ליצור את האירוע" })).toBeVisible();
+    await expect(page.getByText("Failed to fetch")).toHaveCount(0);
+    await page.getByRole("button", { name: "נסו שוב" }).click();
+    await expect(page).toHaveURL(/\/create-event\/success\?slug=event-host-demo/);
+    expect(calls).toBe(2);
   });
 });

@@ -141,6 +141,7 @@ export default function CreateEventForm() {
             persistBasics({ eventName: value });
           }}
           placeholder="יום ההולדת של יובל"
+          dir="auto"
           className={fieldClass}
         />
       </label>
@@ -168,6 +169,7 @@ export default function CreateEventForm() {
           type="text"
           name="hostName"
           value={hostName}
+          dir="auto"
           onChange={(event) => {
             const value = event.target.value;
             setHostName(value);

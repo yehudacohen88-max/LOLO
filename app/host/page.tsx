@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import LoloMark from "@/app/design/lolo-mark";
 import styles from "@/app/design/host-experience.module.css";
 import HostLoginForm from "./host-login-form";
 
@@ -12,7 +13,7 @@ export default function HostLoginPage() {
     <div className={styles.login}>
       <section className={styles.loginCopy}>
         <Link href="/" className={styles.wordmark}>
-          LOLO
+          <LoloMark />
         </Link>
         <h1 className={styles.title}>כניסה לניהול האירוע</h1>
         <p className={styles.lede}>הזינו את קישור האירוע ואת קוד הניהול הפרטי</p>

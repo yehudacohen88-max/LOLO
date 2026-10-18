@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
+import { userFacingMessage } from "@/app/design/user-error";
 
 const fieldClass =
   "h-12 rounded-2xl border border-border bg-white px-4 text-base text-foreground outline-none placeholder:text-muted/70 focus:border-brand";
@@ -36,9 +37,7 @@ export default function HostLoginForm() {
       router.push(`/host/events/${payload.eventId}`);
     } catch (nextError) {
       setError(
-        nextError instanceof Error
-          ? nextError.message
-          : "קישור האירוע או קוד הניהול שגויים.",
+        userFacingMessage(nextError, "לא הצלחנו להתחבר. בדקו את החיבור ונסו שוב."),
       );
     } finally {
       setSaving(false);

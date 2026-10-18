@@ -1,4 +1,5 @@
 import Link from "next/link";
+import LoloMark from "@/app/design/lolo-mark";
 import styles from "@/app/design/host-experience.module.css";
 import FundingProgress from "@/components/funding-progress";
 import GiftMedia from "@/components/gift-media";
@@ -97,20 +98,24 @@ export default function HostDashboard({
   origin,
   exampleNote,
 }: HostDashboardProps) {
+  const readOnly = Boolean(exampleNote);
   return (
     <main className={styles.board}>
         <header className={styles.boardHead}>
           <Link href="/" className={styles.wordmark}>
-            LOLO
+            <LoloMark />
           </Link>
           <h1 className={styles.title}>ניהול האירוע</h1>
-          <p className="mt-3 text-lg font-semibold text-foreground">
+          <p className="mt-3 text-lg font-semibold text-foreground" dir="auto">
             {data.title || "האירוע"}
           </p>
           {exampleNote ? (
-            <p className={styles.example} role="note">
-              {exampleNote}
-            </p>
+            <>
+              <p className={styles.example} role="note">
+                {exampleNote}
+              </p>
+              <p className={styles.exampleHint}>בדוגמה זו הפעולות מושבתות</p>
+            </>
           ) : null}
         </header>
 
@@ -121,7 +126,9 @@ export default function HostDashboard({
           <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
             <div>
               <dt className="text-muted">שם האירוע</dt>
-              <dd className="mt-1 font-semibold">{data.title || "—"}</dd>
+              <dd className="mt-1 font-semibold" dir="auto">
+                {data.title || "—"}
+              </dd>
             </div>
             <div>
               <dt className="text-muted">סוג האירוע</dt>
@@ -133,12 +140,14 @@ export default function HostDashboard({
             </div>
             <div>
               <dt className="text-muted">שם המארח</dt>
-              <dd className="mt-1 font-semibold">{data.hostName || "—"}</dd>
+              <dd className="mt-1 font-semibold" dir="auto">
+                {data.hostName || "—"}
+              </dd>
             </div>
           </dl>
           <div className="mt-5">
             <p className="mb-2 text-sm text-muted">קישור האורחים</p>
-            <CopyGuestLink guestUrl={guestUrl} />
+            <CopyGuestLink guestUrl={guestUrl} disabled={readOnly} />
           </div>
         </section>
 
@@ -180,6 +189,7 @@ export default function HostDashboard({
           eventTitle={data.title}
           origin={origin}
           guests={data.invitedGuests}
+          disabled={readOnly}
         />
         </div>
 
@@ -210,7 +220,7 @@ export default function HostDashboard({
                       />
                       <div className="min-w-0 flex-1">
                         <div className="flex items-start justify-between gap-3">
-                          <p className="font-semibold text-foreground">
+                          <p className="font-semibold text-foreground" dir="auto">
                             {gift.title || "מתנה"}
                           </p>
                           {gift.targetAmount ? (
@@ -254,6 +264,7 @@ export default function HostDashboard({
                         eventId={data.eventId}
                         gift={gift}
                         stores={data.voucherStores}
+                        disabled={readOnly}
                       />
                     ) : null}
                   </li>

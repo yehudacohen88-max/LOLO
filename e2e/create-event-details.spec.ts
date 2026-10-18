@@ -23,9 +23,11 @@ test("a failed cover upload explains the problem and does not trap the step", as
     buffer: TINY_JPEG,
   });
   await expect(page.getByRole("alert").filter({ hasText: "העלאת התמונה נכשלה" })).toBeVisible();
+  await expect(page.getByText("Failed to fetch")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "נסו שוב" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "החלפת תמונה" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "הסרת תמונה" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "בחירת קובץ אחר" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "החלפת תמונה" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "הסרת תמונה" })).toHaveCount(0);
   await page.getByRole("button", { name: "ממשיכים להזמנת האורחים" }).click();
   await expect(page).toHaveURL(/\/create-event\/guests/);
 });
@@ -124,8 +126,8 @@ test("a cover that cannot be stored blocks continue, scrolls, and explains in He
   await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
   await page.getByRole("button", { name: "ממשיכים להזמנת האורחים" }).click();
   await expect(page).toHaveURL(/\/create-event\/details/);
-  await expect(page.getByRole("button", { name: "החלפת תמונה" })).toBeFocused();
-  await expect(page.getByRole("button", { name: "החלפת תמונה" })).toBeInViewport();
+  await expect(page.getByRole("button", { name: "בחירת קובץ אחר" })).toBeFocused();
+  await expect(page.getByRole("button", { name: "בחירת קובץ אחר" })).toBeInViewport();
   await expect(page.getByLabel("שם המקום / האולם")).toHaveValue("בית שלנו");
 
   await page.getByRole("button", { name: "הסרת תמונה" }).click();
