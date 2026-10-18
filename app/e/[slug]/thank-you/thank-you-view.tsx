@@ -142,7 +142,6 @@ export default function ThankYouView() {
         <span className="gift-bow" />
       </div>
       <div className="lolo-card px-5 py-6 text-center">
-        <p className="lolo-demo">גרסת בטא — תשלומים מדומים בלבד</p>
         {paid ? (
           <p className="mt-3 text-base font-bold text-brand">התשלום התקבל</p>
         ) : failed ? (

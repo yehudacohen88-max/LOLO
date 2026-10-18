@@ -22,13 +22,12 @@ const steps = [
 export default function Home() {
   return (
     <div className="flex flex-1 flex-col">
-      <main className="mx-auto flex w-full max-w-lg flex-1 flex-col px-5 py-8 sm:max-w-3xl sm:px-8 sm:py-14">
-        <section className="lg:grid lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:items-center lg:gap-12">
+      <main className="mx-auto flex w-full max-w-lg flex-1 flex-col px-6 py-8 sm:max-w-3xl sm:px-10 lg:max-w-6xl lg:px-12 lg:py-16 xl:max-w-7xl">
+        <section className="lg:grid lg:grid-cols-[minmax(0,1.15fr)_minmax(18rem,0.85fr)] lg:items-center lg:gap-16">
           <div className="flex flex-col items-center text-center lg:items-start lg:text-start">
             <BrandMark />
-            <p className="lolo-kicker mt-8">מתנות שנותנים יחד</p>
-            <p className="lolo-promise mt-3 max-w-xl">ביחד, אנחנו מגשימים משאלה</p>
-            <h1 className="lolo-title mt-4">המתנה שבאמת רצית</h1>
+            <p className="lolo-kicker mt-8">ביחד, אנחנו מגשימים משאלה</p>
+            <h1 className="lolo-title mt-3 max-w-xl">המתנה שבאמת רצית</h1>
             <p className="mt-4 max-w-md text-base leading-relaxed text-muted sm:text-lg">
               חברים ומשפחה נפגשים סביב מתנה אחת. כל אחד נותן את החלק שלו, והמשאלה
               מתגשמת.
@@ -40,10 +39,12 @@ export default function Home() {
             </div>
             <HomeCreateActions />
           </div>
-          <div className="lolo-celebration mt-0 hidden scale-[1.65] lg:block" aria-hidden>
-            <span className="cele-base" />
-            <span className="cele-lid" />
-            <span className="cele-bow" />
+          <div className="lolo-celebration-stage mt-0 hidden place-items-center overflow-hidden lg:grid" aria-hidden>
+            <div className="lolo-celebration origin-center scale-150">
+              <span className="cele-base" />
+              <span className="cele-lid" />
+              <span className="cele-bow" />
+            </div>
           </div>
         </section>
 

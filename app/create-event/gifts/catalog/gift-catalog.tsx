@@ -53,11 +53,10 @@ export default function GiftCatalog() {
           <li key={gift.id}>
             <article className="lolo-card flex h-full flex-col overflow-hidden">
               <div
-                className="relative flex aspect-[16/10] items-center justify-center overflow-hidden bg-[#f6e6de] text-5xl"
+                className="relative flex aspect-[3/2] items-center justify-center overflow-hidden bg-[#f6e6de] text-4xl lg:aspect-[5/2] lg:max-h-36"
                 aria-hidden
               >
-                <span className="absolute inset-y-0 left-1/2 w-3 -translate-x-1/2 bg-[#c4a574]/70" />
-                <span className="absolute left-[14%] right-[14%] top-1/2 h-3 -translate-y-1/2 bg-[#c4a574]/70" />
+                <span className="lolo-corner-ribbon" />
                 <span className="relative">{gift.emoji}</span>
               </div>
               <div className="flex flex-1 flex-col p-4">

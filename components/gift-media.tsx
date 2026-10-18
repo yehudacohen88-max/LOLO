@@ -31,9 +31,8 @@ export default function GiftMedia({
       className={`relative flex shrink-0 items-center justify-center overflow-hidden bg-[#f6e6de] text-foreground ${radius} ${className}`}
       aria-hidden
     >
-      <span className="pointer-events-none absolute inset-y-0 left-1/2 w-3 -translate-x-1/2 bg-[#c4a574]/70" />
-      <span className="pointer-events-none absolute left-[12%] right-[12%] top-1/2 h-3 -translate-y-1/2 bg-[#c4a574]/70" />
-      <span className="relative drop-shadow-sm">{icon || "🎁"}</span>
+      <span className="lolo-corner-ribbon" />
+      <span className="relative">{icon || "🎁"}</span>
     </span>
   );
 }

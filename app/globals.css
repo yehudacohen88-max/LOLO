@@ -182,33 +182,49 @@ button.inline-flex.h-12.w-full.rounded-full.bg-brand {
     linear-gradient(160deg, #6a3144 0%, #3a1824 58%, #241018 100%);
 }
 
-.lolo-hero-fallback::before,
 .lolo-hero-fallback::after {
   content: "";
   position: absolute;
-  left: 50%;
-  width: 18px;
-  transform: translateX(-50%);
-  background: rgba(196, 165, 116, 0.72);
+  top: 1.15rem;
+  inset-inline-start: -2.4rem;
+  width: 8.5rem;
+  height: 0.55rem;
+  background: rgba(196, 165, 116, 0.55);
+  transform: rotate(-42deg);
 }
 
-.lolo-hero-fallback::before {
+.lolo-corner-ribbon {
+  position: absolute;
   top: 0;
-  bottom: 0;
+  inset-inline-start: 0;
+  width: 3.25rem;
+  height: 3.25rem;
+  overflow: hidden;
+  pointer-events: none;
 }
 
-.lolo-hero-fallback::after {
-  top: 42%;
-  height: 18px;
-  width: 72%;
-  transform: translate(-50%, -50%);
+.lolo-corner-ribbon::before {
+  content: "";
+  position: absolute;
+  top: 0.7rem;
+  inset-inline-start: -1.35rem;
+  width: 4.6rem;
+  height: 0.42rem;
+  background: rgba(166, 124, 72, 0.55);
+  transform: rotate(-42deg);
 }
 
 .lolo-celebration {
   position: relative;
   height: 132px;
-  width: 148px;
+  width: min(100%, 148px);
   margin-inline: auto;
+  overflow: hidden;
+}
+
+.lolo-celebration-stage {
+  width: min(100%, 280px);
+  height: 240px;
 }
 
 .gift-scene {

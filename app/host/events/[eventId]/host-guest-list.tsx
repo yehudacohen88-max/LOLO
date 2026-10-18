@@ -28,6 +28,7 @@ export default function HostGuestList({
   const [error, setError] = useState("");
   const [toast, setToast] = useState("");
   const [saving, setSaving] = useState(false);
+  const [open, setOpen] = useState(false);
 
   function absoluteInviteUrl(invitePath: string) {
     const fallback =
@@ -100,13 +101,24 @@ export default function HostGuestList({
   }
 
   return (
-    <section className="lolo-card p-5 sm:p-6">
-      <h2 className="font-sans text-lg font-bold text-foreground">רשימת מוזמנים</h2>
-      <p className="mt-2 text-sm text-muted">
+    <section id="guests" className="lolo-card p-4 sm:p-6">
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="font-sans text-base font-bold text-foreground lg:text-lg">רשימת מוזמנים</h2>
+        <button
+          type="button"
+          className="inline-flex min-h-11 items-center rounded-full px-3 text-sm font-semibold text-brand lg:hidden"
+          aria-expanded={open}
+          onClick={() => setOpen((current) => !current)}
+        >
+          {open ? "סגירה" : "פתיחה"}
+        </button>
+      </div>
+      <p className="mt-1 text-sm text-muted">
         {guests.length === 0
           ? "אין מוזמנים ברשימה עדיין"
           : `${guests.length} מוזמנים`}
       </p>
+      <div className={open ? "mt-3" : "mt-3 max-lg:hidden"}>
       {toast ? (
         <p className="mt-3 rounded-2xl bg-brand-soft px-4 py-3 text-center text-sm font-medium text-brand">
           {toast}
@@ -209,6 +221,7 @@ export default function HostGuestList({
           הוספת אורח
         </button>
       </form>
+      </div>
     </section>
   );
 }

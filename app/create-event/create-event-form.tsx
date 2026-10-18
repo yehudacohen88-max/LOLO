@@ -150,6 +150,9 @@ export default function CreateEventForm() {
         <input
           type="date"
           name="eventDate"
+          lang="he-IL"
+          dir="ltr"
+          title="יום.חודש.שנה"
           value={eventDate}
           onChange={(event) => {
             const value = event.target.value;
@@ -158,6 +161,7 @@ export default function CreateEventForm() {
           }}
           className={fieldClass}
         />
+        <span className="text-xs text-muted">יום.חודש.שנה</span>
       </label>
 
       <label className="flex flex-col gap-2">

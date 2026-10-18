@@ -1,5 +1,6 @@
 import BrandMark from "@/components/brand-mark";
 import FundingProgress from "@/components/funding-progress";
+import MobileDisclosure from "@/components/mobile-disclosure";
 import GiftMedia from "@/components/gift-media";
 import GiftTimeline from "@/components/gift-timeline";
 import type {
@@ -96,11 +97,11 @@ export default function HostDashboard({
 }: HostDashboardProps) {
   return (
     <div className="flex flex-1 flex-col">
-      <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-6 px-5 py-8 sm:max-w-3xl sm:px-8 sm:py-14">
+      <main className="mx-auto flex w-full max-w-lg flex-1 flex-col gap-4 px-4 py-5 sm:max-w-3xl sm:gap-6 sm:px-8 sm:py-14">
         <header className="flex flex-col items-center text-center">
           <BrandMark />
-          <p className="lolo-kicker mt-6">מרכז החגיגה</p>
-          <h1 className="lolo-title mt-3">ניהול האירוע</h1>
+          <p className="lolo-kicker mt-4">מרכז החגיגה</p>
+          <h1 className="lolo-title mt-2">ניהול האירוע</h1>
           <p className="mt-3 text-lg font-semibold text-foreground">
             {data.title || "האירוע"}
           </p>
@@ -113,9 +114,9 @@ export default function HostDashboard({
           <a href="#greetings">הברכות</a>
         </nav>
 
-        <section id="overview" className="lolo-card p-5 sm:p-6">
-          <h2 className="font-sans text-lg font-bold text-foreground">סקירת האירוע</h2>
-          <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
+        <section id="overview" className="lolo-card p-4 sm:p-6">
+          <h2 className="font-sans text-base font-bold text-foreground lg:text-lg">סקירת האירוע</h2>
+          <dl className="mt-3 grid gap-2 text-sm sm:grid-cols-2 sm:gap-3">
             <div>
               <dt className="text-muted">שם האירוע</dt>
               <dd className="mt-1 font-semibold">{data.title || "—"}</dd>
@@ -139,14 +140,9 @@ export default function HostDashboard({
           </div>
         </section>
 
-        <section className="lolo-card p-5 sm:p-6">
-          <h2 className="font-sans text-lg font-bold text-foreground">ההשתתפות עד כה</h2>
-          <p className="mt-2 text-sm leading-relaxed text-muted">
-            הסכום ששולם הוא השתתפות שאושרה למתנות. עמלת שירות אינה נספרת ליעד.
-            אפשר להנפיק שובר על הסכום ששולם גם לפני שהיעד הושלם, ותשלום שמגיע אחר כך נשאר פנוי לשובר נוסף.
-            מימוש בחנות אינו התחשבנות מול LOLO.
-          </p>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        <section className="lolo-card p-4 sm:p-6">
+          <h2 className="font-sans text-base font-bold text-foreground lg:text-lg">ההשתתפות עד כה</h2>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
             <article className="rounded-2xl bg-brand-soft px-4 py-4">
               <p className="text-sm text-muted">סכום ששולם בהצלחה</p>
               <p className="mt-1 text-2xl font-bold text-brand">
@@ -170,10 +166,17 @@ export default function HostDashboard({
               </p>
             </article>
           </div>
+          <MobileDisclosure title="איך לקרוא את המספרים" className="mt-3">
+            <p className="text-sm leading-relaxed text-muted">
+              הסכום ששולם הוא השתתפות שאושרה למתנות. עמלת שירות אינה נספרת ליעד.
+              אפשר להנפיק שובר על הסכום ששולם גם לפני שהיעד הושלם, ותשלום שמגיע אחר כך נשאר פנוי לשובר נוסף.
+              מימוש בחנות אינו התחשבנות מול LOLO.
+            </p>
+          </MobileDisclosure>
         </section>
 
-        <section id="progress" className="lolo-card p-5 sm:p-6">
-          <h2 className="font-sans text-lg font-bold text-foreground">התקדמות המתנות</h2>
+        <section id="progress" className="lolo-card p-4 sm:p-6">
+          <h2 className="font-sans text-base font-bold text-foreground lg:text-lg">התקדמות המתנות</h2>
           {data.vouchersReady ? null : (
             <p className="mt-3 text-sm text-muted">
               הנפקת שוברים עדיין לא זמינה.
@@ -251,17 +254,14 @@ export default function HostDashboard({
           )}
         </section>
 
-        <div id="guests">
-          <HostGuestList
-            eventId={data.eventId}
-            eventTitle={data.title}
-            origin={origin}
-            guests={data.invitedGuests}
-          />
-        </div>
+        <HostGuestList
+          eventId={data.eventId}
+          eventTitle={data.title}
+          origin={origin}
+          guests={data.invitedGuests}
+        />
 
-        <section id="greetings" className="lolo-card p-5 sm:p-6">
-          <h2 className="font-sans text-lg font-bold text-foreground">האורחים שכבר השתתפו</h2>
+        <MobileDisclosure id="greetings" title="האורחים שכבר השתתפו" className="lolo-card p-4 sm:p-6">
           {data.orders.length === 0 ? (
             <p className="mt-4 text-sm leading-relaxed text-muted">
               אין הזמנות עדיין. כשאורחים יבחרו מתנות, ההזמנות יופיעו כאן.
@@ -305,7 +305,7 @@ export default function HostDashboard({
               ))}
             </ul>
           )}
-        </section>
+        </MobileDisclosure>
       </main>
     </div>
   );
