@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import BrandMark from "@/components/brand-mark";
 import GuestEventView from "./guest-event-view";
 
 export const metadata: Metadata = {
@@ -9,14 +9,9 @@ export const metadata: Metadata = {
 export default function GuestEventPage() {
   return (
     <div className="flex flex-1 flex-col">
-      <main className="mx-auto flex w-full max-w-lg flex-1 flex-col px-5 py-10 sm:max-w-2xl sm:px-8 sm:py-16">
-        <header className="flex flex-col items-center text-center">
-          <Link
-            href="/"
-            className="text-4xl font-extrabold tracking-[0.28em] text-brand sm:text-5xl"
-          >
-            LOLO
-          </Link>
+      <main className="mx-auto flex w-full max-w-lg flex-1 flex-col px-4 py-6 sm:px-6 lg:max-w-6xl lg:px-10 lg:py-12 xl:max-w-7xl">
+        <header className="flex justify-center lg:justify-start">
+          <BrandMark />
         </header>
         <GuestEventView />
       </main>

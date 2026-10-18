@@ -34,10 +34,10 @@ type DisplayGift = {
 };
 
 function amountButtonClass(selected: boolean) {
-  return `flex cursor-pointer items-center justify-center gap-2 rounded-2xl border-2 px-3 py-3 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand ${
+  return `flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-2xl border px-3 py-3 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand ${
     selected
-      ? "border-brand bg-brand-soft text-brand-hover shadow-md"
-      : "border-border bg-white text-foreground hover:bg-brand-soft/40"
+      ? "border-brand bg-brand text-white shadow-md"
+      : "border-border bg-ivory text-foreground hover:bg-brand-soft/70"
   }`;
 }
 
@@ -225,7 +225,7 @@ export default function GuestEventView() {
   if (missing) {
     return (
       <div className="mt-10 flex flex-col items-center text-center">
-        <h1 className="text-2xl font-bold text-foreground">האירוע לא נמצא</h1>
+        <h1 className="lolo-title">האירוע לא נמצא</h1>
         <p className="mt-3 max-w-sm text-base leading-relaxed text-muted">
           הקישור לא מוביל לאירוע פעיל. בקשו מהמארח קישור חדש, או חזרו לדף הבית.
         </p>
@@ -241,57 +241,64 @@ export default function GuestEventView() {
 
   if (!event) {
     return (
-      <p className="mt-10 text-center text-base text-muted">טוענים את האירוע...</p>
+      <p className="mt-10 text-center text-base text-muted" role="status">
+        טוענים את האירוע...
+      </p>
     );
   }
 
   const location = [event.venueName, event.address].filter(Boolean).join(", ");
 
   return (
-    <div className="mt-8 flex flex-col gap-6 pb-36">
-      {event.coverImage ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={event.coverImage}
-          alt=""
-          className="h-52 w-full rounded-3xl object-cover"
-        />
-      ) : (
-        <div className="flex h-36 items-center justify-center rounded-3xl bg-brand-soft text-brand">
-          LOLO
+    <div className="mt-6 flex flex-col gap-6 pb-36 lg:mt-8 lg:grid lg:grid-cols-2 lg:items-start lg:gap-x-14 lg:gap-y-8 lg:pb-0">
+      <div className="flex flex-col gap-5 lg:sticky lg:top-8">
+      <section className="lolo-hero lg:min-h-[32rem]">
+        {event.coverImage ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={event.coverImage}
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+        ) : (
+          <div className="lolo-hero-fallback" aria-hidden />
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#241018]/90 via-[#241018]/30 to-[#241018]/10" />
+        <div className="relative flex min-h-[18.5rem] flex-col items-center justify-end px-6 pb-7 pt-16 text-center text-white lg:min-h-[32rem] lg:px-10">
+          {event.hostName ? (
+            <p className="text-sm font-semibold text-[#f6e6de]">
+              הזמנה מאת {event.hostName}
+            </p>
+          ) : null}
+          <h1 className="mt-2 max-w-md text-4xl font-medium leading-tight text-white sm:text-5xl">
+            {event.title || "האירוע"}
+          </h1>
+          {event.date || event.time ? (
+            <p className="mt-3 text-sm text-white/85">
+              {[formatEventDate(event.date), formatEventTime(event.time)]
+                .filter(Boolean)
+                .join(" · ")}
+            </p>
+          ) : null}
+          {location ? <p className="mt-1 text-sm text-white/85">{location}</p> : null}
         </div>
-      )}
-
-      <div className="text-center">
-        {event.hostName ? (
-          <p className="text-sm font-medium text-muted">
-            הזמנה מאת {event.hostName}
-          </p>
-        ) : null}
-        <h1 className="mt-2 text-3xl font-bold leading-tight text-foreground">
-          {event.title || "האירוע"}
-        </h1>
-        {event.date || event.time ? (
-          <p className="mt-3 text-base text-muted">
-            {[formatEventDate(event.date), formatEventTime(event.time)]
-              .filter(Boolean)
-              .join(" · ")}
-          </p>
-        ) : null}
-        {location ? (
-          <p className="mt-1 text-base text-muted">{location}</p>
-        ) : null}
-      </div>
+      </section>
 
       {event.message ? (
-        <p className="rounded-3xl bg-white px-5 py-4 text-center text-base leading-relaxed text-foreground">
+        <p className="lolo-card px-5 py-5 text-center text-base leading-relaxed text-foreground">
           {event.message}
         </p>
       ) : null}
 
+      <p className="text-center text-sm leading-relaxed text-muted lg:text-start">
+        ביחד, אנחנו מגשימים משאלה. כל השתתפות מקרבת את המתנה — בלי סכום נכון או לא נכון.
+      </p>
+      </div>
+
+      <div className="flex flex-col gap-4">
       <section className="flex flex-col gap-4">
-        <h2 className="text-center text-lg font-bold text-foreground">
-          מה תרצו להעניק?
+        <h2 className="text-center text-2xl font-medium text-foreground lg:text-start">
+          המתנה שכולם נותנים יחד
         </h2>
         {fundingNote ? (
           <p className="text-center text-sm text-muted">{fundingNote}</p>
@@ -299,7 +306,7 @@ export default function GuestEventView() {
         {!funding && !fundingNote ? (
           <p className="text-center text-sm text-muted">טוענים את ההתקדמות...</p>
         ) : null}
-        {hostGifts.map((gift) => {
+        {hostGifts.map((gift, index) => {
           const contribution = contributionFor(gift.id);
           const selected = Boolean(contribution);
           const customOpen = Boolean(openCustom[gift.id]) || !showSuggested;
@@ -310,22 +317,24 @@ export default function GuestEventView() {
           return (
             <article
               key={gift.id}
-              className={`rounded-3xl border-2 p-5 ${
-                selected
-                  ? "border-brand bg-brand-soft/40"
-                  : "border-border bg-white"
+              className={`overflow-hidden rounded-[1.75rem] border bg-ivory ${
+                selected ? "border-brand shadow-[var(--shadow-lift)]" : "border-border"
               }`}
             >
               <GiftMedia
                 imageUrl={gift.imageUrl}
                 icon={gift.emoji}
                 alt=""
-                className="h-44 w-full text-5xl"
+                flush
+                className="aspect-[3/2] h-auto w-full text-5xl lg:aspect-[5/2] lg:max-h-40 lg:text-4xl"
               />
-              <div className="mt-4">
+              <div className="p-5">
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <h3 className="text-base font-bold text-foreground">
+                    {index === 0 ? (
+                      <p className="mb-1 text-xs font-bold text-gold">הבחירה הראשונה של המארחים</p>
+                    ) : null}
+                    <h3 className="font-sans text-lg font-bold text-foreground">
                       {gift.name}
                     </h3>
                     {gift.storeName ? (
@@ -333,7 +342,7 @@ export default function GuestEventView() {
                     ) : null}
                   </div>
                   {selected ? (
-                    <span className="text-sm font-bold text-brand">
+                    <span className="rounded-full bg-brand-soft px-3 py-1 text-sm font-bold text-brand">
                       ✓ {formatGiftAmount(contribution?.amount ?? 0)}
                     </span>
                   ) : null}
@@ -358,7 +367,6 @@ export default function GuestEventView() {
                     contributorCount={funding[gift.id].contributorCount}
                   />
                 ) : null}
-              </div>
 
               {showSuggested ? (
                 <div className="mt-4 grid grid-cols-2 gap-2">
@@ -447,18 +455,19 @@ export default function GuestEventView() {
                 <button
                   type="button"
                   onClick={() => removeContribution(gift.id)}
-                  className="mt-4 cursor-pointer text-sm font-semibold text-brand hover:text-brand-hover"
+                  className="mt-4 min-h-11 cursor-pointer text-sm font-semibold text-brand hover:text-brand-hover"
                 >
                   הסרת מתנה
                 </button>
               ) : null}
+              </div>
             </article>
           );
         })}
       </section>
 
-      <section className="rounded-3xl border border-border bg-white p-5">
-        <h2 className="text-base font-bold text-foreground">המתנה שלכם</h2>
+      <section className="lolo-card p-5">
+        <h2 className="font-sans text-base font-bold text-foreground">החלק שלכם במתנה</h2>
         {contributions.length === 0 ? (
           <p className="mt-2 text-sm text-muted">עדיין לא נבחרה מתנה.</p>
         ) : (
@@ -481,8 +490,11 @@ export default function GuestEventView() {
         </p>
       </section>
 
-      <div className="fixed inset-x-0 bottom-0 border-t border-border bg-white/95 px-5 py-4 backdrop-blur">
-        <div className="mx-auto w-full max-w-lg">
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-[#fbf7f2]/95 px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur lg:static lg:z-auto lg:mt-2 lg:border-0 lg:bg-transparent lg:px-0 lg:py-0">
+        <div className="mx-auto w-full max-w-lg lg:max-w-none">
+          <p className="mb-2 text-center text-xs font-semibold text-muted">
+            {total > 0 ? "ההשתתפות שלכם מצטרפת למתנה" : "בחרו סכום כדי להצטרף למתנה"}
+          </p>
           <button
             type="button"
             disabled={total <= 0}
@@ -495,6 +507,7 @@ export default function GuestEventView() {
             ממשיכים לברכה • {formatGiftAmount(total)}
           </button>
         </div>
+      </div>
       </div>
     </div>
   );

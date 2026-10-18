@@ -13,7 +13,7 @@ import VoucherShareActions from "@/components/voucher-share-actions";
 
 function statusClass(status: VoucherCardModel["status"]) {
   if (status === "ISSUED") {
-    return "bg-white/20 text-white";
+    return "bg-[#f8efe2] text-[#6a4518]";
   }
   if (status === "PARTIALLY_REDEEMED") {
     return "bg-white text-brand";
@@ -24,16 +24,18 @@ function statusClass(status: VoucherCardModel["status"]) {
 export default function VoucherCard({ model }: { model: VoucherCardModel }) {
   const balanceDiffers = model.remainingAmount !== model.amount;
   return (
-    <article className="voucher-print overflow-hidden rounded-[2rem] border border-border bg-white shadow-[0_20px_60px_rgba(76,29,149,0.12)]">
-      <div className="bg-gradient-to-l from-[#4c1d95] via-brand to-[#c084fc] px-6 py-7 text-white">
+    <article className="voucher-print overflow-hidden rounded-[2rem] border border-[#e4cfaa] bg-ivory shadow-[0_22px_60px_rgba(62,21,36,0.12)]">
+      <div className="relative overflow-hidden bg-[#3e1524] px-6 py-7 text-white">
+        <div className="pointer-events-none absolute inset-y-0 left-1/2 w-4 -translate-x-1/2 bg-[#c4a574]/35" aria-hidden />
+        <div className="relative">
         <div className="flex items-center justify-between gap-3">
-          <p className="text-2xl font-extrabold tracking-[0.28em]">LOLO</p>
+          <p className="font-sans text-xl font-bold tracking-[0.32em]">LOLO</p>
           <span className={`rounded-full px-3 py-1 text-xs font-semibold ${statusClass(model.status)}`}>
             {voucherStatusLabel(model.status)}
           </span>
         </div>
-        <p className="mt-8 text-sm text-white/80">שובר מתנה</p>
-        <p className="mt-1 text-4xl font-bold tracking-tight">{formatGiftAmount(model.amount)}</p>
+        <p className="mt-8 text-sm text-[#f6e6de]">שובר מתנה</p>
+        <p className="mt-1 text-4xl font-medium tracking-tight">{formatGiftAmount(model.amount)}</p>
         {balanceDiffers ? (
           <p className="mt-2 text-sm text-white/90">
             יתרה למימוש {formatGiftAmount(model.remainingAmount)}
@@ -41,10 +43,11 @@ export default function VoucherCard({ model }: { model: VoucherCardModel }) {
         ) : (
           <p className="mt-2 text-sm text-white/80">הסכום המלא זמין למימוש</p>
         )}
-        <p className="mt-5 rounded-2xl bg-white/15 px-4 py-3 text-sm font-bold leading-relaxed">
-          שובר הדגמה בלבד — ללא ערך כספי ואינו ניתן למימוש בחנות
-        </p>
+        </div>
       </div>
+      <p className="voucher-disclaimer bg-[#f8efe2] px-5 py-3 text-center text-sm font-bold leading-relaxed text-[#3e1524]">
+        שובר הדגמה בלבד — ללא ערך כספי ואינו ניתן למימוש בחנות
+      </p>
 
       <div className="flex flex-col gap-6 px-6 py-6">
         <div className="flex items-center gap-4">
@@ -138,6 +141,9 @@ export default function VoucherCard({ model }: { model: VoucherCardModel }) {
           )}
         </section>
 
+        <p className="voucher-disclaimer text-center text-sm font-bold leading-relaxed text-[#3e1524]">
+          שובר הדגמה בלבד — ללא ערך כספי ואינו ניתן למימוש בחנות
+        </p>
         <VoucherShareActions shareUrl={model.shareUrl} />
       </div>
     </article>

@@ -170,13 +170,11 @@ export default function GuestPaymentSummary() {
 
   return (
     <div className="mt-10 flex flex-col gap-6" aria-busy={phase === "processing"}>
-      <section className="rounded-3xl border border-border bg-white p-5">
+      <section className="lolo-card p-5">
         <div className="flex items-start justify-between gap-3">
-          <h2 className="text-base font-bold text-foreground">סיכום התשלום</h2>
+          <h2 className="font-sans text-base font-bold text-foreground">סיכום התשלום</h2>
           {showDemo && !unavailable ? (
-            <span className="shrink-0 rounded-full bg-brand-soft px-3 py-1 text-xs font-bold text-brand">
-              תשלום הדגמה
-            </span>
+            <span className="lolo-demo shrink-0">תשלום הדגמה</span>
           ) : null}
         </div>
         {showDemo && !unavailable ? (
