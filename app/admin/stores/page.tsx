@@ -52,7 +52,37 @@ export default async function AdminStoresPage() {
       ) : null}
 
       {stores.length > 0 ? (
-        <div className="mt-8 overflow-x-auto rounded-3xl border border-border bg-white">
+        <ul className="mt-8 flex flex-col gap-3 md:hidden">
+          {stores.map((store) => (
+            <li key={store.id} className="rounded-3xl border border-border bg-white p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="font-bold text-foreground">{store.name}</p>
+                  <p className="mt-1 text-sm text-muted">
+                    {store.active ? "פעיל" : "לא פעיל"}
+                    {" · "}
+                    עמלה {commissionLabel(store.commissionPercent)}
+                  </p>
+                  <p className="mt-1 text-sm text-muted">
+                    {paymentTermsLabel(store.paymentTermsDays)}
+                    {" · "}
+                    {settlementLabel(store.settlementMethod)}
+                  </p>
+                </div>
+                <Link href={`/admin/stores/${store.id}`} className="shrink-0 text-sm font-semibold text-brand">
+                  עריכה
+                </Link>
+              </div>
+              <div className="mt-3">
+                <StoreStatusButton storeId={store.id} active={store.active} />
+              </div>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+
+      {stores.length > 0 ? (
+        <div className="mt-8 hidden overflow-x-auto rounded-3xl border border-border bg-white md:block">
           <table className="w-full min-w-[760px] text-right text-sm">
             <thead className="border-b border-border text-muted">
               <tr>

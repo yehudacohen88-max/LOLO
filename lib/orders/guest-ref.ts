@@ -37,3 +37,10 @@ export function loadGuestOrderRef(slug: string): GuestOrderRef | null {
 export function saveGuestOrderRef(slug: string, ref: GuestOrderRef) {
   window.localStorage.setItem(scopedKey(slug), JSON.stringify(ref));
 }
+
+export function clearGuestOrderRef(slug: string) {
+  if (typeof window === "undefined" || !slug) {
+    return;
+  }
+  window.localStorage.removeItem(scopedKey(slug));
+}

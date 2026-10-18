@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import FundingProgress from "@/components/funding-progress";
@@ -223,9 +224,18 @@ export default function GuestEventView() {
 
   if (missing) {
     return (
-      <p className="mt-10 text-center text-base text-muted">
-        האירוע לא נמצא.
-      </p>
+      <div className="mt-10 flex flex-col items-center text-center">
+        <h1 className="text-2xl font-bold text-foreground">האירוע לא נמצא</h1>
+        <p className="mt-3 max-w-sm text-base leading-relaxed text-muted">
+          הקישור לא מוביל לאירוע פעיל. בקשו מהמארח קישור חדש, או חזרו לדף הבית.
+        </p>
+        <Link
+          href="/"
+          className="mt-6 inline-flex h-12 items-center justify-center rounded-full bg-brand px-6 text-base font-semibold text-white hover:bg-brand-hover"
+        >
+          לדף הבית
+        </Link>
+      </div>
     );
   }
 
@@ -401,6 +411,7 @@ export default function GuestEventView() {
                       type="number"
                       min={1}
                       inputMode="numeric"
+                      dir="ltr"
                       value={customDrafts[gift.id] ?? ""}
                       onChange={(event) => {
                         const value = event.target.value;

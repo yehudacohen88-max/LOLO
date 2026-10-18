@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { cookies, headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
+import { isUuid } from "@/lib/vouchers/input";
 import VoucherCard from "@/components/voucher-card";
 import { appPublicOrigin, originFromProxyHeaders } from "@/lib/app-url";
 import {
@@ -23,6 +24,9 @@ type PageProps = {
 
 export default async function HostVoucherPage({ params }: PageProps) {
   const { eventId, voucherId } = await params;
+  if (!isUuid(eventId) || !isUuid(voucherId)) {
+    notFound();
+  }
   const jar = await cookies();
   const session = readHostSessionToken(jar.get(HOST_SESSION_COOKIE)?.value);
   if (!session || session.eventId !== eventId) {
@@ -50,6 +54,9 @@ export default async function HostVoucherPage({ params }: PageProps) {
     notFound();
   }
 
+  const showAtStore =
+    card.status === "ISSUED" || card.status === "PARTIALLY_REDEEMED";
+
   return (
     <main className="mx-auto flex w-full max-w-lg flex-1 flex-col px-5 py-8 sm:py-12">
       <div className="no-print mb-6 flex items-center justify-between gap-3">
@@ -58,6 +65,17 @@ export default async function HostVoucherPage({ params }: PageProps) {
         </Link>
         <p className="text-sm text-muted">להצגה בחנות</p>
       </div>
+      {showAtStore ? (
+        <section className="no-print mb-4 rounded-3xl bg-brand-soft px-5 py-4">
+          <p className="text-sm font-semibold text-brand">הצעד הבא</p>
+          <h1 className="mt-1 text-xl font-bold text-foreground">הציגו את הכרטיס בחנות</h1>
+          <p className="mt-2 text-sm leading-relaxed text-muted">
+            פתחו את הכרטיס על המסך, או שלחו את הקישור. בחנות סורקים את הקוד ומממשים את הסכום.
+          </p>
+        </section>
+      ) : (
+        <h1 className="no-print mb-4 text-xl font-bold text-foreground">כרטיס השובר</h1>
+      )}
       <VoucherCard model={card} />
     </main>
   );

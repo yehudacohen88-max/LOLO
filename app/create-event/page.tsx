@@ -27,7 +27,7 @@ export default function CreateEventPage() {
           </p>
         </header>
 
-        <Suspense fallback={null}>
+        <Suspense fallback={<p className="mt-10 text-center text-sm text-muted">טוענים...</p>}>
           <CreateEventForm />
         </Suspense>
       </main>

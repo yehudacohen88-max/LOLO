@@ -30,7 +30,7 @@ export default function HostLoginForm() {
       };
 
       if (!response.ok || !payload.eventId) {
-        throw new Error(payload.error || "מזהה האירוע או קוד הניהול שגויים.");
+        throw new Error(payload.error || "קישור האירוע או קוד הניהול שגויים.");
       }
 
       router.push(`/host/events/${payload.eventId}`);
@@ -38,7 +38,7 @@ export default function HostLoginForm() {
       setError(
         nextError instanceof Error
           ? nextError.message
-          : "מזהה האירוע או קוד הניהול שגויים.",
+          : "קישור האירוע או קוד הניהול שגויים.",
       );
     } finally {
       setSaving(false);
@@ -49,7 +49,7 @@ export default function HostLoginForm() {
     <form onSubmit={handleSubmit} className="mt-10 flex flex-col gap-5">
       <label className="flex flex-col gap-2">
         <span className="text-sm font-semibold text-foreground">
-          מזהה האירוע או קישור האורחים
+          קישור האירוע או כתובת עמוד האורחים
         </span>
         <input
           value={identifier}

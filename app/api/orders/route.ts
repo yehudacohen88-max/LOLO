@@ -9,7 +9,7 @@ export async function GET(request: Request) {
   const accessToken = searchParams.get("accessToken") ?? "";
 
   if (!id || !accessToken) {
-    return NextResponse.json({ error: "חסר מזהה הזמנה." }, { status: 400 });
+    return NextResponse.json({ error: "לא מצאנו את ההזמנה." }, { status: 400 });
   }
 
   try {

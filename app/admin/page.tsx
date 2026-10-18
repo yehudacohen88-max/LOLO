@@ -52,7 +52,7 @@ export default async function AdminHomePage() {
           <p className="mt-3 text-base text-muted sm:text-lg">האזור הזה מיועד לבעלי המערכת בלבד.</p>
         </header>
         {adminPasswordIsConfigured() ? null : (
-          <p className="mt-8 text-center text-sm text-muted">הניהול עדיין לא הוגדר בשרת.</p>
+          <p className="mt-8 text-center text-sm text-muted">הכניסה לניהול עדיין לא הופעלה.</p>
         )}
         <AdminLoginForm />
       </main>

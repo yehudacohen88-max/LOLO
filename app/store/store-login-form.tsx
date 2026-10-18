@@ -25,7 +25,7 @@ export default function StoreLoginForm() {
       });
       const payload = (await response.json()) as { error?: string };
       if (!response.ok) {
-        throw new Error(payload.error || "מזהה בית העסק או קוד הכניסה שגויים.");
+        throw new Error(payload.error || "שם הכניסה או קוד הכניסה שגויים.");
       }
       router.push("/store/redeem");
       router.refresh();
@@ -33,7 +33,7 @@ export default function StoreLoginForm() {
       setError(
         nextError instanceof Error
           ? nextError.message
-          : "מזהה בית העסק או קוד הכניסה שגויים.",
+          : "שם הכניסה או קוד הכניסה שגויים.",
       );
       setSaving(false);
     }
@@ -42,7 +42,7 @@ export default function StoreLoginForm() {
   return (
     <form onSubmit={handleSubmit} className="mt-10 flex flex-col gap-5">
       <label className="flex flex-col gap-2">
-        <span className="text-sm font-semibold">מזהה בית העסק</span>
+        <span className="text-sm font-semibold">שם הכניסה של החנות</span>
         <input
           value={slug}
           onChange={(event) => setSlug(event.target.value)}

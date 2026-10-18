@@ -15,6 +15,7 @@ import { decideMarkFailed, decideMarkPaid } from "@/lib/payments/state";
 import type { CheckoutAmounts } from "@/lib/payments/fee";
 import type { MarkPaidAttempt } from "@/lib/payments/state";
 import type { StoredEvent } from "@/lib/events/types";
+import { decideStoredOrderWrite } from "./repeat";
 import type { PaymentStatus, StoredOrder, UpsertOrderInput } from "./types";
 
 type GiftRow = {
@@ -307,16 +308,25 @@ export async function upsertPendingOrder(
     if (existingError || !existing) {
       orderId = "";
       accessToken = "";
-    } else if (existing.access_token !== accessToken) {
-      throw new Error("לא ניתן לעדכן את ההזמנה.");
-    } else if (existing.event_id !== event.id) {
-      throw new Error("לא ניתן לעדכן את ההזמנה.");
-    } else if (
-      existing.payment_status !== "pending" &&
-      existing.payment_status !== "failed"
-    ) {
-      throw new Error("ההזמנה כבר אינה ממתינה לתשלום.");
     } else {
+      const decision = decideStoredOrderWrite({
+        accessTokenMatches: existing.access_token === accessToken,
+        eventMatches: existing.event_id === event.id,
+        paymentStatus: existing.payment_status,
+      });
+      if (decision === "reject-auth") {
+        throw new Error("לא ניתן לעדכן את ההזמנה.");
+      }
+      if (decision === "reject-closed") {
+        throw new Error("ההזמנה כבר אינה ממתינה לתשלום.");
+      }
+      if (decision === "replace") {
+        orderId = "";
+        accessToken = "";
+      }
+    }
+
+    if (orderId) {
       const { error: updateError } = await supabase
         .from("orders")
         .update({

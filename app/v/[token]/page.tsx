@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
+import FriendlyStatus from "@/components/friendly-status";
 import VoucherCard from "@/components/voucher-card";
 import { appPublicOrigin, originFromProxyHeaders } from "@/lib/app-url";
 import { getPublicVoucherCard } from "@/lib/vouchers/repository";
@@ -36,11 +37,10 @@ export default async function PublicVoucherPage({ params }: PageProps) {
 
   if (!card) {
     return (
-      <main className="mx-auto flex w-full max-w-lg flex-1 flex-col px-5 py-16 text-center">
-        <p className="text-4xl font-extrabold tracking-[0.28em] text-brand">LOLO</p>
-        <h1 className="mt-8 text-2xl font-bold">השובר לא נמצא</h1>
-        <p className="mt-3 text-base text-muted">הקישור אינו פעיל.</p>
-      </main>
+      <FriendlyStatus
+        title="השובר לא נמצא"
+        body="הקישור אינו פעיל. בקשו מהמארח לשלוח את הכרטיס מחדש."
+      />
     );
   }
 

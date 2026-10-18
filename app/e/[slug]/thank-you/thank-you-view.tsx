@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getEventBySlug, guestEventPath } from "@/lib/events";
 import { fromRouteParam } from "@/lib/events/slug";
 import {
@@ -13,6 +13,8 @@ import {
   type GuestContribution,
 } from "@/lib/guest-draft";
 import { loadPendingGuestOrder } from "@/lib/orders/client";
+import { clearGuestOrderRef } from "@/lib/orders/guest-ref";
+import { thankYouAfterLoad } from "@/lib/orders/thank-you-ref";
 import type { PaymentStatus } from "@/lib/orders/types";
 
 export default function ThankYouView() {
@@ -27,6 +29,7 @@ export default function ThankYouView() {
   const [paymentProvider, setPaymentProvider] = useState<string | null>(null);
   const [paymentReference, setPaymentReference] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
+  const confirmedPaid = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -39,14 +42,22 @@ export default function ThankYouView() {
       const stored = await getEventBySlug(slug);
       const order = await loadPendingGuestOrder(slug);
       const local = loadContributions(slug);
+      const decision = thankYouAfterLoad(
+        order ? { ok: true, paymentStatus: order.paymentStatus } : { ok: false },
+        confirmedPaid.current,
+      );
 
       if (cancelled) {
         return;
       }
 
-      setEventName(stored?.title ?? "");
-      setGuestName(order?.guestName || loadGuestDetails(slug).name);
-      if (order) {
+      if (decision.confirmedPaid) {
+        confirmedPaid.current = true;
+      }
+
+      if (order && decision.replaceDisplay) {
+        setEventName(stored?.title ?? "");
+        setGuestName(order.guestName || loadGuestDetails(slug).name);
         setContributions(
           order.items.map((item) => ({
             giftId: item.giftId,
@@ -62,13 +73,21 @@ export default function ThankYouView() {
         setPaymentStatus(order.paymentStatus);
         setPaymentProvider(order.paymentProvider ?? null);
         setPaymentReference(order.paymentReference ?? null);
-      } else {
+      } else if (decision.replaceDisplay) {
+        setEventName(stored?.title ?? "");
+        setGuestName(loadGuestDetails(slug).name);
         setContributions(local);
         const total = getContributionsTotal(local);
         setContributionAmount(total);
         setFeeAmount(0);
         setChargedAmount(total);
         setPaymentStatus("");
+        setPaymentProvider(null);
+        setPaymentReference(null);
+      }
+
+      if (decision.clearRef) {
+        clearGuestOrderRef(slug);
       }
       setReady(true);
     })();
@@ -89,8 +108,11 @@ export default function ThankYouView() {
   return (
     <div className="mt-8 flex flex-col">
       <div className="rounded-3xl border border-border bg-white px-5 py-6 text-center">
+        <p className="text-sm font-semibold leading-relaxed text-brand">
+          גרסת בטא — תשלומים מדומים בלבד
+        </p>
         {paid ? (
-          <p className="text-base font-bold text-brand">התשלום התקבל</p>
+          <p className="mt-3 text-base font-bold text-brand">התשלום התקבל</p>
         ) : failed ? (
           <p className="text-base font-bold text-brand">התשלום לא הושלם</p>
         ) : (

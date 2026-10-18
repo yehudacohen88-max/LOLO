@@ -96,9 +96,50 @@ export function loadEventDraft(): EventDraft {
   }
 }
 
+export class DraftStorageError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "DraftStorageError";
+  }
+}
+
+const DRAFT_SAVE_FAILED = "לא הצלחנו לשמור את הפרטים. נסו שוב.";
+const DRAFT_IMAGE_TOO_BIG =
+  "לא הצלחנו לשמור את התמונה. היא גדולה מדי. הסירו אותה או בחרו תמונה אחרת.";
+const DRAFT_STORAGE_FULL =
+  "לא הצלחנו לשמור. הזיכרון בדפדפן מלא. הסירו את התמונה או נסו שוב.";
+
+function isQuotaError(error: unknown) {
+  return (
+    error instanceof DOMException &&
+    (error.name === "QuotaExceededError" ||
+      error.name === "NS_ERROR_DOM_QUOTA_REACHED" ||
+      error.code === 22)
+  );
+}
+
 export function saveEventDraft(patch: Partial<EventDraft>) {
   const next = { ...loadEventDraft(), ...patch };
-  window.localStorage.setItem(EVENT_DRAFT_KEY, JSON.stringify(next));
+  const incomingImage = Object.prototype.hasOwnProperty.call(patch, "imageDataUrl")
+    ? patch.imageDataUrl ?? ""
+    : "";
+
+  if (incomingImage.startsWith("data:") && incomingImage.length > 500_000) {
+    throw new DraftStorageError(DRAFT_IMAGE_TOO_BIG);
+  }
+
+  try {
+    window.localStorage.setItem(EVENT_DRAFT_KEY, JSON.stringify(next));
+  } catch (error) {
+    if (error instanceof DraftStorageError) {
+      throw error;
+    }
+    if (isQuotaError(error) && next.imageDataUrl.startsWith("data:")) {
+      throw new DraftStorageError(DRAFT_IMAGE_TOO_BIG);
+    }
+    throw new DraftStorageError(isQuotaError(error) ? DRAFT_STORAGE_FULL : DRAFT_SAVE_FAILED);
+  }
+
   return next;
 }
 

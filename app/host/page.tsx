@@ -21,7 +21,7 @@ export default function HostLoginPage() {
             כניסה לניהול האירוע
           </h1>
           <p className="mt-3 text-base text-muted sm:text-lg">
-            הזינו את מזהה האירוע ואת קוד הניהול הפרטי
+            הזינו את קישור האירוע ואת קוד הניהול הפרטי
           </p>
         </header>
         <HostLoginForm />

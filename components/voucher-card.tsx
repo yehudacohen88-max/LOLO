@@ -41,6 +41,9 @@ export default function VoucherCard({ model }: { model: VoucherCardModel }) {
         ) : (
           <p className="mt-2 text-sm text-white/80">הסכום המלא זמין למימוש</p>
         )}
+        <p className="mt-5 rounded-2xl bg-white/15 px-4 py-3 text-sm font-bold leading-relaxed">
+          שובר הדגמה בלבד — ללא ערך כספי ואינו ניתן למימוש בחנות
+        </p>
       </div>
 
       <div className="flex flex-col gap-6 px-6 py-6">

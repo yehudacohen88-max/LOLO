@@ -12,7 +12,7 @@ import {
   generateVoucherSecret,
   parseVoucherLookup,
 } from "@/lib/vouchers/code";
-import { safeImageUrl } from "@/lib/vouchers/input";
+import { isUuid, safeImageUrl } from "@/lib/vouchers/input";
 import {
   isMissingVoucherSchema,
   voucherErrorCode,
@@ -207,6 +207,9 @@ async function cardFromRow(
 }
 
 async function loadRedemptions(voucherId: string) {
+  if (!isUuid(voucherId)) {
+    return [];
+  }
   const supabase = getSupabaseServiceClient();
   const { data, error } = await supabase
     .from("redemptions")
@@ -222,6 +225,9 @@ async function loadRedemptions(voucherId: string) {
 }
 
 async function loadVoucherBy(column: "id" | "view_token" | "code_key", value: string) {
+  if (column === "id" && !isUuid(value)) {
+    return null;
+  }
   const supabase = getSupabaseServiceClient();
   const { data, error } = await supabase
     .from("vouchers")

@@ -21,7 +21,7 @@ import {
 } from "@/lib/security/required-secret";
 import { getSupabaseServiceClient } from "@/lib/supabase/server";
 
-const GENERIC_ERROR = "מזהה האירוע או קוד הניהול שגויים.";
+const GENERIC_ERROR = "קישור האירוע או קוד הניהול שגויים.";
 
 function limitedResponse(ip: string) {
   const retryAfter = loginRetryAfterSeconds("host", ip);

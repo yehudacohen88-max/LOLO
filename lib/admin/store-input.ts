@@ -115,9 +115,9 @@ function optionalSettlement(value: unknown): SettlementMethod | null {
 }
 
 export function parseStoreSlug(value: unknown) {
-  const slug = requiredText(value, "מזהה באנגלית", 80).toLowerCase();
+  const slug = requiredText(value, "שם כניסה לחנות", 80).toLowerCase();
   if (!SLUG_PATTERN.test(slug)) {
-    throw new Error("המזהה באנגלית יכול לכלול אותיות קטנות, מספרים ומקפים.");
+    throw new Error("שם הכניסה יכול לכלול אותיות באנגלית, מספרים ומקפים.");
   }
   return slug;
 }

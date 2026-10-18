@@ -1,5 +1,6 @@
 import "server-only";
 import { getSupabaseServiceClient } from "@/lib/supabase/server";
+import { isUuid } from "@/lib/vouchers/input";
 import type { AdminStore, AdminStoreInput, SettlementMethod } from "./store-fields";
 import { SETTLEMENT_METHODS } from "./store-fields";
 
@@ -90,10 +91,10 @@ function storeError(error: { message: string; code?: string }, fallback: string)
     code: error.code,
   });
   if (error.code === "23505") {
-    return new Error("המזהה באנגלית כבר בשימוש.");
+    return new Error("שם הכניסה הזה כבר בשימוש.");
   }
   if (error.code === "42703" || error.code === "PGRST204") {
-    return new Error("עדכון טבלת בתי העסק עדיין לא הורץ.");
+    return new Error("פרטי בתי העסק עדיין לא זמינים. נסו שוב מאוחר יותר.");
   }
   return new Error(fallback);
 }
@@ -113,6 +114,9 @@ export async function listAdminStores(): Promise<AdminStore[]> {
 }
 
 export async function getAdminStore(id: string): Promise<AdminStore | null> {
+  if (!isUuid(id)) {
+    return null;
+  }
   const supabase = getSupabaseServiceClient();
   const { data, error } = await supabase
     .from("stores")
@@ -121,6 +125,9 @@ export async function getAdminStore(id: string): Promise<AdminStore | null> {
     .maybeSingle();
 
   if (error) {
+    if (error.code === "22P02") {
+      return null;
+    }
     throw storeError(error, "טעינת בית העסק נכשלה.");
   }
   return data ? toAdminStore(data as StoreRow) : null;

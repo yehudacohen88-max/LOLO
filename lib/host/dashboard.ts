@@ -35,6 +35,7 @@ export type HostDashboardOrder = {
   guestName: string;
   guestPhone: string;
   guestEmail: string;
+  greetingText: string;
   createdAt: string;
   totalAmount: number;
   paymentStatus: HostPaymentStatus;
@@ -65,6 +66,7 @@ type OrderRow = {
   guest_name: string;
   guest_phone: string;
   guest_email: string;
+  greeting_text: string;
   total_amount: number | string;
   payment_status: string;
   created_at: string;
@@ -178,7 +180,7 @@ export async function getHostDashboardData(
   const { data: orderRows } = await supabase
     .from("orders")
     .select(
-      "id, event_id, guest_name, guest_phone, guest_email, total_amount, payment_status, created_at",
+      "id, event_id, guest_name, guest_phone, guest_email, greeting_text, total_amount, payment_status, created_at",
     )
     .eq("event_id", eventId)
     .order("created_at", { ascending: false });
@@ -261,6 +263,7 @@ export async function getHostDashboardData(
       guestName: String(order.guest_name || "").trim(),
       guestPhone: String(order.guest_phone || "").trim(),
       guestEmail: String(order.guest_email || "").trim(),
+      greetingText: String(order.greeting_text || "").trim(),
       createdAt: order.created_at,
       totalAmount: asAmount(order.total_amount),
       paymentStatus: asStatus(order.payment_status),

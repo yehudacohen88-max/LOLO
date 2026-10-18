@@ -1,9 +1,21 @@
 import HomeCreateActions from "./home-create-actions";
 
 const steps = [
-  { number: "1", title: "יוצרים אירוע" },
-  { number: "2", title: "בוחרים מתנות" },
-  { number: "3", title: "משתפים את האורחים" },
+  {
+    number: "1",
+    title: "יוצרים אירוע",
+    body: "בוחרים מתנות, יעד וחנות.",
+  },
+  {
+    number: "2",
+    title: "האורחים משתתפים",
+    body: "כל אורח נכנס מקישור אישי, בוחר סכום ומשאיר ברכה.",
+  },
+  {
+    number: "3",
+    title: "מממשים בחנות",
+    body: "המארח מציג שובר, והחנות מממשת אותו.",
+  },
 ];
 
 export default function Home() {
@@ -20,25 +32,36 @@ export default function Home() {
           </h1>
 
           <p className="mt-4 max-w-md text-base leading-relaxed text-muted sm:mt-5 sm:text-lg">
-            יוצרים אירוע, בוחרים מתנות ומאפשרים לאורחים להשתתף בדרך פשוטה
-            ונעימה.
+            LOLO היא הדרך לתת מתנה אמיתית לאירוע. המארח בוחר מתנות מחנויות
+            שותפות, האורחים משתתפים בסכום שמתאים להם, והכסף הופך לשובר למימוש
+            בחנות.
+          </p>
+          <p className="mt-3 max-w-md text-sm leading-relaxed text-muted">
+            היעד של המתנה הוא יעד, לא תקרה. אפשר לעבור את 100%, והמארח מנפיק
+            שובר על מה ששולם.
           </p>
 
           <HomeCreateActions />
         </section>
 
         <section className="mt-14 sm:mt-20" aria-label="איך זה עובד">
-          <ol className="grid gap-3 sm:grid-cols-3 sm:gap-4">
+          <h2 className="text-center text-lg font-bold text-foreground">איך זה עובד</h2>
+          <ol className="mt-4 grid gap-3 sm:grid-cols-3 sm:gap-4">
             {steps.map((step) => (
               <li
                 key={step.number}
-                className="flex items-center gap-4 rounded-2xl border border-border bg-white px-4 py-4 sm:flex-col sm:items-center sm:px-5 sm:py-6 sm:text-center"
+                className="flex items-start gap-4 rounded-2xl border border-border bg-white px-4 py-4 sm:flex-col sm:items-center sm:px-5 sm:py-6 sm:text-center"
               >
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-soft text-sm font-bold text-brand">
                   {step.number}
                 </span>
-                <span className="text-sm font-semibold text-foreground sm:text-base">
-                  {step.title}
+                <span>
+                  <span className="block text-sm font-semibold text-foreground sm:text-base">
+                    {step.title}
+                  </span>
+                  <span className="mt-1 block text-sm leading-relaxed text-muted">
+                    {step.body}
+                  </span>
                 </span>
               </li>
             ))}
