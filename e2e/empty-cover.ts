@@ -3,6 +3,8 @@ import { expect, type Page } from "@playwright/test";
 export async function expectLetterClearOfBow(page: Page) {
   const letters = page.locator("[data-empty-letter]");
   const bows = page.locator("[data-empty-bow]");
+  await expect(letters.first()).toBeVisible();
+  await expect(bows.first()).toBeVisible();
   const count = await letters.count();
   expect(count).toBeGreaterThan(0);
   expect(await bows.count()).toBe(count);
