@@ -60,3 +60,12 @@ test("an unknown invite does not leak a stack trace", async ({ request }) => {
   expect(body).not.toContain("Supabase");
   expect(body).not.toContain("stack");
 });
+
+test("beta sign-in uses the LOLO flagship design", async ({ page }) => {
+  await page.goto("/beta?notice=invalid");
+  await expect(page.getByRole("heading", { name: "כניסה לבטא" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "lolo" })).toBeVisible();
+  await expect(page.getByText("הסיסמה שגויה.")).toBeVisible();
+  const button = page.getByRole("button", { name: "כניסה" });
+  await expect(button).toHaveCSS("background-color", "rgb(184, 50, 28)");
+});
