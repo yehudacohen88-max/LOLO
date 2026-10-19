@@ -1,6 +1,8 @@
 import { mkdirSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 import * as XLSX from "xlsx";
+import { BETA_CLARITY } from "@/app/design/beta-notice";
+import { expectLetterClearOfBow } from "./empty-cover";
 
 const ARTIFACTS = "/opt/cursor/artifacts/host-experience";
 const ACCESS_CODE = "AB12-CD34";
@@ -20,6 +22,22 @@ function shot(page: Page, name: string) {
     path: `${ARTIFACTS}/${name}.png`,
     fullPage: true,
   });
+}
+
+function createStepSentence(url: string) {
+  if (url.includes("/preview")) {
+    return "שלב 5 מתוך 5";
+  }
+  if (url.includes("/details")) {
+    return "שלב 3 מתוך 5";
+  }
+  if (url.includes("/guests")) {
+    return "שלב 4 מתוך 5";
+  }
+  if (url.includes("/gifts")) {
+    return "שלב 2 מתוך 5";
+  }
+  return "שלב 1 מתוך 5";
 }
 
 function guestWorkbook() {
@@ -98,6 +116,9 @@ test.describe("host experience", () => {
           await expect(page.getByRole("heading", { name: "עדיין אין אירוע מוכן" })).toBeVisible();
         } else if (url.startsWith("/host/example")) {
           await expect(page.getByText("נתוני דוגמה — לא אירוע אמיתי")).toBeVisible();
+          await expect(page.getByText(BETA_CLARITY)).toHaveCount(1);
+          await expect(page.getByRole("button", { name: "הנפקת שובר" })).toHaveCount(0);
+          await expect(page.getByText("אין כרגע בית עסק פעיל שאפשר לשייך לשובר.")).toHaveCount(0);
         } else if (url === "/host") {
           await expect(page.getByRole("heading", { name: "כניסה לניהול האירוע" })).toBeVisible();
         } else if (url.includes("/preview")) {
@@ -111,12 +132,21 @@ test.describe("host experience", () => {
         } else {
           await expect(page.getByRole("main").getByText("שלב 1 מתוך 5")).toBeVisible();
         }
+        if (url.startsWith("/create-event") && !url.includes("/success")) {
+          await expect(page.getByText(createStepSentence(url))).toHaveCount(1);
+        }
+        if (url.includes("/preview")) {
+          await expectLetterClearOfBow(page);
+        }
         await shot(page, name);
         if (name === "create-preview-1440") {
           await shot(page, "create-preview-nocover-1440");
         }
         if (name === "create-preview-390") {
           await shot(page, "create-preview-nocover-390");
+        }
+        if (url.startsWith("/host/example")) {
+          await shot(page, `dashboard-notice-${viewport.name}`);
         }
       }
     });
@@ -155,6 +185,7 @@ test.describe("host experience", () => {
 
     await page.getByRole("button", { name: "יצירת האירוע" }).click();
     await expect(page).toHaveURL(/\/create-event\/success\?slug=event-host-demo$/);
+    await expect(page.getByText(BETA_CLARITY)).toHaveCount(1);
     await expect(page.getByText(ACCESS_CODE)).toBeVisible();
     await expect(page.getByText("שמרו את הקוד — בלעדיו אי אפשר לנהל את האירוע")).toBeVisible();
     await page.getByRole("button", { name: "העתקת קוד הניהול" }).click();
@@ -277,7 +308,9 @@ test.describe("host experience", () => {
     await page.goto("/host/example");
     await expect(page.getByText("נתוני דוגמה — לא אירוע אמיתי")).toBeVisible();
     await expect(page.getByText("בדוגמה זו הפעולות מושבתות")).toBeVisible();
-    await expect(page.getByRole("button", { name: "הנפקת שובר" })).toBeDisabled();
+    await expect(page.getByText(BETA_CLARITY)).toHaveCount(1);
+    await expect(page.getByRole("button", { name: "הנפקת שובר" })).toHaveCount(0);
+    await expect(page.getByText("אין כרגע בית עסק פעיל שאפשר לשייך לשובר.")).toHaveCount(0);
     await expect(page.getByRole("button", { name: "הוספת אורח" })).toBeDisabled();
     await expect(page.getByRole("button", { name: "הסרה" })).toBeDisabled();
     await expect(page.getByRole("button", { name: "העתקת קישור" })).toBeDisabled();

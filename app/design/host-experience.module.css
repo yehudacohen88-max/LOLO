@@ -48,13 +48,6 @@
   display: none;
 }
 
-.summaryKicker {
-  margin: 0 0 0.85rem;
-  color: var(--fs-coral-ink);
-  font-size: 0.875rem;
-  font-weight: 700;
-}
-
 .rail {
   display: grid;
   gap: 0.35rem;
@@ -287,6 +280,17 @@
   color: var(--fs-navy-2);
   font-size: 1rem;
   line-height: 1.5;
+}
+
+.betaNote {
+  margin: 0;
+  padding: 0.85rem 1rem;
+  border-radius: 1rem;
+  background: var(--fs-blush);
+  color: var(--fs-coral-ink);
+  font-size: 0.95rem;
+  font-weight: 500;
+  line-height: 1.55;
 }
 
 .empty {

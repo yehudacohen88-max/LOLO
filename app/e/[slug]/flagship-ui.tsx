@@ -21,15 +21,25 @@ export function Wordmark() {
   );
 }
 
-export function EmptyCover({ monogram }: { monogram: string }) {
+export function EmptyCover({
+  monogram,
+  compact = false,
+}: {
+  monogram: string;
+  compact?: boolean;
+}) {
   return (
-    <div className={`${styles.portrait} ${styles.portraitEmpty}`}>
+    <div
+      className={`${styles.portrait} ${styles.portraitEmpty} ${compact ? styles.portraitCompact : ""}`}
+    >
       <div className={styles.fallback} aria-hidden="true">
         <span className={styles.fallbackRibbon} />
-        <SatinBow className={styles.fallbackBow} />
-        <span className={styles.monogram}>{monogram}</span>
+        <SatinBow className={styles.fallbackBow} mark />
+        <span className={styles.monogram} data-empty-letter="">
+          {monogram}
+        </span>
       </div>
-      <CornerRibbon still />
+      {compact ? null : <CornerRibbon still />}
     </div>
   );
 }
@@ -77,11 +87,16 @@ export function LockIcon() {
   );
 }
 
-function SatinBow({ className }: { className?: string }) {
+function SatinBow({ className, mark = false }: { className?: string; mark?: boolean }) {
   const band = useSvgId("band");
   const tail = useSvgId("tail");
   return (
-    <svg className={className} viewBox="0 0 120 150" aria-hidden="true">
+    <svg
+      className={className}
+      viewBox="0 0 120 150"
+      aria-hidden="true"
+      {...(mark ? { "data-empty-bow": "" } : {})}
+    >
       <defs>
         <linearGradient id={band} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor="#FF907C" />
@@ -196,8 +211,10 @@ export function Portrait({
       ) : (
         <div className={styles.fallback} aria-hidden="true">
           <span className={styles.fallbackRibbon} />
-          <SatinBow className={styles.fallbackBow} />
-          <span className={styles.monogram}>{monogram}</span>
+          <SatinBow className={styles.fallbackBow} mark />
+          <span className={styles.monogram} data-empty-letter="">
+            {monogram}
+          </span>
         </div>
       )}
       <CornerRibbon />

@@ -82,10 +82,11 @@
 
 .fallbackBow {
   position: absolute;
-  right: 2%;
-  bottom: 0;
-  width: 64%;
+  right: -2%;
+  bottom: -12%;
+  width: 42%;
   height: auto;
+  pointer-events: none;
 }
 
 .monogram {
@@ -96,6 +97,15 @@
   font-size: clamp(2.4rem, 9vw, 3.1rem);
   line-height: 1;
   color: var(--fs-navy);
+}
+
+.portraitCompact .fallbackBow {
+  width: 38%;
+  bottom: -20%;
+}
+
+.portraitCompact .monogram {
+  font-size: 1.65rem;
 }
 
 .ribbon {
@@ -1630,25 +1640,15 @@
 }
 
 .thanksCelebrant img,
-.thanksCelebrant span {
+.thanksCelebrant .portrait.portraitEmpty {
   width: 96px;
   height: 120px;
   flex: none;
+  margin: 0;
+  aspect-ratio: auto;
   border-radius: 20px;
   object-fit: cover;
   object-position: center 28%;
-}
-
-.thanksCelebrant span {
-  display: grid;
-  place-items: center;
-  background:
-    radial-gradient(90% 80% at 80% 0%, #ffe3d3 0%, transparent 56%),
-    linear-gradient(165deg, #fbf7f4, #f3e6ea);
-  color: var(--fs-navy);
-  font-family: var(--fs-serif);
-  font-size: 2.4rem;
-  font-weight: 700;
 }
 
 .thanksKicker {
@@ -1955,9 +1955,10 @@
   }
 
   .flowThanks .thanksCelebrant img,
-  .flowThanks .thanksCelebrant span {
+  .flowThanks .thanksCelebrant .portrait.portraitEmpty {
     width: 128px;
     height: 160px;
+    justify-self: auto;
   }
 
   .flowThanks > .flowBody,
@@ -1991,5 +1992,9 @@
   .thumbFallback {
     width: 112px;
     height: 140px;
+  }
+
+  .portraitCompact.portraitEmpty .monogram {
+    font-size: 1.65rem;
   }
 }

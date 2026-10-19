@@ -5,7 +5,6 @@ import styles from "@/app/design/host-experience.module.css";
 import { EmptyCover } from "@/app/e/[slug]/flagship-ui";
 import { loadDraftGifts } from "@/lib/draft-gifts";
 import { formatEventDate, loadEventDraft, type EventDraft } from "@/lib/event-draft";
-import { createStepLabel } from "./steps";
 
 const STEPS = [
   { step: 1, label: "האירוע" },
@@ -54,7 +53,6 @@ export default function CreateSummary({ step }: { step: number }) {
 
   return (
     <aside className={styles.summary} aria-label="סיכום האירוע">
-      <p className={styles.summaryKicker}>{createStepLabel(step)}</p>
       <ol className={styles.rail}>
         {STEPS.map((item) => {
           const state = item.step === step ? styles.railOn : item.step < step ? styles.railDone : "";
