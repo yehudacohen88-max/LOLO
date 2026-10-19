@@ -69,3 +69,12 @@ test("beta sign-in uses the LOLO flagship design", async ({ page }) => {
   const button = page.getByRole("button", { name: "כניסה" });
   await expect(button).toHaveCSS("background-color", "rgb(184, 50, 28)");
 });
+
+test("landing uses the LOLO flagship design", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByText("lolo", { exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "יצירת אירוע" })).toHaveCSS(
+    "background-color",
+    "rgb(184, 50, 28)",
+  );
+});
