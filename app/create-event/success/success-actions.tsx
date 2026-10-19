@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { BETA_CLARITY } from "@/app/design/beta-notice";
 import styles from "@/app/design/host-experience.module.css";
 import { peekCreatedAccess } from "@/app/create-event/created-access-memory";
 import { guestEventPath } from "@/lib/events";
@@ -113,6 +114,7 @@ export default function SuccessActions() {
     <div className="mt-8 flex flex-col gap-3">
       <h1 className={styles.title}>האירוע שלכם מוכן</h1>
       <p className={styles.lede}>עכשיו נשאר רק להזמין את האורחים.</p>
+      <p className={styles.betaNote}>{BETA_CLARITY}</p>
 
       {toast ? (
         <p role="status" className="rounded-2xl bg-brand-soft px-4 py-3 text-center text-sm font-medium text-brand">

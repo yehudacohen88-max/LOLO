@@ -39,13 +39,8 @@ export function exampleDashboardData(): HostDashboardData {
         invitePath: "/i/example-dana",
       },
     ],
+    // Only a hidden test store, so the closed-beta status replaces the voucher picker.
     voucherStores: [
-      {
-        id: "store-real",
-        name: "חנות הספרים",
-        logoUrl: null,
-        terms,
-      },
       {
         id: "store-test",
         name: "חנות אופניים - בדיקה",

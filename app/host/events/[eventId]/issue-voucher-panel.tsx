@@ -12,6 +12,7 @@ import {
   validityTermLabel,
   voucherStatusLabel,
 } from "@/lib/vouchers/labels";
+import { BETA_CLARITY } from "@/app/design/beta-notice";
 import { visibleHostStores } from "@/app/design/host-stores";
 import { userFacingMessage } from "@/app/design/user-error";
 import type { HostDashboardGift } from "@/lib/host/dashboard";
@@ -44,6 +45,7 @@ export default function IssueVoucherPanel({
   const selected = fixedStore ?? hostStores.find((store) => store.id === storeId) ?? null;
   const needsChoice = !fixedStore;
   const canStart = gift.availableAmount > 0 && (Boolean(fixedStore) || hostStores.length > 0);
+  const awaitingStore = gift.availableAmount > 0 && needsChoice && hostStores.length === 0;
   const issuedBefore = gift.voucheredAmount > 0;
 
   function openConfirmation() {
@@ -134,13 +136,15 @@ export default function IssueVoucherPanel({
         </p>
       ) : null}
 
-      {gift.availableAmount > 0 && needsChoice && hostStores.length === 0 ? (
-        <p className="mt-3 text-sm text-muted">אין כרגע בית עסק פעיל שאפשר לשייך לשובר.</p>
-      ) : null}
-
-      <p className="mt-4 rounded-2xl bg-brand-soft px-4 py-3 text-sm font-semibold leading-relaxed text-brand">
-        זוהי סביבת התנסות. השובר שיונפק אינו בעל ערך כספי ולא ניתן לממשו בחנות
-      </p>
+      {awaitingStore ? (
+        <p className="mt-4 rounded-2xl bg-brand-soft px-4 py-3 text-sm font-medium leading-relaxed text-brand">
+          {BETA_CLARITY}
+        </p>
+      ) : (
+        <p className="mt-4 rounded-2xl bg-brand-soft px-4 py-3 text-sm font-semibold leading-relaxed text-brand">
+          זוהי סביבת התנסות. השובר שיונפק אינו בעל ערך כספי ולא ניתן לממשו בחנות
+        </p>
+      )}
 
       {canStart && !open ? (
         <button

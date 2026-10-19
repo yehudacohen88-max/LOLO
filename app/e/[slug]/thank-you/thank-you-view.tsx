@@ -19,7 +19,8 @@ import {
 import { clearGuestOrderRef, loadGuestOrderRef } from "@/lib/orders/guest-ref";
 import { thankYouAfterLoad } from "@/lib/orders/thank-you-ref";
 import type { StoredOrder } from "@/lib/orders/types";
-import { GiftReveal } from "../flagship-ui";
+import { BETA_CLARITY } from "@/app/design/beta-notice";
+import { EmptyCover, GiftReveal } from "../flagship-ui";
 import { giftProgressCopy, participationLine } from "../progress-copy";
 import styles from "../flagship.module.css";
 
@@ -276,7 +277,7 @@ export default function ThankYouView() {
           {coverImage ? (
             <img src={coverImage} alt="" width={160} height={200} />
           ) : (
-            <span aria-hidden="true">{letter}</span>
+            <EmptyCover monogram={letter} compact />
           )}
           <div>
             <p className={styles.thanksKicker}>חוגגים יחד</p>
@@ -294,8 +295,8 @@ export default function ThankYouView() {
       </div>
       <div className={styles.thanksMain}>
         <div className={`${styles.card} ${styles.thanksReceipt}`}>
-          <p className={styles.notice}>גרסת בטא — תשלומים מדומים בלבד</p>
           <p className={styles.notice}>תשלום הדגמה — לא מתבצע חיוב אמיתי</p>
+          <p className={styles.quietLine}>{BETA_CLARITY}</p>
           <p className={styles.orderStatus} data-order-status="" role="status">
             {statusText(orderRead)}
           </p>
