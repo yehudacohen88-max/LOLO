@@ -9,7 +9,6 @@ export {
 } from "./repository";
 export { publishHostEvent } from "./from-draft";
 export {
-  createUniqueSlug,
   fromRouteParam,
   normalizeEventSlug,
   slugsMatch,

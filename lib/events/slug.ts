@@ -11,10 +11,6 @@ export function slugifyTitle(title: string) {
   return base || "event";
 }
 
-export function randomSuffix() {
-  return Math.random().toString(36).slice(2, 6);
-}
-
 export function normalizeEventSlug(slug: string) {
   if (!slug) {
     return "";
@@ -50,15 +46,4 @@ export function slugsMatch(stored: string, incoming: string) {
     encodeURIComponent(a) === incoming ||
     encodeURIComponent(stored) === incoming
   );
-}
-
-export function createUniqueSlug(title: string, existing: string[]) {
-  const taken = new Set(existing.map(normalizeEventSlug));
-  let slug = `${slugifyTitle(title)}-${randomSuffix()}`;
-
-  while (taken.has(slug)) {
-    slug = `${slugifyTitle(title)}-${randomSuffix()}`;
-  }
-
-  return slug;
 }

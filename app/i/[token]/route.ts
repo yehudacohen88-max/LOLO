@@ -11,12 +11,18 @@ type RouteContext = {
   params: Promise<{ token?: string | string[] }>;
 };
 
+function withRobots(response: NextResponse) {
+  response.headers.set("X-Robots-Tag", "noindex, nofollow");
+  return response;
+}
+
 function hebrewStatusResponse(status: number, title: string, body: string) {
   const html = `<!doctype html>
 <html lang="he" dir="rtl">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
     <title>${title} | LOLO</title>
   </head>
   <body style="margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#fbfafc;color:#1c1528;font-family:Heebo,Arial,sans-serif;text-align:center;padding:24px">
@@ -28,10 +34,12 @@ function hebrewStatusResponse(status: number, title: string, body: string) {
     </main>
   </body>
 </html>`;
-  return new NextResponse(html, {
-    status,
-    headers: { "Content-Type": "text/html; charset=utf-8" },
-  });
+  return withRobots(
+    new NextResponse(html, {
+      status,
+      headers: { "Content-Type": "text/html; charset=utf-8" },
+    }),
+  );
 }
 
 function firstParam(value: string | string[] | undefined) {
@@ -63,7 +71,7 @@ export async function GET(request: Request, context: RouteContext) {
 
     const origin = new URL(request.url).origin;
     const location = `${origin}/e/${encodeURIComponent(normalizeEventSlug(resolved.slug))}`;
-    const response = NextResponse.redirect(location);
+    const response = withRobots(NextResponse.redirect(location));
     response.cookies.set(
       INVITE_SESSION_COOKIE,
       createInviteSessionToken({

@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { toPublicInviteIdentity } from "@/lib/events/public-guest";
 import { getSupabaseServiceClient } from "@/lib/supabase/server";
 import { normalizeEventSlug } from "@/lib/events/slug";
 import {
@@ -12,7 +13,7 @@ export async function GET(request: Request) {
     new URL(request.url).searchParams.get("slug") ?? "",
   );
   if (!slug) {
-    return NextResponse.json({ name: "", phone: "" });
+    return NextResponse.json(toPublicInviteIdentity({}));
   }
 
   const jar = await cookies();
@@ -20,7 +21,7 @@ export async function GET(request: Request) {
     jar.get(INVITE_SESSION_COOKIE)?.value,
   );
   if (!session) {
-    return NextResponse.json({ name: "", phone: "" });
+    return NextResponse.json(toPublicInviteIdentity({}));
   }
 
   const supabase = getSupabaseServiceClient();
@@ -31,11 +32,13 @@ export async function GET(request: Request) {
     .maybeSingle();
 
   if (!event || event.id !== session.eventId) {
-    return NextResponse.json({ name: "", phone: "" });
+    return NextResponse.json(toPublicInviteIdentity({}));
   }
 
-  return NextResponse.json({
-    name: session.name,
-    phone: session.phone,
-  });
+  return NextResponse.json(
+    toPublicInviteIdentity({
+      name: session.name,
+      phone: session.phone,
+    }),
+  );
 }
