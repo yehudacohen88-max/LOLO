@@ -13,6 +13,7 @@ import {
   setVideoPreviewUrl,
 } from "@/lib/event-draft";
 import { uploadImageFile } from "@/lib/images/upload-client";
+import { EVENT_FIELD_ERRORS, EVENT_FIELD_LIMITS } from "@/lib/events/text-limits";
 import { useIsClient } from "@/lib/use-is-client";
 
 const fieldClass =
@@ -204,6 +205,15 @@ export default function EventDetailsForm() {
     event.preventDefault();
     setFormError("");
 
+    if (
+      message.length > EVENT_FIELD_LIMITS.message ||
+      venueName.length > EVENT_FIELD_LIMITS.venueName ||
+      address.length > EVENT_FIELD_LIMITS.address
+    ) {
+      requestFocus("form");
+      return;
+    }
+
     if (imageUploading) {
       setImageError(COVER_UPLOADING);
       requestFocus("image");
@@ -302,8 +312,15 @@ export default function EventDetailsForm() {
           }}
           placeholder="אנחנו מתרגשים לחגוג איתכם ונשמח שתהיו חלק מהאירוע שלנו ❤️"
           rows={4}
+          maxLength={EVENT_FIELD_LIMITS.message}
+          aria-invalid={message.length > EVENT_FIELD_LIMITS.message ? true : undefined}
           className="rounded-3xl border border-border bg-white px-4 py-3 text-base text-foreground outline-none placeholder:text-muted/70 focus:border-brand"
         />
+        {message.length > EVENT_FIELD_LIMITS.message ? (
+          <span role="alert" className="text-sm font-medium text-brand">
+            {EVENT_FIELD_ERRORS.message}
+          </span>
+        ) : null}
       </label>
 
       <section className="flex flex-col gap-3">
@@ -317,8 +334,15 @@ export default function EventDetailsForm() {
               setVenueName(value);
               persistDetails({ venueName: value }, false);
             }}
+            maxLength={EVENT_FIELD_LIMITS.venueName}
+            aria-invalid={venueName.length > EVENT_FIELD_LIMITS.venueName ? true : undefined}
             className={fieldClass}
           />
+          {venueName.length > EVENT_FIELD_LIMITS.venueName ? (
+            <span role="alert" className="text-sm font-medium text-brand">
+              {EVENT_FIELD_ERRORS.venueName}
+            </span>
+          ) : null}
         </label>
         <label className="flex flex-col gap-2">
           <span className="text-sm font-semibold text-foreground">כתובת</span>
@@ -329,8 +353,15 @@ export default function EventDetailsForm() {
               setAddress(value);
               persistDetails({ address: value }, false);
             }}
+            maxLength={EVENT_FIELD_LIMITS.address}
+            aria-invalid={address.length > EVENT_FIELD_LIMITS.address ? true : undefined}
             className={fieldClass}
           />
+          {address.length > EVENT_FIELD_LIMITS.address ? (
+            <span role="alert" className="text-sm font-medium text-brand">
+              {EVENT_FIELD_ERRORS.address}
+            </span>
+          ) : null}
         </label>
       </section>
 

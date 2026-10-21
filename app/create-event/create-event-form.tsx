@@ -7,6 +7,7 @@ import {
   resetEventCreationDraft,
   saveEventDraft,
 } from "@/lib/event-draft";
+import { EVENT_FIELD_ERRORS, EVENT_FIELD_LIMITS } from "@/lib/events/text-limits";
 import { useIsClient } from "@/lib/use-is-client";
 
 const eventTypes = [
@@ -14,11 +15,25 @@ const eventTypes = [
   "בר מצווה",
   "בת מצווה",
   "חתונה",
-  "ברית / בריתה",
+  "ברית מילה",
+  "בריתה",
   "חלאקה",
   "חינה",
   "אחר",
 ];
+
+const LEGACY_EVENT_TYPE = "ברית / בריתה";
+
+function eventTypeChoices(current: string) {
+  if (current !== LEGACY_EVENT_TYPE) {
+    return eventTypes;
+  }
+
+  const choices = [...eventTypes];
+  const brita = choices.indexOf("בריתה");
+  choices.splice(brita + 1, 0, LEGACY_EVENT_TYPE);
+  return choices;
+}
 
 const fieldClass =
   "h-12 rounded-2xl border border-border bg-white px-4 text-base text-foreground outline-none placeholder:text-muted/70 focus:border-brand";
@@ -63,6 +78,9 @@ export default function CreateEventForm() {
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (eventName.length > EVENT_FIELD_LIMITS.title) {
+      return;
+    }
     saveEventDraft({
       eventType,
       eventName,
@@ -104,7 +122,7 @@ export default function CreateEventForm() {
           איזה אירוע חוגגים?
         </legend>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-          {eventTypes.map((type) => {
+          {eventTypeChoices(eventType).map((type) => {
             const selected = eventType === type;
 
             return (
@@ -142,8 +160,15 @@ export default function CreateEventForm() {
           }}
           placeholder="יום ההולדת של יובל"
           dir="auto"
+          maxLength={EVENT_FIELD_LIMITS.title}
+          aria-invalid={eventName.length > EVENT_FIELD_LIMITS.title ? true : undefined}
           className={fieldClass}
         />
+        {eventName.length > EVENT_FIELD_LIMITS.title ? (
+          <span role="alert" className="text-sm font-medium text-brand">
+            {EVENT_FIELD_ERRORS.title}
+          </span>
+        ) : null}
       </label>
 
       <label className="flex flex-col gap-2">

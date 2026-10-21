@@ -11,6 +11,7 @@ import {
 import { parseGuestList } from "@/lib/host/guest-fields";
 import type { EventGift, StoredEvent } from "@/lib/events/types";
 import { isOwnGiftImageUrl } from "@/lib/images/public-url";
+import { capEventText, EVENT_FIELD_LIMITS } from "@/lib/events/text-limits";
 
 export type PublishEventInput = {
   title?: string;
@@ -228,8 +229,11 @@ async function listSlugs() {
 export async function publishEventOnServer(
   input: PublishEventInput,
 ): Promise<StoredEvent & { accessCode: string }> {
-  const title = asString(input.title);
+  const title = capEventText(input.title, EVENT_FIELD_LIMITS.title);
   const hostName = asString(input.hostName);
+  const venueName = capEventText(input.venueName, EVENT_FIELD_LIMITS.venueName);
+  const address = capEventText(input.address, EVENT_FIELD_LIMITS.address);
+  const message = capEventText(input.message, EVENT_FIELD_LIMITS.message);
   const giftMode = asGiftMode(input.giftMode);
   const guests = parseGuestList(input.guests);
   const supabase = getSupabaseServiceClient();
@@ -264,9 +268,9 @@ export async function publishEventOnServer(
     event_type: asString(input.eventType),
     event_date: asString(input.date),
     event_time: asString(input.time),
-    venue_name: asString(input.venueName),
-    address: asString(input.address),
-    message: asString(input.message),
+    venue_name: venueName,
+    address,
+    message,
     cover_image: coverImage,
     gift_mode: giftMode,
     money_amounts: asMoneyAmounts(input.moneyAmounts),
@@ -376,9 +380,9 @@ export async function publishEventOnServer(
     eventType: asString(input.eventType),
     date: asString(input.date),
     time: asString(input.time),
-    venueName: asString(input.venueName),
-    address: asString(input.address),
-    message: asString(input.message),
+    venueName,
+    address,
+    message,
     coverImage,
     giftMode,
     moneyAmounts: asMoneyAmounts(input.moneyAmounts),
