@@ -575,12 +575,13 @@ export default function GuestEventView() {
 
   const primary = hostGifts[0];
   const others = hostGifts.slice(1);
-  const place = [event.venueName, event.address].filter(Boolean).join(", ");
+  const venueName = event.venueName.trim();
+  const address = event.address.trim();
+  const mapQuery = encodeURIComponent(address);
   const kicker = [
     event.eventType,
     occasionDate(event.date),
     formatEventTime(event.time),
-    place,
   ].filter(Boolean);
   const message = event.message.trim();
   const quoted = /^[״"“«]/.test(message);
@@ -633,6 +634,31 @@ export default function GuestEventView() {
             <TitleText title={event.title || "האירוע"} />
           </h1>
           <p className={styles.sub}>מתנה מכל החברים</p>
+          {venueName || address ? (
+            <section className={styles.venue} data-venue="">
+              <p className={styles.venueKicker}>איפה חוגגים</p>
+              {venueName ? <p className={styles.venueName}>{venueName}</p> : null}
+              {address ? <p className={styles.venueAddress}>{address}</p> : null}
+              {address ? (
+                <div className={styles.venueActions}>
+                  <a
+                    href={`https://waze.com/ul?q=${mapQuery}&navigate=yes`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Waze
+                  </a>
+                  <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${mapQuery}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Google Maps
+                  </a>
+                </div>
+              ) : null}
+            </section>
+          ) : null}
           {primary ? (
             <button
               type="button"

@@ -1,6 +1,11 @@
+import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { Frank_Ruhl_Libre, Rubik } from "next/font/google";
 import styles from "./flagship.module.css";
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 const rubik = Rubik({
   subsets: ["hebrew", "latin"],
