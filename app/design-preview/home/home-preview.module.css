@@ -1,0 +1,284 @@
+.page {
+  min-height: 100dvh;
+  background: #f8f5ef;
+  color: #172f2b;
+  font-family: var(--font-preview-heebo), Heebo, "Arial Hebrew", Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+.page :focus-visible {
+  outline: 2px solid #172f2b;
+  outline-offset: 3px;
+}
+
+.simLabel {
+  margin: 0;
+  padding: 10px 16px;
+  background: #172f2b;
+  color: #f8f5ef;
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  text-align: center;
+}
+
+.main {
+  width: min(1120px, 100%);
+  margin: 0 auto;
+  padding: 28px 20px 56px;
+}
+
+.hero {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.mark {
+  margin: 0;
+  color: #172f2b;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+}
+
+.copy h1 {
+  margin: 12px 0 0;
+  color: #172f2b;
+  font-size: clamp(2.35rem, 10vw, 3.4rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.12;
+}
+
+.lede {
+  margin: 16px 0 0;
+  max-width: 38rem;
+  font-size: 1.125rem;
+  font-weight: 400;
+  line-height: 1.65;
+}
+
+.support {
+  margin: 12px 0 0;
+  max-width: 36rem;
+  color: #172f2b;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.primary,
+.secondary {
+  display: inline-flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 22px;
+  border-radius: 999px;
+  font-size: 1rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.primary {
+  background: #172f2b;
+  color: #ffffff;
+}
+
+.secondary {
+  background: #ffffff;
+  color: #172f2b;
+  box-shadow: inset 0 0 0 1.5px #c7a36a;
+}
+
+.guestNote {
+  margin: 14px 0 0;
+  max-width: 28rem;
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+
+.giftCard {
+  padding: 22px 20px 20px;
+  border-radius: 28px;
+  background: #ffffff;
+  box-shadow: 0 24px 48px -32px rgba(23, 47, 43, 0.45);
+}
+
+.seal {
+  display: grid;
+  width: 112px;
+  height: 112px;
+  place-items: center;
+  border-radius: 50%;
+  background: #e87563;
+  box-shadow:
+    0 0 0 8px #f8f5ef,
+    0 0 0 10px #c7a36a;
+}
+
+.seal span {
+  display: grid;
+  width: 78px;
+  height: 78px;
+  place-items: center;
+  border-radius: 50%;
+  background: #ffffff;
+  color: #172f2b;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.cardKicker {
+  margin: 18px 0 0;
+  color: #172f2b;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.cardTitle {
+  margin: 4px 0 0;
+  font-size: 1.45rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+}
+
+.cardList {
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cardList li {
+  position: relative;
+  margin-top: 8px;
+  padding-inline-start: 16px;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.cardList li::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: 0;
+  top: 0.65em;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #c7a36a;
+}
+
+.steps {
+  margin-top: 40px;
+}
+
+.steps h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.steps ol {
+  display: grid;
+  gap: 12px;
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.steps li {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 16px;
+  border-radius: 24px;
+  background: #ffffff;
+}
+
+.steps li > span {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  flex: none;
+  place-items: center;
+  border-radius: 50%;
+  background: #f8f5ef;
+  box-shadow: inset 0 0 0 1.5px #c7a36a;
+  color: #172f2b;
+  font-weight: 700;
+}
+
+.steps strong {
+  display: block;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.steps li p {
+  margin: 4px 0 0;
+  font-size: 1rem;
+  line-height: 1.55;
+}
+
+.beta {
+  margin: 20px 0 0;
+  padding: 16px 18px;
+  border-radius: 20px;
+  border-inline-start: 3px solid #c7a36a;
+  background: #ffffff;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+@media (min-width: 900px) {
+  .main {
+    padding: 56px 40px 72px;
+  }
+
+  .hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
+    align-items: center;
+    gap: 56px;
+  }
+
+  .actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .primary,
+  .secondary {
+    min-width: 180px;
+  }
+
+  .steps {
+    margin-top: 64px;
+  }
+
+  .steps ol {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+  }
+
+  .steps li {
+    flex-direction: column;
+    min-height: 100%;
+    padding: 22px 20px 24px;
+  }
+
+  .copy h1 {
+    font-size: clamp(3.2rem, 4.6vw, 4.4rem);
+  }
+}
