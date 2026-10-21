@@ -130,7 +130,9 @@ test("event text fields keep the published caps and explain them in Hebrew", asy
     );
   }, EVENT_FIELD_LIMITS);
   await page.goto("/create-event");
-  await expect(page.getByRole("alert")).toHaveText(EVENT_FIELD_ERRORS.title);
+  await expect(
+    page.getByRole("alert").filter({ hasText: EVENT_FIELD_ERRORS.title }),
+  ).toHaveText(EVENT_FIELD_ERRORS.title);
   await page.getByRole("button", { name: "ממשיכים לבחירת המתנות" }).click();
   await expect(page).toHaveURL(/\/create-event$/);
 

@@ -634,31 +634,6 @@ export default function GuestEventView() {
             <TitleText title={event.title || "האירוע"} />
           </h1>
           <p className={styles.sub}>מתנה מכל החברים</p>
-          {venueName || address ? (
-            <section className={styles.venue} data-venue="">
-              <p className={styles.venueKicker}>איפה חוגגים</p>
-              {venueName ? <p className={styles.venueName}>{venueName}</p> : null}
-              {address ? <p className={styles.venueAddress}>{address}</p> : null}
-              {address ? (
-                <div className={styles.venueActions}>
-                  <a
-                    href={`https://waze.com/ul?q=${mapQuery}&navigate=yes`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    Waze
-                  </a>
-                  <a
-                    href={`https://www.google.com/maps/search/?api=1&query=${mapQuery}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    Google Maps
-                  </a>
-                </div>
-              ) : null}
-            </section>
-          ) : null}
           {primary ? (
             <button
               type="button"
@@ -702,6 +677,32 @@ export default function GuestEventView() {
                 </p>
               ) : null}
             </div>
+          </section>
+        ) : null}
+
+        {venueName || address ? (
+          <section className={styles.venue} data-venue="">
+            <p className={styles.venueKicker}>איפה חוגגים</p>
+            {venueName ? <p className={styles.venueName}>{venueName}</p> : null}
+            {address ? <p className={styles.venueAddress}>{address}</p> : null}
+            {address ? (
+              <div className={styles.venueActions}>
+                <a
+                  href={`https://waze.com/ul?q=${mapQuery}&navigate=yes`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Waze
+                </a>
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${mapQuery}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Google Maps
+                </a>
+              </div>
+            ) : null}
           </section>
         ) : null}
 

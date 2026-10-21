@@ -236,7 +236,7 @@
 
 .venue {
   max-width: 28rem;
-  margin-top: 16px;
+  margin: 0 16px;
   padding: 14px 16px 16px;
   border-radius: 22px;
   background: #fff;
@@ -1080,6 +1080,11 @@
   .story {
     grid-area: story;
     gap: 16px;
+  }
+
+  .story .venue {
+    order: -2;
+    margin: 0;
   }
 
   .story .note {
