@@ -1,4 +1,5 @@
 import Link from "next/link";
+import LoloMark from "@/app/design/lolo-mark";
 import { BETA_CLARITY } from "@/app/design/beta-notice";
 import styles from "./home-preview.module.css";
 
@@ -6,19 +7,29 @@ const steps = [
   {
     number: "1",
     title: "יוצרים אירוע",
-    body: "המארח בוחר את המתנה שהחוגג באמת רוצה, ואת פרטי האירוע.",
+    body: "בוחרים את המתנה שהחוגג באמת רוצה, ואת העסק שבו יממשו אותה.",
   },
   {
     number: "2",
-    title: "האורחים משתתפים",
-    body: "כל אורח נכנס מהקישור האישי, בוחר סכום שמתאים לו ומשאיר ברכה.",
+    title: "האורחים נותנים יחד",
+    body: "כל אורח נכנס מהקישור, משתתף בסכום שמתאים לו ומשאיר ברכה.",
   },
   {
     number: "3",
-    title: "מתנה אחת, ביחד",
-    body: "ההשתתפות מצטברת למתנה אחת. היעד הוא יעד, לא תקרה.",
+    title: "שובר דיגיטלי",
+    body: "החוגג מקבל שובר לעסק שבחר. בבטא זה עדיין הדגמה, בלי מימוש אמיתי.",
   },
 ];
+
+function Ribbon() {
+  return (
+    <svg className={styles.ribbon} viewBox="0 0 72 28" aria-hidden="true">
+      <path d="M36 14 C26 2 6 2 8 11 C10 18 26 18 36 14Z" fill="#E87563" />
+      <path d="M36 14 C46 2 66 2 64 11 C62 18 46 18 36 14Z" fill="#E87563" />
+      <circle cx="36" cy="14" r="4.2" fill="#C7A36A" />
+    </svg>
+  );
+}
 
 export default function PremiumHomePreview() {
   return (
@@ -27,20 +38,17 @@ export default function PremiumHomePreview() {
       <main className={styles.main}>
         <section className={styles.hero}>
           <div className={styles.copy}>
-            <p className={styles.mark}>LOLO</p>
-            <h1>המתנה שבאמת רצית</h1>
-            <p className={styles.lede}>
-              LOLO היא הדרך שבה אורחים משתתפים יחד במתנה אחת — המתנה שהחוגג
-              באמת רוצה. המארח יוצר אירוע, כל אורח נכנס מהקישור ובוחר סכום,
-              וההשתתפות נאספת למתנה אחת.
+            <p className={styles.brand}>
+              <LoloMark />
             </p>
-            <p className={styles.support}>
-              היעד של המתנה הוא יעד, לא תקרה. אפשר לעבור את 100%, והמארח רואה
-              כמה באמת נאסף.
+            <h1>האורחים נותנים יחד את המתנה שהחוגג באמת רוצה, והוא מקבל שובר דיגיטלי לעסק שבחר</h1>
+            <p className={styles.lede}>
+              המארח פותח אירוע למתנה אחת. כל אורח נכנס מהקישור האישי, בוחר סכום
+              שמתאים לו ומשאיר ברכה. בסוף מחכה לחוגג שובר דיגיטלי לעסק שהוא בחר.
             </p>
             <div className={styles.actions}>
               <Link className={styles.primary} href="/create-event?new=1">
-                יצירת אירוע
+                יוצרים אירוע
               </Link>
               <Link className={styles.secondary} href="/host">
                 כניסה לניהול אירוע
@@ -50,19 +58,42 @@ export default function PremiumHomePreview() {
               אורחים לא נרשמים לכאן. הם נכנסים מהקישור האישי שקיבלו מהמארח.
             </p>
           </div>
-          <aside className={styles.giftCard} aria-label="המתנה האחת">
-            <div className={styles.seal} aria-hidden="true">
-              <span>מתנה</span>
+
+          <figure className={styles.stage}>
+            <div className={styles.phone}>
+              <div className={styles.ear} aria-hidden="true" />
+              <div className={styles.screen}>
+                <div className={styles.phoneBrand}>
+                  <LoloMark />
+                </div>
+                <p className={styles.examplePill}>דוגמה</p>
+                <p className={styles.phoneKicker}>יום הולדת</p>
+                <p className={styles.phoneTitle}>אופני עיר</p>
+                <p className={styles.phoneMeta}>המתנה שהחוגג בחר</p>
+                <div
+                  className={styles.track}
+                  role="img"
+                  aria-label="72 אחוז מהיעד, 18 אורחים כבר השתתפו"
+                >
+                  <span />
+                </div>
+                <p className={styles.progressLabel}>
+                  <b>72%</b>
+                  <span>18 אורחים כבר בפנים</span>
+                </p>
+              </div>
             </div>
-            <p className={styles.cardKicker}>מתנה אחת</p>
-            <p className={styles.cardTitle}>כולם משתתפים באותה מתנה</p>
-            <ul className={styles.cardList}>
-              <li>החוגג ביקש משהו אחד, לא רשימת הפתעות.</li>
-              <li>כל אורח בוחר סכום שמתאים לו.</li>
-              <li>הברכות נשארות עם ההשתתפות.</li>
-            </ul>
-          </aside>
+            <div className={styles.voucher}>
+              <Ribbon />
+              <p className={styles.voucherKicker}>שובר דיגיטלי</p>
+              <p className={styles.voucherTitle}>לעסק שהחוגג בחר</p>
+              <p className={styles.voucherNote}>כרטיס להמחשה. לא שובר אמיתי.</p>
+            </div>
+            <figcaption>המחשה של דף האירוע והשובר. לא אירוע חי.</figcaption>
+          </figure>
         </section>
+
+        <p className={styles.beta}>{BETA_CLARITY}</p>
 
         <section className={styles.steps} aria-label="איך זה עובד">
           <h2>איך זה עובד</h2>
@@ -78,8 +109,6 @@ export default function PremiumHomePreview() {
             ))}
           </ol>
         </section>
-
-        <p className={styles.beta}>{BETA_CLARITY}</p>
       </main>
     </div>
   );
