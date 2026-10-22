@@ -1,8 +1,15 @@
 .root {
   composes: theme from "../../design/flagship-tokens.module.css";
+  --fs-paper: #f8f5ef;
+  --fs-navy: #172f2b;
+  --fs-navy-2: #172f2b;
+  --fs-hair: rgba(23, 47, 43, 0.12);
+  --fs-sans: var(--font-premium-heebo), Heebo, "Arial Hebrew", Arial, sans-serif;
+  --fs-serif: var(--font-premium-heebo), Heebo, "Arial Hebrew", Arial, sans-serif;
   min-height: 100dvh;
+  overflow-x: clip;
   background-color: var(--fs-paper);
-  background-image: radial-gradient(420px 240px at 100% 0%, #fff1ea 0%, transparent 72%);
+  background-image: radial-gradient(420px 220px at 100% 0%, rgba(232, 117, 99, 0.16), transparent 70%);
   color: var(--fs-navy);
   font-family: var(--fs-sans);
   font-feature-settings: "tnum" 1;
@@ -1039,9 +1046,7 @@
 
 @media (min-width: 1100px) {
   .root {
-    background-image:
-      radial-gradient(700px 520px at 92% 8%, #fff1ea 0%, transparent 70%),
-      radial-gradient(760px 560px at 0% 100%, #eef2f9 0%, transparent 70%);
+    background-image: radial-gradient(520px 280px at 100% 0%, rgba(232, 117, 99, 0.14), transparent 70%);
   }
 
   .header {
