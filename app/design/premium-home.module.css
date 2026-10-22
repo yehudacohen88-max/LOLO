@@ -6,13 +6,14 @@
     radial-gradient(420px 220px at 100% 0%, rgba(232, 117, 99, 0.16), transparent 70%),
     #f8f5ef;
   color: #172f2b;
-  font-family: var(--font-preview-heebo), Heebo, "Arial Hebrew", Arial, sans-serif;
+  font-family: var(--font-premium-heebo), Heebo, "Arial Hebrew", Arial, sans-serif;
   font-size: 18px;
   line-height: 1.65;
   -webkit-font-smoothing: antialiased;
 }
 
-.page :focus-visible {
+.page a:focus-visible,
+.page button:focus-visible {
   outline: 3px solid #172f2b;
   outline-offset: 3px;
 }
