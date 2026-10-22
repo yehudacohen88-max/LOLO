@@ -240,7 +240,6 @@ export default function ThankYouView() {
   const order = orderRead.phase === "ready" ? orderRead.order : null;
   const paid = order?.paymentStatus === "paid";
   const failed = order?.paymentStatus === "failed";
-  const demoPaid = paid && order?.paymentProvider === "demo";
   const showReceiptAmounts = orderRead.phase === "ready";
   const giftLabel = contributions[0]?.giftName || heroGift || eventName || "המתנה";
   const shareText = eventName ? `בואו לחגוג: ${eventName}` : "בואו לחגוג ב-LOLO";
@@ -272,7 +271,12 @@ export default function ThankYouView() {
 
   return (
     <div className={styles.thanksLayout}>
-      <div className={styles.thanksHero}>
+      <div className={`${styles.thanksHero} ${styles.festive}`}>
+        <svg className={styles.thanksBow} viewBox="0 0 72 28" aria-hidden="true">
+          <path d="M36 14 C26 2 6 2 8 11 C10 18 26 18 36 14Z" fill="#E87563" />
+          <path d="M36 14 C46 2 66 2 64 11 C62 18 46 18 36 14Z" fill="#E87563" />
+          <circle cx="36" cy="14" r="4.2" fill="#C7A36A" />
+        </svg>
         <div className={styles.thanksCelebrant}>
           {coverImage ? (
             <img src={coverImage} alt="" width={160} height={200} />
@@ -295,12 +299,11 @@ export default function ThankYouView() {
       </div>
       <div className={styles.thanksMain}>
         <div className={`${styles.card} ${styles.thanksReceipt}`}>
-          <p className={styles.notice}>תשלום הדגמה — לא מתבצע חיוב אמיתי</p>
+          <p className={styles.notice}>תשלום הדגמה בלבד — לא מתבצע חיוב אמיתי</p>
           <p className={styles.quietLine}>{BETA_CLARITY}</p>
           <p className={styles.orderStatus} data-order-status="" role="status">
             {statusText(orderRead)}
           </p>
-          {demoPaid ? <p className={styles.quietLine}>תשלום הדגמה</p> : null}
           {showReceiptAmounts ? (
             <>
               {contributions.map((item) => (
