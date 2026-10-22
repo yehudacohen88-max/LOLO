@@ -967,9 +967,14 @@
 }
 
 .status {
-  max-width: 28rem;
-  margin: 36px auto 0;
-  padding: 0 20px 48px;
+  max-width: 32rem;
+  margin: 36px 16px 0;
+  padding: 28px 20px 32px;
+  border-radius: 24px;
+  background: #ffffff;
+  box-shadow:
+    0 0 0 2px #c7a36a,
+    0 16px 36px -30px rgba(23, 47, 43, 0.45);
   text-align: center;
 }
 
@@ -977,7 +982,8 @@
   margin: 0;
   font-family: var(--fs-serif);
   font-weight: 700;
-  font-size: 2rem;
+  font-size: clamp(2rem, 8vw, 2.75rem);
+  line-height: 1.2;
 }
 
 .status p {
