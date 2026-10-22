@@ -173,12 +173,8 @@ export default function GuestPaymentSummary() {
         <h2>סיכום התשלום</h2>
         {showDemo && !unavailable ? (
           <>
-            <p className={styles.notice}>תשלום הדגמה — לא מתבצע חיוב אמיתי</p>
+            <p className={styles.notice}>תשלום הדגמה בלבד — לא מתבצע חיוב אמיתי</p>
             <p className={styles.quietLine}>{BETA_CLARITY}</p>
-            <p className={styles.quietLine}>תשלום הדגמה</p>
-            <p className={styles.quietLine}>
-              זהו תשלום הדגמה. לא נגבה כסף אמיתי, ולא מתבקש מספר כרטיס אשראי.
-            </p>
           </>
         ) : null}
         {eventName ? <p className={styles.lineRow}>{eventName}</p> : null}
@@ -243,7 +239,6 @@ export default function GuestPaymentSummary() {
           >
             הדמיית תשלום שנכשל
           </button>
-          <p className={styles.quietLine}>לבדיקה בלבד. לא מתבצע חיוב אמיתי.</p>
         </>
       ) : null}
     </div>

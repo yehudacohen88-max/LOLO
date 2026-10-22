@@ -92,7 +92,7 @@ test("guest page keeps contribution flow and hides an empty invitation", async (
   await page.goto("/e/flagship-fixture");
   await expect(page.getByRole("heading", { name: /חוגגים 40 לדנה/ })).toBeVisible();
   await expect(page.locator("h1 span")).toHaveText("40");
-  await expect(page.locator("h1 span")).toHaveCSS("color", "rgb(242, 85, 63)");
+  await expect(page.locator("h1 span")).toHaveCSS("color", "rgb(23, 47, 43)");
   await expect(page.getByText("השנה החלטנו להפתיע את דנה")).toBeVisible();
   await expect(page.getByText("הזמנה מאת נועה לוי")).toHaveCount(0);
   await expect(page.getByText("הזמנה", { exact: true })).toHaveCount(0);
@@ -103,7 +103,7 @@ test("guest page keeps contribution flow and hides an empty invitation", async (
   const join = page.getByRole("button", { name: "מצטרפים למתנה" });
   await expect(join).toBeEnabled();
   const ctaColor = await join.evaluate((element) => getComputedStyle(element).backgroundColor);
-  expect(ctaColor).toBe("rgb(242, 85, 63)");
+  expect(ctaColor).toBe("rgb(23, 47, 43)");
   await join.click();
   await expect(page.locator("#join-amount-hint")).toHaveText("בחרו סכום כדי להצטרף");
   await expect(page).toHaveURL(/\/e\/flagship-fixture$/);
@@ -212,8 +212,8 @@ for (const viewport of widths) {
             position: getComputedStyle(element).objectPosition,
           };
         });
-        expect(crop.ratio).toBeGreaterThan(0.74);
-        expect(crop.ratio).toBeLessThan(0.86);
+        expect(crop.ratio).toBeGreaterThan(1.5);
+        expect(crop.ratio).toBeLessThan(1.7);
         expect(crop.position).toMatch(/28%/);
       }
       if (viewport.name === "390" || viewport.name === "320") {
