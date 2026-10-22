@@ -7,17 +7,17 @@ const steps = [
   {
     number: "1",
     title: "יוצרים אירוע",
-    body: "בוחרים את המתנה שהחוגג באמת רוצה, ואת העסק שבו יממשו אותה.",
+    body: "בוחרים מתנה אחת ואת היעד שלה.",
   },
   {
     number: "2",
-    title: "האורחים נותנים יחד",
-    body: "כל אורח נכנס מהקישור, משתתף בסכום שמתאים לו ומשאיר ברכה.",
+    title: "משתפים את האורחים",
+    body: "כל אורח נכנס מהקישור, בוחר סכום ומשאיר ברכה.",
   },
   {
     number: "3",
-    title: "שובר דיגיטלי",
-    body: "החוגג מקבל שובר לעסק שבחר. בבטא זה עדיין הדגמה, בלי מימוש אמיתי.",
+    title: "כולם באותה מתנה",
+    body: "ההשתתפות נאספת למתנה אחת. בבטא התשלום הוא הדגמה, בלי חיוב אמיתי.",
   },
 ];
 
@@ -41,10 +41,9 @@ export default function PremiumHomePreview() {
             <p className={styles.brand}>
               <LoloMark />
             </p>
-            <h1>האורחים נותנים יחד את המתנה שהחוגג באמת רוצה, והוא מקבל שובר דיגיטלי לעסק שבחר</h1>
+            <h1>המתנה שבאמת רציתם, ביחד.</h1>
             <p className={styles.lede}>
-              המארח פותח אירוע למתנה אחת. כל אורח נכנס מהקישור האישי, בוחר סכום
-              שמתאים לו ומשאיר ברכה. בסוף מחכה לחוגג שובר דיגיטלי לעסק שהוא בחר.
+              יוצרים אירוע, משתפים את האורחים, וכולם משתתפים במתנה אחת.
             </p>
             <div className={styles.actions}>
               <Link className={styles.primary} href="/create-event?new=1">
@@ -63,33 +62,34 @@ export default function PremiumHomePreview() {
             <div className={styles.phone}>
               <div className={styles.ear} aria-hidden="true" />
               <div className={styles.screen}>
-                <div className={styles.phoneBrand}>
+                <div className={styles.phoneBrand} aria-hidden="true">
                   <LoloMark />
                 </div>
                 <p className={styles.examplePill}>דוגמה</p>
-                <p className={styles.phoneKicker}>יום הולדת</p>
-                <p className={styles.phoneTitle}>אופני עיר</p>
-                <p className={styles.phoneMeta}>המתנה שהחוגג בחר</p>
-                <div
-                  className={styles.track}
-                  role="img"
-                  aria-label="72 אחוז מהיעד, 18 אורחים כבר השתתפו"
-                >
-                  <span />
+                <div className={styles.giftCard}>
+                  <p className={styles.phoneKicker}>יום הולדת</p>
+                  <p className={styles.phoneTitle}>אופני עיר</p>
+                  <p className={styles.phoneMeta}>המתנה שבחרתם</p>
+                  <div className={styles.track} aria-hidden="true">
+                    <span />
+                  </div>
+                  <p className={styles.progressLabel}>
+                    <b>72%</b>
+                    <span>מהיעד</span>
+                  </p>
+                  <p className={styles.guestCount}>18 אורחים כבר השתתפו</p>
                 </div>
-                <p className={styles.progressLabel}>
-                  <b>72%</b>
-                  <span>18 אורחים כבר בפנים</span>
-                </p>
               </div>
             </div>
             <div className={styles.voucher}>
               <Ribbon />
-              <p className={styles.voucherKicker}>שובר דיגיטלי</p>
-              <p className={styles.voucherTitle}>לעסק שהחוגג בחר</p>
-              <p className={styles.voucherNote}>כרטיס להמחשה. לא שובר אמיתי.</p>
+              <p className={styles.voucherKicker}>להמחשה בלבד</p>
+              <p className={styles.voucherTitle}>שובר דיגיטלי</p>
+              <p className={styles.voucherNote}>
+                בבטא לא מונפק שובר אמיתי ולא מתבצע מימוש.
+              </p>
             </div>
-            <figcaption>המחשה של דף האירוע והשובר. לא אירוע חי.</figcaption>
+            <figcaption>המחשה של דף אירוע. לא אירוע חי, ולא שובר אמיתי.</figcaption>
           </figure>
         </section>
 
@@ -100,7 +100,7 @@ export default function PremiumHomePreview() {
           <ol>
             {steps.map((step) => (
               <li key={step.number}>
-                <span>{step.number}</span>
+                <span aria-hidden="true">{step.number}</span>
                 <div>
                   <strong>{step.title}</strong>
                   <p>{step.body}</p>
