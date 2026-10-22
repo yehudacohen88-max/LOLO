@@ -14,10 +14,12 @@
     "verify:vouchers": "node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/register-test-hooks.mjs --test scripts/verify-vouchers.ts",
     "verify:settlements": "node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/register-test-hooks.mjs --test scripts/verify-settlements.ts",
     "verify:guest-progress": "node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/register-test-hooks.mjs --test scripts/verify-guest-progress.ts",
+    "verify:guest-access": "node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/register-test-hooks.mjs --test scripts/verify-guest-access.ts",
     "test:e2e": "npm run build && playwright test"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.114.0",
+    "@vercel/firewall": "^1.2.6",
     "next": "16.3.1",
     "qrcode": "^1.5.4",
     "react": "19.2.8",
@@ -26,12 +28,12 @@
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
+    "@playwright/test": "^1.56.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/qrcode": "^1.5.6",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@playwright/test": "^1.56.1",
     "eslint": "^9",
     "eslint-config-next": "16.3.1",
     "tailwindcss": "^4",

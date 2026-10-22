@@ -1,15 +1,24 @@
 import { NextResponse } from "next/server";
 import { resolveInviteToken } from "@/lib/host/guest-list";
-import { normalizeEventSlug } from "@/lib/events/slug";
+import { canonicalEventSlug } from "@/lib/events/slug";
 import {
   createInviteSessionToken,
   inviteSessionCookieOptions,
   INVITE_SESSION_COOKIE,
 } from "@/lib/invite/session";
+import { guardGuestRead } from "@/lib/security/guest-guard";
 
 type RouteContext = {
   params: Promise<{ token?: string | string[] }>;
 };
+
+function withRobots(response: NextResponse) {
+  response.headers.set("X-Robots-Tag", "noindex, nofollow");
+  return response;
+}
+
+const INVITE_MISS_TITLE = "ההזמנה לא נמצאה";
+const INVITE_MISS_BODY = "הקישור האישי אינו פעיל. בקשו מהמארח לשלוח הזמנה חדשה.";
 
 function hebrewStatusResponse(status: number, title: string, body: string) {
   const html = `<!doctype html>
@@ -17,21 +26,28 @@ function hebrewStatusResponse(status: number, title: string, body: string) {
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
     <title>${title} | LOLO</title>
   </head>
-  <body style="margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#fbfafc;color:#1c1528;font-family:Heebo,Arial,sans-serif;text-align:center;padding:24px">
+  <body style="margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#fcfaf7;color:#16204d;font-family:Heebo,Arial Hebrew,Arial,sans-serif;text-align:center;padding:24px">
     <main>
-      <p style="letter-spacing:.28em;font-weight:800;color:#6d28d9">LOLO</p>
-      <h1 style="margin-top:24px;font-size:28px">${title}</h1>
-      <p style="margin-top:12px;color:#6b6178;line-height:1.6">${body}</p>
-      <a href="/" style="display:inline-flex;margin-top:24px;height:48px;align-items:center;border-radius:999px;background:#6d28d9;color:white;padding:0 24px;font-weight:700;text-decoration:none">לדף הבית</a>
+      <p style="letter-spacing:-0.04em;font-weight:700;font-size:28px;color:#16204d">lolo</p>
+      <h1 style="margin-top:24px;font-size:32px;line-height:1.3">${title}</h1>
+      <p style="margin-top:12px;color:#525b82;line-height:1.6;font-size:18px">${body}</p>
+      <a href="/" style="display:inline-flex;margin-top:24px;min-height:48px;align-items:center;border-radius:999px;background:#d63e2a;color:#fff;padding:0 24px;font-weight:700;text-decoration:none">לדף הבית</a>
     </main>
   </body>
 </html>`;
-  return new NextResponse(html, {
-    status,
-    headers: { "Content-Type": "text/html; charset=utf-8" },
-  });
+  return withRobots(
+    new NextResponse(html, {
+      status,
+      headers: { "Content-Type": "text/html; charset=utf-8" },
+    }),
+  );
+}
+
+function inviteMissResponse() {
+  return hebrewStatusResponse(404, INVITE_MISS_TITLE, INVITE_MISS_BODY);
 }
 
 function firstParam(value: string | string[] | undefined) {
@@ -42,6 +58,11 @@ function firstParam(value: string | string[] | undefined) {
 }
 
 export async function GET(request: Request, context: RouteContext) {
+  const limited = await guardGuestRead(request);
+  if (limited) {
+    return limited;
+  }
+
   try {
     const params = context.params ? await context.params : undefined;
     const raw = firstParam(params?.token) || new URL(request.url).pathname.split("/").pop() || "";
@@ -54,16 +75,12 @@ export async function GET(request: Request, context: RouteContext) {
 
     const resolved = token ? await resolveInviteToken(token) : null;
     if (!resolved?.slug) {
-      return hebrewStatusResponse(
-        404,
-        "ההזמנה לא נמצאה",
-        "הקישור האישי אינו פעיל. בקשו מהמארח לשלוח הזמנה חדשה.",
-      );
+      return inviteMissResponse();
     }
 
     const origin = new URL(request.url).origin;
-    const location = `${origin}/e/${encodeURIComponent(normalizeEventSlug(resolved.slug))}`;
-    const response = NextResponse.redirect(location);
+    const location = `${origin}/e/${encodeURIComponent(canonicalEventSlug(resolved.slug))}`;
+    const response = withRobots(NextResponse.redirect(location));
     response.cookies.set(
       INVITE_SESSION_COOKIE,
       createInviteSessionToken({
