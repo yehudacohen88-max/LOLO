@@ -1425,9 +1425,9 @@
   margin: 22px 0 0;
   font-family: var(--fs-serif);
   font-weight: 700;
-  font-size: clamp(2rem, 8vw, 2.8rem);
+  font-size: clamp(2.4rem, 8vw, 3.5rem);
   letter-spacing: -0.03em;
-  line-height: 1.05;
+  line-height: 1.15;
 }
 
 .flowLede {
@@ -1517,7 +1517,9 @@
 }
 
 .stack textarea {
-  min-height: 140px;
+  min-height: 240px;
+  font-size: 1.25rem;
+  line-height: 1.55;
   resize: vertical;
 }
 
@@ -1540,7 +1542,7 @@
 }
 
 .prompt {
-  min-height: 44px;
+  min-height: 48px;
   padding: 8px 14px;
   border: 1px solid rgba(22, 32, 77, 0.12);
   border-radius: 999px;
@@ -1554,8 +1556,8 @@
 
 .prompt[aria-pressed="true"] {
   border-color: transparent;
-  background: var(--fs-blush);
-  color: var(--fs-coral-ink);
+  background: #172f2b;
+  color: #f8f5ef;
 }
 
 .check {
@@ -1568,9 +1570,9 @@
 }
 
 .check input {
-  width: 22px;
-  height: 22px;
-  accent-color: var(--fs-coral);
+  width: 24px;
+  height: 24px;
+  accent-color: #172f2b;
 }
 
 .notice {
