@@ -146,7 +146,11 @@ for (const viewport of widths) {
     await page.setViewportSize({ width: viewport.width, height: viewport.height });
     for (const [name, pathName, marker] of screens) {
       await page.goto(pathName);
-      await expect(page.getByText(marker, { exact: false }).first()).toBeVisible();
+      const markerLocator =
+        name === "event"
+          ? page.getByRole("button", { name: marker })
+          : page.getByRole("heading", { name: marker, exact: true });
+      await expect(markerLocator).toBeVisible();
       await expectNoOverflowAndLargeTargets(page);
       if (viewport.name === "390" || viewport.name === "1440") {
         await page.screenshot({
