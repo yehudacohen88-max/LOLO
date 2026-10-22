@@ -30,18 +30,41 @@ export function isPublicEventSlug(slug: string) {
   return EVENT_SLUG_PATTERN.test(canonicalEventSlug(slug));
 }
 
+function decodedGuestPath(pathname: string) {
+  let current = pathname;
+  for (let i = 0; i < 3; i += 1) {
+    try {
+      const decoded = decodeURIComponent(current);
+      if (decoded === current) {
+        break;
+      }
+      current = decoded;
+    } catch {
+      return pathname;
+    }
+  }
+  return current;
+}
+
 export function isGuestDirectAccess(pathname: string, method: string) {
+  const decoded = decodedGuestPath(pathname);
   if (
     !pathname ||
     pathname.length > 512 ||
+    decoded.length > 512 ||
     pathname.includes("\\") ||
+    decoded.includes("\\") ||
     pathname.includes("\0") ||
-    pathname.includes("%") ||
+    decoded.includes("\0") ||
     pathname.includes("..") ||
-    pathname.includes("//")
+    decoded.includes("..") ||
+    pathname.includes("//") ||
+    decoded.includes("//")
   ) {
     return false;
   }
+
+  pathname = decoded;
 
   const verb = method.toUpperCase();
 
