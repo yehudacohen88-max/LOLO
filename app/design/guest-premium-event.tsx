@@ -33,34 +33,24 @@ export default function GuestPremiumEvent() {
       <div>
         <p className={styles.example}>דוגמה</p>
         <p className={styles.kickerLabel}>{sample.badge}</p>
-        <Image
-          className={styles.cover}
-          src={sample.coverSrc}
-          alt={sample.coverAlt}
-          width={960}
-          height={720}
-          sizes="(min-width: 1100px) 640px, 100vw"
-          style={{ width: "100%", height: "auto" }}
-        />
-        <p className={styles.credit}>{sample.credit}</p>
-        <p className={styles.kicker}>
-          <span>{sample.eventType}</span>
-          <span className={styles.dot} aria-hidden="true" />
-          <span>{sample.dateLabel}</span>
-          <span className={styles.dot} aria-hidden="true" />
-          <span>{sample.timeLabel}</span>
-        </p>
-        <h1 className={styles.title}>{sample.title}</h1>
-        <p className={styles.sub}>מתנה מכל החברים</p>
-
-        <div className={styles.stack}>
-          <blockquote className={`${styles.card} ${styles.invite}`}>
-            <p className={styles.kickerLabel}>הזמנה אישית מאת {sample.hostName}</p>
-            <p className={styles.quote}>״{sample.message}״</p>
-          </blockquote>
-
-          <section className={styles.card} aria-label="מקום האירוע">
-            <p className={styles.kickerLabel}>איפה חוגגים</p>
+        <figure className={styles.hero}>
+          <Image
+            className={styles.cover}
+            src={sample.coverSrc}
+            alt={sample.coverAlt}
+            width={960}
+            height={720}
+            sizes="(min-width: 1100px) 640px, 100vw"
+            style={{ width: "100%", objectFit: "cover" }}
+          />
+          <figcaption className={styles.venueSheet}>
+            <p className={styles.kicker}>
+              <span>{sample.eventType}</span>
+              <span className={styles.dot} aria-hidden="true" />
+              <span>{sample.dateLabel}</span>
+              <span className={styles.dot} aria-hidden="true" />
+              <span>{sample.timeLabel}</span>
+            </p>
             <p className={styles.venueName}>{sample.venueName}</p>
             <p className={styles.address}>{sample.address}</p>
             <div className={styles.mapRow}>
@@ -75,32 +65,18 @@ export default function GuestPremiumEvent() {
                 Google Maps
               </a>
             </div>
-          </section>
-        </div>
+          </figcaption>
+        </figure>
+        <p className={styles.credit}>{sample.credit}</p>
+        <h1 className={styles.title}>{sample.title}</h1>
+        <p className={styles.sub}>מתנה מכל החברים</p>
+        <blockquote className={`${styles.card} ${styles.invite}`}>
+          <p className={styles.kickerLabel}>הזמנה אישית מאת {sample.hostName}</p>
+          <p className={styles.quote}>״{sample.message}״</p>
+        </blockquote>
       </div>
 
       <div className={`${styles.stack} ${styles.panel}`}>
-        <section className={styles.card} aria-label="התקדמות המתנה">
-          <h2 className={styles.joined}>
-            כבר <b>{sample.contributorCount}</b> חברים הצטרפו
-          </h2>
-          <p className={styles.nums}>
-            <b>{formatGiftAmount(sample.raisedAmount)}</b>
-            <span>מתוך {formatGiftAmount(sample.targetAmount)}</span>
-            <span>{sample.percentOfTarget}%</span>
-          </p>
-          <div
-            className={styles.track}
-            role="img"
-            aria-label={`${sample.percentOfTarget} אחוז מהיעד`}
-          >
-            <span />
-          </div>
-          <p className={styles.remain}>
-            נותרו <b>{formatGiftAmount(sample.remainingAmount)}</b>
-          </p>
-        </section>
-
         <section className={`${styles.card} ${styles.gift}`}>
           <Image
             src={sample.giftImage}
@@ -111,10 +87,19 @@ export default function GuestPremiumEvent() {
             style={{ width: "100%", height: "auto" }}
           />
           <div>
-            <p className={styles.kickerLabel}>המשאלה</p>
             <h2>{sample.giftName}</h2>
-            <p className={styles.muted}>{sample.giftDescription}</p>
-            <p className={styles.muted}>יעד: {formatGiftAmount(sample.targetAmount)} אפשר להשתתף בכל סכום.</p>
+            <p className={styles.chosen}>{amount > 0 ? formatGiftAmount(amount) : "בחרו סכום"}</p>
+            <p className={styles.joined}>
+              כבר <b>{sample.contributorCount}</b> חברים הצטרפו
+            </p>
+            <p className={styles.nums}>
+              <b>{formatGiftAmount(sample.raisedAmount)}</b>
+              <span>מתוך {formatGiftAmount(sample.targetAmount)}</span>
+              <span>{sample.percentOfTarget}%</span>
+            </p>
+            <div className={styles.track} role="img" aria-label={`${sample.percentOfTarget} אחוז מהיעד`}>
+              <span />
+            </div>
           </div>
         </section>
 

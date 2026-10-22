@@ -26,15 +26,19 @@ export default function GuestPremiumThanks() {
 
   return (
     <>
-      <h1 className={styles.flowTitle}>תודה</h1>
-      <p className={styles.lede}>ההשתתפות שלכם כבר חלק מהמתנה.</p>
-
       <div className={styles.flow}>
-        <div className={`${styles.card} ${styles.thanksHero}`}>
+        <div className={`${styles.card} ${styles.thanksHero} ${styles.festive}`}>
+          <svg className={styles.bow} viewBox="0 0 72 28" aria-hidden="true">
+            <path d="M36 14 C26 2 6 2 8 11 C10 18 26 18 36 14Z" fill="#E87563" />
+            <path d="M36 14 C46 2 66 2 64 11 C62 18 46 18 36 14Z" fill="#E87563" />
+            <circle cx="36" cy="14" r="4.2" fill="#C7A36A" />
+          </svg>
+          <p className={styles.kickerLabel}>חוגגים יחד</p>
+          <h1 className={styles.flowTitle}>תודה</h1>
+          <p className={styles.lede}>ההשתתפות שלכם כבר חלק מהמתנה.</p>
           <div className={styles.celebrant}>
             <Image src={sample.coverSrc} alt="" width={88} height={112} />
             <div>
-              <p className={styles.kickerLabel}>חוגגים יחד</p>
               <p className={styles.thanksName}>{sample.title}</p>
             </div>
           </div>
@@ -49,10 +53,8 @@ export default function GuestPremiumThanks() {
         </div>
 
         <section className={styles.card}>
-          <p className={styles.demo}>
-            <strong>תשלום הדגמה — לא מתבצע חיוב אמיתי</strong>
-            {BETA_CLARITY}
-          </p>
+          <p className={styles.payNotice}>תשלום הדגמה בלבד — לא מתבצע חיוב אמיתי</p>
+          <p className={styles.demo}>{BETA_CLARITY}</p>
           <p className={styles.status} role="status">
             שולם בהדגמה
           </p>
@@ -72,7 +74,6 @@ export default function GuestPremiumThanks() {
             <span>{formatGiftAmount(sample.defaultAmount)}</span>
           </p>
           <p className={styles.muted}>ההשתתפות נוספה למתנה. תודה שחגגתם יחד.</p>
-          <p className={styles.muted}>לא הונפק שובר, ולא מתבצע מימוש.</p>
         </section>
 
         <div className={styles.share}>

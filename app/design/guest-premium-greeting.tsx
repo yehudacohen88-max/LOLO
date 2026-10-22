@@ -21,7 +21,7 @@ export default function GuestPremiumGreeting() {
   const params = useSearchParams();
   const amount = chosenAmount(params.get("amount"));
   const [text, setText] = useState<string>(sample.greeting);
-  const next = `${guestPreviewPaths.payment}?amount=${amount}`;
+  const next = `${guestPreviewPaths.details}?amount=${amount}`;
 
   return (
     <>
@@ -33,9 +33,6 @@ export default function GuestPremiumGreeting() {
       </ol>
       <h1 className={styles.flowTitle}>משאירים ברכה</h1>
       <p className={styles.lede}>כמה מילים חמות. אפשר גם להמשיך בלי.</p>
-      <p className={styles.lede}>
-        באתר החי השלב הבא הוא פרטי האורח: שם מלא, טלפון ואימייל. בהדמיה הזו ממשיכים ישר לתשלום הדגמה.
-      </p>
 
       <div className={styles.flow}>
         <section className={styles.card}>
@@ -68,7 +65,7 @@ export default function GuestPremiumGreeting() {
           ברכה במילים שלכם (לא חובה)
           <textarea
             value={text}
-            rows={5}
+            rows={8}
             placeholder="או כותבים כאן משהו אישי..."
             onChange={(event) => setText(event.target.value)}
           />

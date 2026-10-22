@@ -16,6 +16,7 @@ const heebo = Heebo({
 const screens = [
   ["האירוע", guestPreviewPaths.event],
   ["ברכה", guestPreviewPaths.greeting],
+  ["פרטים", guestPreviewPaths.details],
   ["תשלום", guestPreviewPaths.payment],
   ["תודה", guestPreviewPaths.thanks],
   ["קישור לא פעיל", guestPreviewPaths.missing],

@@ -46,12 +46,10 @@ export default function GuestPremiumPayment() {
         </aside>
 
         <section className={styles.card} aria-busy={false}>
+          <p className={styles.payNotice}>תשלום הדגמה בלבד — לא מתבצע חיוב אמיתי</p>
           <h2 className={styles.kickerLabel}>סיכום התשלום</h2>
           <p className={styles.amountLead}>{formatGiftAmount(amount)}</p>
-          <p className={styles.demo}>
-            <strong>תשלום הדגמה — לא מתבצע חיוב אמיתי</strong>
-            {BETA_CLARITY}
-          </p>
+          <p className={styles.demo}>{BETA_CLARITY}</p>
           <p className={styles.line}>{sample.title}</p>
           <p className={styles.muted}>{sample.guestName}</p>
           <p className={styles.muted}>״{sample.greeting}״</p>
@@ -70,8 +68,6 @@ export default function GuestPremiumPayment() {
             <span>סה״כ לחיוב</span>
             <span>{formatGiftAmount(amount)}</span>
           </p>
-          <p className={styles.muted}>לא נגבה כסף אמיתי, ולא מתבקש מספר כרטיס אשראי.</p>
-
           {failed ? (
             <p className={styles.hint} role="alert">
               התשלום לא הושלם. אפשר לנסות שוב. לא בוצע חיוב.
@@ -86,7 +82,6 @@ export default function GuestPremiumPayment() {
               הדמיית תשלום שנכשל
             </button>
           </div>
-          <p className={styles.muted}>לבדיקה בלבד. לא מתבצע חיוב אמיתי.</p>
         </section>
       </div>
     </>

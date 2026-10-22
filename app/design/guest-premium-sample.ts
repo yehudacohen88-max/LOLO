@@ -31,6 +31,8 @@ export const guestPremiumSample = {
   amounts: [200, 350, 500] as const,
   defaultAmount: 350,
   guestName: "יעל כהן",
+  guestPhone: "0501234567",
+  guestEmail: "yael@example.com",
   greeting: "אוהבים ושמחים לחגוג איתך.",
   feeAmount: 0,
   prompts: [
@@ -43,6 +45,7 @@ export const guestPremiumSample = {
 export const guestPreviewPaths = {
   event: "/design-preview/guest",
   greeting: "/design-preview/guest/greeting",
+  details: "/design-preview/guest/details",
   payment: "/design-preview/guest/payment",
   thanks: "/design-preview/guest/thank-you",
   missing: "/design-preview/guest/not-found",

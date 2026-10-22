@@ -60,13 +60,39 @@
   background: #c7a36a;
 }
 
+.hero {
+  position: relative;
+  margin: 0;
+}
+
+.hero .cover {
+  height: 280px;
+  max-height: none;
+  aspect-ratio: auto;
+}
+
+.venueSheet {
+  position: relative;
+  margin: -64px 12px 0;
+  padding: 16px 16px 14px;
+  border-radius: 22px;
+  background: #ffffff;
+  box-shadow:
+    0 0 0 2px #c7a36a,
+    0 18px 36px -24px rgba(23, 47, 43, 0.45);
+}
+
+.venueSheet .kicker {
+  margin-top: 0;
+}
+
 .title {
-  margin: 10px 0 0;
+  margin: 22px 0 0;
   color: #172f2b;
-  font-size: 36px;
+  font-size: 44px;
   font-weight: 700;
   letter-spacing: -0.03em;
-  line-height: 1.25;
+  line-height: 1.2;
   overflow-wrap: anywhere;
 }
 
@@ -222,10 +248,27 @@
 
 .gift h2 {
   margin: 4px 0 0;
-  font-size: 26px;
+  font-size: 30px;
   font-weight: 700;
   letter-spacing: -0.02em;
-  line-height: 1.3;
+  line-height: 1.25;
+}
+
+.chosen {
+  margin: 6px 0 0;
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+}
+
+.gift .joined {
+  margin-top: 14px;
+  font-size: 22px;
+}
+
+.gift .joined b {
+  font-size: 22px;
 }
 
 .muted {
@@ -284,17 +327,18 @@
 .cta {
   display: flex;
   width: 100%;
-  min-height: 56px;
+  min-height: 64px;
   align-items: center;
   justify-content: center;
   margin-top: 8px;
-  padding: 0 24px;
+  padding: 0 28px;
   border: 0;
   border-radius: 999px;
   background: #172f2b;
+  box-shadow: 0 18px 32px -18px rgba(23, 47, 43, 0.75);
   color: #ffffff;
   font: inherit;
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 700;
   line-height: 1.2;
   text-align: center;
@@ -447,8 +491,9 @@
 }
 
 .field textarea {
-  min-height: 140px;
-  padding: 14px 16px;
+  min-height: 240px;
+  padding: 16px;
+  font-size: 20px;
   resize: vertical;
 }
 
@@ -584,7 +629,10 @@
 .screens a {
   display: inline-flex;
   min-height: 44px;
+  min-width: 44px;
   align-items: center;
+  justify-content: center;
+  padding-inline: 8px;
   color: #172f2b;
   font-size: 16px;
   font-weight: 700;
@@ -597,7 +645,10 @@
 }
 
 @media (max-width: 389px) {
-  .title,
+  .title {
+    font-size: 40px;
+  }
+
   .flowTitle,
   .missing h1 {
     font-size: 32px;
@@ -615,6 +666,10 @@
 
   .chips {
     grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .hero .cover {
+    height: 360px;
   }
 
   .share {
@@ -647,8 +702,12 @@
   }
 
   .title {
-    font-size: 52px;
-    line-height: 1.18;
+    font-size: 64px;
+    line-height: 1.12;
+  }
+
+  .hero .cover {
+    height: 460px;
   }
 
   .payLayout {
@@ -661,4 +720,51 @@
   .amountLead {
     font-size: 56px;
   }
+}
+
+.payNotice {
+  margin: 0 0 16px;
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: #172f2b;
+  color: #f8f5ef;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.bow {
+  display: block;
+  width: 72px;
+  height: 28px;
+}
+
+.festive {
+  box-shadow:
+    0 0 0 2px #c7a36a,
+    0 16px 36px -30px rgba(23, 47, 43, 0.45);
+}
+
+.check {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  min-height: 48px;
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.check input {
+  width: 24px;
+  height: 24px;
+  flex: none;
+  accent-color: #172f2b;
+}
+
+.fieldError {
+  color: #172f2b;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.4;
 }
