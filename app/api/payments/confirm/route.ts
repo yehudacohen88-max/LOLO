@@ -5,9 +5,8 @@ import { getOrderForGuest } from "@/lib/orders/repository";
 import { getDemoPaymentProvider } from "@/lib/payments/provider";
 import { demoBrowserConfirmEnabled } from "@/lib/payments/selection";
 import type { PaymentOutcome } from "@/lib/payments/types";
-import { clientIpFromRequest } from "@/lib/security/login-limit";
-import { takePaymentIp, takePaymentSlug } from "@/lib/security/guest-limit";
-import { guestLimitResponse, readLimitedJson } from "@/lib/security/guest-http";
+import { guestOrderMissResponse, guardPaymentIp, guardPaymentSlug } from "@/lib/security/guest-guard";
+import { readLimitedJson } from "@/lib/security/guest-http";
 import { caughtErrorBody } from "@/lib/security/required-secret";
 
 export const dynamic = "force-dynamic";
@@ -19,7 +18,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: UNAVAILABLE }, { status: 400 });
   }
 
-  const limited = guestLimitResponse(takePaymentIp(clientIpFromRequest(request)));
+  const limited = guardPaymentIp(request);
   if (limited) {
     return limited;
   }
@@ -37,7 +36,7 @@ export async function POST(request: Request) {
   const orderId = body.orderId?.trim() ?? "";
   const accessToken = body.accessToken?.trim() ?? "";
   if (!isUuid(orderId) || !isUuid(accessToken)) {
-    return NextResponse.json({ error: "לא מצאנו את ההזמנה." }, { status: 400 });
+    return guestOrderMissResponse();
   }
   if (body.outcome !== "success" && body.outcome !== "failure") {
     return NextResponse.json({ error: "בקשת התשלום אינה תקינה." }, { status: 400 });
@@ -46,9 +45,9 @@ export async function POST(request: Request) {
   try {
     const current = await getOrderForGuest(orderId, accessToken);
     if (!current) {
-      return NextResponse.json({ error: "ההזמנה לא נמצאה." }, { status: 404 });
+      return guestOrderMissResponse();
     }
-    const slugLimited = guestLimitResponse(takePaymentSlug(current.eventSlug));
+    const slugLimited = await guardPaymentSlug(request, current.eventSlug, current.eventId);
     if (slugLimited) {
       return slugLimited;
     }

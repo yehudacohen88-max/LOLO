@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
+import { isPublicEventSlug } from "@/lib/beta/guest-access";
 import { loadGuestEvent } from "@/lib/events/load-guest-event";
+import { canonicalEventSlug } from "@/lib/events/slug";
 import { toPublicGuestEvent } from "@/lib/events/public-guest";
-import { clientIpFromRequest } from "@/lib/security/login-limit";
-import { beginGuestRead, noteGuestMiss } from "@/lib/security/guest-limit";
-import { guestLimitResponse } from "@/lib/security/guest-http";
+import { guestEventMissResponse, guardGuestRead, rememberGuestMiss } from "@/lib/security/guest-guard";
 import { caughtErrorBody } from "@/lib/security/required-secret";
 
 export const dynamic = "force-dynamic";
@@ -14,17 +14,22 @@ type RouteContext = {
 
 export async function GET(request: Request, context: RouteContext) {
   const { slug } = await context.params;
-  const ip = clientIpFromRequest(request);
-  const limited = guestLimitResponse(beginGuestRead(ip));
+  const limited = await guardGuestRead(request);
   if (limited) {
     return limited;
   }
 
+  const canonical = canonicalEventSlug(slug);
+  if (!isPublicEventSlug(canonical)) {
+    rememberGuestMiss(request);
+    return guestEventMissResponse();
+  }
+
   try {
-    const event = await loadGuestEvent(slug);
-    if (!event) {
-      noteGuestMiss(ip);
-      return NextResponse.json({ error: "האירוע לא נמצא." }, { status: 404 });
+    const event = await loadGuestEvent(canonical);
+    if (!event || canonicalEventSlug(event.slug) !== canonical) {
+      rememberGuestMiss(request);
+      return guestEventMissResponse();
     }
     return NextResponse.json({ event: toPublicGuestEvent(event) });
   } catch (error) {

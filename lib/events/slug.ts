@@ -32,6 +32,11 @@ export function normalizeEventSlug(slug: string) {
   return current.normalize("NFC");
 }
 
+/** Guest slugs are minted in lowercase. Fold case so a mixed-case link is the same event. */
+export function canonicalEventSlug(slug: string) {
+  return normalizeEventSlug(slug).toLowerCase();
+}
+
 export function fromRouteParam(slug: string | string[] | undefined) {
   const raw = Array.isArray(slug) ? slug[0] : slug;
   return normalizeEventSlug(raw ?? "");

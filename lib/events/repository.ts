@@ -1,5 +1,5 @@
 import { buildDemoEvent, DEMO_EVENT_SLUG } from "./demo";
-import { normalizeEventSlug } from "./slug";
+import { canonicalEventSlug } from "./slug";
 import type { PublishedHostEvent, StoredEvent } from "./types";
 
 const LAST_CREATED_SLUG_KEY = "lolo-last-created-event-slug";
@@ -9,7 +9,7 @@ function rememberSlug(slug: string) {
 }
 
 export async function getEventBySlug(slug: string): Promise<StoredEvent | null> {
-  const decoded = normalizeEventSlug(slug);
+  const decoded = canonicalEventSlug(slug);
 
   if (decoded === DEMO_EVENT_SLUG || slug === DEMO_EVENT_SLUG) {
     return buildDemoEvent();
@@ -108,6 +108,6 @@ export function getLastCreatedSlug() {
 }
 
 export function guestEventPath(slug: string, rest = "") {
-  const base = `/e/${encodeURIComponent(normalizeEventSlug(slug))}`;
+  const base = `/e/${encodeURIComponent(canonicalEventSlug(slug))}`;
   return rest ? `${base}/${rest}` : base;
 }

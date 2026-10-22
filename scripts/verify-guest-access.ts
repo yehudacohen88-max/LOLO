@@ -18,7 +18,7 @@ import {
   toPublicQuote,
 } from "../lib/events/public-guest";
 import { buildDemoEvent } from "../lib/events/demo";
-import { normalizeEventSlug } from "../lib/events/slug";
+import { canonicalEventSlug, normalizeEventSlug } from "../lib/events/slug";
 import {
   createUniqueSlug,
   SLUG_SUFFIX_ALPHABET,
@@ -35,6 +35,15 @@ import {
   takePaymentIp,
   takePaymentSlug,
 } from "../lib/security/guest-limit";
+import { clientIpFromVercelHeaders } from "../lib/security/client-ip";
+import {
+  GUEST_EVENT_MISS,
+  GUEST_ORDER_MISS,
+  GUEST_RATE_LIMIT_IDS,
+  guestEventLookup,
+  guestRateLimitKey,
+  sharedLimitDecision,
+} from "../lib/security/guest-rate-decision";
 import { demoBrowserConfirmEnabled } from "../lib/payments/selection";
 import type { EventFunding } from "../lib/funding/calculate";
 import type { StoredEvent } from "../lib/events/types";
@@ -52,6 +61,10 @@ describe("guest direct access allowlist", () => {
     ["GET", "/e/birthday-ab12/payment"],
     ["GET", "/e/birthday-ab12/thank-you"],
     ["GET", "/i/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"],
+    ["GET", "/i/short"],
+    ["GET", "/e/Birthday-AB12"],
+    ["GET", "/E/demo-event"],
+    ["GET", "/api/events/Birthday-AB12"],
     ["GET", "/api/events/demo-event"],
     ["GET", "/api/events/birthday-ab12/funding"],
     ["GET", "/api/orders"],
@@ -90,7 +103,6 @@ describe("guest direct access allowlist", () => {
     ["GET", "/e/../admin"],
     ["GET", "/e/%2e%2e/admin"],
     ["GET", "/api/events/../admin"],
-    ["GET", "/i/short"],
     ["GET", "/i/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/extra"],
     ["GET", "/i/../../admin"],
   ];
@@ -300,5 +312,108 @@ describe("guest money caps and demo confirm", () => {
     assert.equal(demoBrowserConfirmEnabled("demo"), true);
     assert.equal(demoBrowserConfirmEnabled("none"), false);
     assert.equal(demoBrowserConfirmEnabled("cardcom"), false);
+  });
+});
+
+describe("guest client IP", () => {
+  function headers(values: Record<string, string>) {
+    return {
+      get(name: string) {
+        return values[name.toLowerCase()] ?? null;
+      },
+    };
+  }
+
+  it("ignores a spoofed x-forwarded-for when Vercel set the client address", () => {
+    assert.equal(
+      clientIpFromVercelHeaders(
+        headers({
+          "x-forwarded-for": "1.2.3.4, 203.0.113.10",
+          "x-real-ip": "203.0.113.50",
+        }),
+      ),
+      "203.0.113.50",
+    );
+    assert.equal(
+      clientIpFromVercelHeaders(
+        headers({
+          "x-forwarded-for": "1.2.3.4",
+          "x-vercel-forwarded-for": "198.51.100.8, 10.0.0.1",
+          "x-real-ip": "203.0.113.50",
+        }),
+      ),
+      "198.51.100.8",
+    );
+  });
+
+  it("does not treat a lone spoofed x-forwarded-for as the client", () => {
+    assert.equal(
+      clientIpFromVercelHeaders(headers({ "x-forwarded-for": "1.2.3.4" })),
+      "unknown",
+    );
+    assert.equal(clientIpFromVercelHeaders(headers({})), "unknown");
+    assert.equal(
+      clientIpFromVercelHeaders(headers({ "x-real-ip": "x".repeat(129) })),
+      "unknown",
+    );
+  });
+});
+
+describe("guest enumeration responses", () => {
+  it("uses one body for a malformed slug, a missing event, and a non-public row", () => {
+    const malformed = guestEventLookup({ slug: "Not A Slug", found: false, visible: false });
+    const missing = guestEventLookup({ slug: "birthday-ab12", found: false, visible: false });
+    const hidden = guestEventLookup({ slug: "Birthday-AB12", found: true, visible: false });
+    assert.equal(malformed.status, 404);
+    assert.deepEqual(malformed, missing);
+    assert.deepEqual(missing, hidden);
+    assert.equal(JSON.stringify(malformed.body), JSON.stringify(GUEST_EVENT_MISS));
+    assert.equal(JSON.stringify(GUEST_ORDER_MISS), JSON.stringify({ error: "ההזמנה לא נמצאה." }));
+  });
+
+  it("canonicalizes mixed-case slugs before the public-shape check", () => {
+    assert.equal(canonicalEventSlug("Birthday-AB12"), "birthday-ab12");
+    assert.equal(isPublicEventSlug("Birthday-AB12"), true);
+    assert.equal(isPublicEventSlug("not a slug"), false);
+    const visible = guestEventLookup({ slug: "Birthday-AB12", found: true, visible: true });
+    assert.equal(visible.status, 200);
+    assert.equal(visible.body, null);
+  });
+});
+
+describe("shared guest rate limit decision", () => {
+  it("keys reads by IP and writes by IP plus event id", () => {
+    assert.equal(GUEST_RATE_LIMIT_IDS.read, "lolo-guest-read");
+    assert.equal(GUEST_RATE_LIMIT_IDS.write, "lolo-guest-write");
+    assert.equal(guestRateLimitKey("203.0.113.10", "read"), "203.0.113.10");
+    assert.equal(guestRateLimitKey("203.0.113.10", "write", "event-1"), "203.0.113.10:event-1");
+    assert.equal(guestRateLimitKey("203.0.113.10", "write"), "203.0.113.10:none");
+  });
+
+  it("fails closed on Vercel for a timeout or firewall error and skips the shared store off Vercel", () => {
+    assert.deepEqual(sharedLimitDecision({ onVercel: false, result: { failed: true } }), { ok: true });
+    assert.deepEqual(sharedLimitDecision({ onVercel: true }), {
+      ok: false,
+      retryAfterSeconds: 60,
+    });
+    assert.deepEqual(sharedLimitDecision({ onVercel: true, result: { failed: true } }), {
+      ok: false,
+      retryAfterSeconds: 60,
+    });
+    assert.deepEqual(
+      sharedLimitDecision({ onVercel: true, result: { rateLimited: true, error: "blocked" } }),
+      { ok: false, retryAfterSeconds: 60 },
+    );
+    assert.deepEqual(sharedLimitDecision({ onVercel: true, result: { rateLimited: true } }), {
+      ok: false,
+      retryAfterSeconds: 60,
+    });
+    assert.deepEqual(
+      sharedLimitDecision({ onVercel: true, result: { rateLimited: false, error: "not-found" } }),
+      { ok: true },
+    );
+    assert.deepEqual(sharedLimitDecision({ onVercel: true, result: { rateLimited: false } }), {
+      ok: true,
+    });
   });
 });

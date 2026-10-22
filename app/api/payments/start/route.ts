@@ -3,16 +3,14 @@ import { toPublicPaymentStart } from "@/lib/events/public-guest";
 import { GUEST_BODY_BYTES, isUuid } from "@/lib/orders/guest-input";
 import { getOrderForGuest } from "@/lib/orders/repository";
 import { getPaymentProvider } from "@/lib/payments/provider";
-import { clientIpFromRequest } from "@/lib/security/login-limit";
-import { takePaymentIp, takePaymentSlug } from "@/lib/security/guest-limit";
-import { guestLimitResponse, readLimitedJson } from "@/lib/security/guest-http";
+import { guestOrderMissResponse, guardPaymentIp, guardPaymentSlug } from "@/lib/security/guest-guard";
+import { readLimitedJson } from "@/lib/security/guest-http";
 import { caughtErrorBody } from "@/lib/security/required-secret";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
-  const ip = clientIpFromRequest(request);
-  const limited = guestLimitResponse(takePaymentIp(ip));
+  const limited = guardPaymentIp(request);
   if (limited) {
     return limited;
   }
@@ -26,16 +24,16 @@ export async function POST(request: Request) {
   const orderId = body.orderId?.trim() ?? "";
   const accessToken = body.accessToken?.trim() ?? "";
   if (!isUuid(orderId) || !isUuid(accessToken)) {
-    return NextResponse.json({ error: "לא מצאנו את ההזמנה." }, { status: 400 });
+    return guestOrderMissResponse();
   }
 
   try {
     const order = await getOrderForGuest(orderId, accessToken);
     if (!order) {
-      return NextResponse.json({ error: "ההזמנה לא נמצאה." }, { status: 404 });
+      return guestOrderMissResponse();
     }
 
-    const slugLimited = guestLimitResponse(takePaymentSlug(order.eventSlug));
+    const slugLimited = await guardPaymentSlug(request, order.eventSlug, order.eventId);
     if (slugLimited) {
       return slugLimited;
     }

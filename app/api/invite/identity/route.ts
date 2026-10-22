@@ -2,14 +2,20 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { toPublicInviteIdentity } from "@/lib/events/public-guest";
 import { getSupabaseServiceClient } from "@/lib/supabase/server";
-import { normalizeEventSlug } from "@/lib/events/slug";
+import { canonicalEventSlug } from "@/lib/events/slug";
+import { guardGuestRead } from "@/lib/security/guest-guard";
 import {
   INVITE_SESSION_COOKIE,
   readInviteSessionToken,
 } from "@/lib/invite/session";
 
 export async function GET(request: Request) {
-  const slug = normalizeEventSlug(
+  const limited = await guardGuestRead(request);
+  if (limited) {
+    return limited;
+  }
+
+  const slug = canonicalEventSlug(
     new URL(request.url).searchParams.get("slug") ?? "",
   );
   if (!slug) {

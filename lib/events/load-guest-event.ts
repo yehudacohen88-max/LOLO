@@ -1,7 +1,7 @@
 import "server-only";
 import { buildDemoEvent, DEMO_EVENT_SLUG } from "@/lib/events/demo";
 import { mapGuestEvent, type GuestEventRow, type GuestGiftRow } from "@/lib/events/guest-shape";
-import { normalizeEventSlug } from "@/lib/events/slug";
+import { canonicalEventSlug } from "@/lib/events/slug";
 import { getSupabaseServiceClient } from "@/lib/supabase/server";
 
 const EVENT_COLUMNS =
@@ -15,7 +15,7 @@ const GIFT_COLUMNS = [
 ];
 
 export async function loadGuestEvent(slug: string) {
-  const decoded = normalizeEventSlug(slug);
+  const decoded = canonicalEventSlug(slug);
   if (!decoded) {
     return null;
   }

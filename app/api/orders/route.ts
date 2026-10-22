@@ -8,10 +8,18 @@ import {
   publicSlugOrNull,
 } from "@/lib/orders/guest-input";
 import type { OrderItemInput } from "@/lib/orders/types";
+import { loadGuestEvent } from "@/lib/events/load-guest-event";
 import { toPublicOrder } from "@/lib/events/public-guest";
-import { clientIpFromRequest } from "@/lib/security/login-limit";
-import { takeOrderRead, takeOrderWrite } from "@/lib/security/guest-limit";
-import { guestLimitResponse, readLimitedJson } from "@/lib/security/guest-http";
+import { canonicalEventSlug } from "@/lib/events/slug";
+import { GUEST_EVENT_MISS } from "@/lib/security/guest-rate-decision";
+import {
+  guestEventMissResponse,
+  guestOrderMissResponse,
+  guardOrderRead,
+  guardOrderWriteLocal,
+  guardSharedWrite,
+} from "@/lib/security/guest-guard";
+import { readLimitedJson } from "@/lib/security/guest-http";
 import { caughtErrorBody } from "@/lib/security/required-secret";
 
 function jsonError(error: string, status: number) {
@@ -19,7 +27,7 @@ function jsonError(error: string, status: number) {
 }
 
 export async function GET(request: Request) {
-  const limited = guestLimitResponse(takeOrderRead(clientIpFromRequest(request)));
+  const limited = await guardOrderRead(request);
   if (limited) {
     return limited;
   }
@@ -29,13 +37,13 @@ export async function GET(request: Request) {
   const accessToken = searchParams.get("accessToken") ?? "";
 
   if (!isUuid(id) || !isUuid(accessToken)) {
-    return jsonError("לא מצאנו את ההזמנה.", 400);
+    return guestOrderMissResponse();
   }
 
   try {
     const order = await getOrderForGuest(id, accessToken);
     if (!order) {
-      return jsonError("ההזמנה לא נמצאה.", 404);
+      return guestOrderMissResponse();
     }
     return NextResponse.json(toPublicOrder(order));
   } catch (error) {
@@ -45,7 +53,6 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const ip = clientIpFromRequest(request);
   const parsed = await readLimitedJson(request, GUEST_BODY_BYTES.order);
   if (!parsed.ok) {
     return jsonError(parsed.error, parsed.status);
@@ -63,9 +70,6 @@ export async function POST(request: Request) {
     items?: OrderItemInput[];
   };
   const slug = publicSlugOrNull(body.slug ?? "");
-  if (!slug) {
-    return jsonError("האירוע לא נמצא.", 400);
-  }
   const items = Array.isArray(body.items) ? body.items : [];
   const problem =
     guestTextProblem({
@@ -78,9 +82,19 @@ export async function POST(request: Request) {
     return jsonError(problem, 400);
   }
 
-  const limited = guestLimitResponse(takeOrderWrite(ip, slug));
+  const localLimit = guardOrderWriteLocal(request, slug || "none");
+  if (localLimit) {
+    return localLimit;
+  }
+
+  const event = slug ? await loadGuestEvent(slug) : null;
+  const visible = Boolean(event && canonicalEventSlug(event.slug) === slug);
+  const limited = await guardSharedWrite(request, visible ? event!.id : "none");
   if (limited) {
     return limited;
+  }
+  if (!slug || !visible || !event) {
+    return guestEventMissResponse();
   }
 
   try {
@@ -98,6 +112,9 @@ export async function POST(request: Request) {
 
     return NextResponse.json(toPublicOrder(order));
   } catch (error) {
+    if (error instanceof Error && error.message === GUEST_EVENT_MISS.error) {
+      return guestEventMissResponse();
+    }
     const failure = caughtErrorBody(error, "שמירת ההזמנה נכשלה.");
     return NextResponse.json({ error: failure.error }, { status: failure.status });
   }

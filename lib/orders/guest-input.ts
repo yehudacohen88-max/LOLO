@@ -1,5 +1,5 @@
 import { isPublicEventSlug } from "@/lib/beta/guest-access";
-import { normalizeEventSlug } from "@/lib/events/slug";
+import { canonicalEventSlug } from "@/lib/events/slug";
 export const GUEST_TEXT_LIMITS = {
   name: 80,
   phone: 32,
@@ -28,7 +28,7 @@ export function isUuid(value: string) {
 }
 
 export function publicSlugOrNull(slug: string) {
-  const decoded = normalizeEventSlug(slug);
+  const decoded = canonicalEventSlug(slug);
   if (!isPublicEventSlug(decoded)) {
     return null;
   }

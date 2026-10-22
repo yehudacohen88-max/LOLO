@@ -1,3 +1,5 @@
+import { canonicalEventSlug } from "@/lib/events/slug";
+
 /**
  * Exact guest paths that skip the beta password.
  * Lookup of an existing slug is unchanged; this only decides who may request it.
@@ -7,17 +9,25 @@ const SLUG = "[a-z0-9](?:[a-z0-9-]{0,78}[a-z0-9])?";
 
 export const EVENT_SLUG_PATTERN = new RegExp(`^${SLUG}$`);
 
+/**
+ * One path segment, including mixed case and malformed shapes.
+ * The handler returns the same not-found response as a missing event.
+ * Traversal is rejected earlier in isGuestDirectAccess.
+ */
+const EVENT_SEGMENT = "[^/]{1,80}";
+const INVITE_SEGMENT = "[^/]{1,256}";
 const EVENT_PAGE = new RegExp(
-  `^/e/${SLUG}(?:/(?:greeting|details|payment|thank-you))?/?$`,
+  `^/e/${EVENT_SEGMENT}(?:/(?:greeting|details|payment|thank-you))?/?$`,
+  "i",
 );
-const EVENT_API = new RegExp(`^/api/events/${SLUG}$`);
-const FUNDING_API = new RegExp(`^/api/events/${SLUG}/funding$`);
-const INVITE_PAGE = /^\/i\/[A-Za-z0-9_-]{22,128}\/?$/;
+const EVENT_API = new RegExp(`^/api/events/${EVENT_SEGMENT}$`, "i");
+const FUNDING_API = new RegExp(`^/api/events/${EVENT_SEGMENT}/funding$`, "i");
+const INVITE_PAGE = new RegExp(`^/i/${INVITE_SEGMENT}/?$`);
 
 const PAGE_METHODS = new Set(["GET", "HEAD"]);
 
 export function isPublicEventSlug(slug: string) {
-  return EVENT_SLUG_PATTERN.test(slug);
+  return EVENT_SLUG_PATTERN.test(canonicalEventSlug(slug));
 }
 
 export function isGuestDirectAccess(pathname: string, method: string) {
