@@ -2,10 +2,10 @@ import { expect, test } from "@playwright/test";
 
 test("landing explains LOLO and links to create an event", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: "המתנה שבאמת רצית" })).toBeVisible();
-  await expect(page.getByText("היעד של המתנה הוא יעד, לא תקרה")).toBeVisible();
-  await expect(page.getByRole("link", { name: "יצירת אירוע" })).toBeVisible();
-  await page.getByRole("link", { name: "יצירת אירוע" }).click();
+  await expect(page.getByRole("heading", { name: "המתנה שבאמת רציתם, ביחד." })).toBeVisible();
+  await expect(page.getByText("בבטא התשלום הוא הדגמה, בלי חיוב אמיתי.")).toBeVisible();
+  await expect(page.getByRole("link", { name: "יוצרים אירוע" })).toBeVisible();
+  await page.getByRole("link", { name: "יוצרים אירוע" }).click();
   await expect(page).toHaveURL(/\/create-event/);
   await expect(page.getByRole("heading", { name: "בואו ניצור את האירוע שלכם" })).toBeVisible();
 });
@@ -72,9 +72,9 @@ test("beta sign-in uses the LOLO flagship design", async ({ page }) => {
 
 test("landing uses the LOLO flagship design", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByText("lolo", { exact: true })).toBeVisible();
-  await expect(page.getByRole("link", { name: "יצירת אירוע" })).toHaveCSS(
+  await expect(page.getByText("lolo", { exact: true }).first()).toBeVisible();
+  await expect(page.getByRole("link", { name: "יוצרים אירוע" })).toHaveCSS(
     "background-color",
-    "rgb(184, 50, 28)",
+    "rgb(23, 47, 43)",
   );
 });
