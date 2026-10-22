@@ -348,10 +348,10 @@ export function ProgressRibbon({
         <path
           d="M20 15 C13 3 2 3 3 10 C4 17 13 17 20 15Z M20 15 C27 3 38 3 37 10 C36 17 27 17 20 15Z"
           fill="#fff"
-          stroke="#F2553F"
+          stroke="#E87563"
           strokeWidth="1.5"
         />
-        <circle cx="20" cy="15" r="3" fill="#F2553F" opacity="0.55" />
+        <circle cx="20" cy="15" r="3" fill="#E87563" opacity="0.55" />
       </svg>
     </div>
   );
