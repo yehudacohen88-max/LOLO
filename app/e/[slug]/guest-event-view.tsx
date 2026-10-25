@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { Fragment, useEffect, useMemo, useState } from "react";
+import { BETA_CLARITY } from "@/app/design/beta-notice";
 import { formatEventTime } from "@/lib/event-draft";
 import { getEventBySlug, guestEventPath, type StoredEvent } from "@/lib/events";
 import {
@@ -359,6 +360,9 @@ export default function GuestEventView() {
 
     return (
       <div>
+        <p className={styles.chosen}>
+          {contribution ? formatGiftAmount(contribution.amount) : "בחרו סכום"}
+        </p>
         {showSuggested ? (
           <div className={styles.amounts}>
             {suggestedAmounts.map((amount) => {
@@ -610,14 +614,41 @@ export default function GuestEventView() {
         </div>
       ) : null}
       <div className={styles.spread}>
-        <Portrait
-          src={event.coverImage}
-          alt={event.title ? `תמונה לאירוע ${event.title}` : "תמונת האירוע"}
-          monogram={monogramFor(event.title)}
-          hostName={event.hostName.trim()}
-          nameOnChip={!message}
-          objectPosition={coverObjectPosition(event)}
-        />
+        <div className={styles.hero}>
+          <Portrait
+            src={event.coverImage}
+            alt={event.title ? `תמונה לאירוע ${event.title}` : "תמונת האירוע"}
+            monogram={monogramFor(event.title)}
+            hostName={event.hostName.trim()}
+            nameOnChip={!message}
+            objectPosition={coverObjectPosition(event)}
+          />
+          {venueName || address ? (
+            <section className={`${styles.venue} ${styles.venueOnCover}`} data-venue="">
+              <p className={styles.venueKicker}>איפה חוגגים</p>
+              {venueName ? <p className={styles.venueName}>{venueName}</p> : null}
+              {address ? <p className={styles.venueAddress}>{address}</p> : null}
+              {address ? (
+                <div className={styles.venueActions}>
+                  <a
+                    href={`https://waze.com/ul?q=${mapQuery}&navigate=yes`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Waze
+                  </a>
+                  <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${mapQuery}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Google Maps
+                  </a>
+                </div>
+              ) : null}
+            </section>
+          ) : null}
+        </div>
 
         <div className={`${styles.copy} ${styles.rise}`}>
           {kicker.length > 0 ? (
@@ -677,32 +708,6 @@ export default function GuestEventView() {
                 </p>
               ) : null}
             </div>
-          </section>
-        ) : null}
-
-        {venueName || address ? (
-          <section className={styles.venue} data-venue="">
-            <p className={styles.venueKicker}>איפה חוגגים</p>
-            {venueName ? <p className={styles.venueName}>{venueName}</p> : null}
-            {address ? <p className={styles.venueAddress}>{address}</p> : null}
-            {address ? (
-              <div className={styles.venueActions}>
-                <a
-                  href={`https://waze.com/ul?q=${mapQuery}&navigate=yes`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Waze
-                </a>
-                <a
-                  href={`https://www.google.com/maps/search/?api=1&query=${mapQuery}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Google Maps
-                </a>
-              </div>
-            ) : null}
           </section>
         ) : null}
 
@@ -813,6 +818,7 @@ export default function GuestEventView() {
               <LockIcon />
               תשלום הדגמה — לא מתבצע חיוב אמיתי
             </p>
+            <p className={styles.quiet}>{BETA_CLARITY}</p>
           </div>
         </aside>
 

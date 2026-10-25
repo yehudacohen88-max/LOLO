@@ -36,11 +36,13 @@ export function FlowPage({
   step,
   title,
   lede,
+  notice,
   children,
 }: {
   step: StepId;
   title: string;
   lede?: string;
+  notice?: string;
   children: ReactNode;
 }) {
   const slug = fromRouteParam(useParams<{ slug: string }>().slug);
@@ -124,7 +126,14 @@ export function FlowPage({
         </div>
       ) : null}
       <div
-        className={`${styles.flow} ${step === "thanks" ? styles.flowThanks : ""} ${step === "payment" ? styles.flowPay : ""}`}
+        className={[
+          styles.flow,
+          step === "thanks" ? styles.flowThanks : "",
+          step === "payment" ? styles.flowPay : "",
+          step === "greeting" || step === "details" ? styles.flowForm : "",
+        ]
+          .filter(Boolean)
+          .join(" ")}
       >
         <aside className={styles.flowAside}>
           <div className={styles.continuity} aria-busy={mark ? undefined : true}>
@@ -191,6 +200,7 @@ export function FlowPage({
         <div className={`${styles.flowHead} ${styles.flowIn}`}>
           <h1 className={styles.flowTitle}>{title}</h1>
           {lede ? <p className={styles.flowLede}>{lede}</p> : null}
+          {notice ? <p className={styles.pay}>{notice}</p> : null}
         </div>
         <div className={styles.flowBody}>{children}</div>
       </div>
