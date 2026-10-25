@@ -12,6 +12,7 @@ export default function GuestDetailsPage() {
       step="details"
       title="עוד רגע מסיימים"
       lede="נשמח לדעת ממי המתנה."
+      notice="תשלום הדגמה — לא מתבצע חיוב אמיתי"
     >
       <GuestDetailsForm />
     </FlowPage>

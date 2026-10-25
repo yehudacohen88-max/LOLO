@@ -5,8 +5,10 @@ import { useEffect, useState } from "react";
 import { guestEventPath } from "@/lib/events";
 import { fromRouteParam } from "@/lib/events/slug";
 import {
+  getContributionsTotal,
   isValidEmail,
   isValidPhone,
+  loadContributions,
   loadGuestDetails,
   saveGuestDetails,
 } from "@/lib/guest-draft";
@@ -102,6 +104,11 @@ export default function GuestDetailsForm() {
 
         setErrors(nextErrors);
         if (Object.keys(nextErrors).length > 0) {
+          return;
+        }
+
+        if (getContributionsTotal(loadContributions(slug)) <= 0) {
+          setSaveError("עדיין לא נבחרה מתנה.");
           return;
         }
 
