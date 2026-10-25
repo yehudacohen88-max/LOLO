@@ -4,6 +4,11 @@ import { buildDemoEvent, DEMO_EVENT_SLUG } from "@/lib/events/demo";
 import { getSupabaseServiceClient } from "@/lib/supabase/server";
 import { normalizeEventSlug } from "@/lib/events/slug";
 import { isValidEmail, isValidPhone } from "@/lib/guest-draft";
+import {
+  guestItemsProblem,
+  guestTextProblem,
+  publicSlugOrNull,
+} from "@/lib/orders/guest-input";
 import { roundMoney } from "@/lib/money";
 import {
   calculateGuestFee,
@@ -238,7 +243,14 @@ export async function quoteContribution(
   slug: string,
   itemInputs: UpsertOrderInput["items"],
 ): Promise<CheckoutAmounts & { feeEnabled: boolean }> {
-  const decoded = normalizeEventSlug(slug);
+  const decoded = publicSlugOrNull(slug);
+  if (!decoded) {
+    throw new Error("האירוע לא נמצא.");
+  }
+  const itemProblem = guestItemsProblem(itemInputs);
+  if (itemProblem) {
+    throw new Error(itemProblem);
+  }
   if (decoded === DEMO_EVENT_SLUG) {
     const contribution = buildContribution(buildDemoEvent(), itemInputs, false);
     return {
@@ -263,7 +275,20 @@ export async function quoteContribution(
 export async function upsertPendingOrder(
   input: UpsertOrderInput,
 ): Promise<StoredOrder> {
-  const decoded = normalizeEventSlug(input.slug);
+  const decoded = publicSlugOrNull(input.slug);
+  if (!decoded) {
+    throw new Error("האירוע לא נמצא.");
+  }
+  const textProblem = guestTextProblem({
+    guestName: input.guestName,
+    guestPhone: input.guestPhone,
+    guestEmail: input.guestEmail,
+    greetingText: input.greetingText,
+  });
+  const itemProblem = guestItemsProblem(input.items);
+  if (textProblem || itemProblem) {
+    throw new Error(textProblem || itemProblem || "הבקשה אינה תקינה.");
+  }
   if (decoded === DEMO_EVENT_SLUG) {
     throw new Error("תשלום הדגמה זמין באירוע שפורסם.");
   }
