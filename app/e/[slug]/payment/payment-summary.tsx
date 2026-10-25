@@ -159,6 +159,7 @@ export default function GuestPaymentSummary() {
   if (contributions.length === 0 || localTotal <= 0) {
     return (
       <div className={styles.card}>
+        <p className={styles.notice}>תשלום הדגמה בלבד — לא מתבצע חיוב אמיתי</p>
         <p>עדיין לא נבחרה מתנה.</p>
         <Link href={guestEventPath(slug)} className={styles.cta}>
           חזרה לבחירת מתנה

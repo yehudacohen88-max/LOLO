@@ -151,10 +151,26 @@ for (const viewport of widths) {
           ? page.getByRole("button", { name: marker })
           : page.getByRole("heading", { name: marker, exact: true });
       await expect(markerLocator).toBeVisible();
+      if (name === "greeting" || name === "details") {
+        await expect(page.getByText("תשלום הדגמה — לא מתבצע חיוב אמיתי")).toBeVisible();
+        await expect(page.getByText("תשלום הדגמה בלבד — לא מתבצע חיוב אמיתי")).toHaveCount(0);
+      }
+      if (name === "payment" || name === "thanks") {
+        await expect(page.getByText("תשלום הדגמה בלבד — לא מתבצע חיוב אמיתי")).toBeVisible();
+      }
       await expectNoOverflowAndLargeTargets(page);
       if (viewport.name === "390" || viewport.name === "1440") {
         await page.screenshot({
           path: path.join(artifactDir, `guest-live-${name}-${viewport.name}.png`),
+          fullPage: true,
+        });
+      }
+      if (
+        (name === "greeting" || name === "details") &&
+        (viewport.name === "390" || viewport.name === "768" || viewport.name === "1440")
+      ) {
+        await page.screenshot({
+          path: path.join(artifactDir, `guest-review-${name}-${viewport.name}.png`),
           fullPage: true,
         });
       }

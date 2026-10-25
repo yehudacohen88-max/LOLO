@@ -12,6 +12,7 @@ export default function GuestGreetingPage() {
       step="greeting"
       title="משאירים ברכה"
       lede="כמה מילים חמות. אפשר גם להמשיך בלי."
+      notice="תשלום הדגמה — לא מתבצע חיוב אמיתי"
     >
       <GuestGreetingForm />
     </FlowPage>

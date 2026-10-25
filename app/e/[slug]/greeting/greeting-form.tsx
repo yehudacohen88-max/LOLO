@@ -41,6 +41,7 @@ export default function GuestGreetingForm() {
   const [recordError, setRecordError] = useState("");
   const [contributions, setContributions] = useState<GuestContribution[]>([]);
   const [ready, setReady] = useState(false);
+  const [continueError, setContinueError] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -166,6 +167,11 @@ export default function GuestGreetingForm() {
       onSubmit={(event) => {
         event.preventDefault();
         persistGreeting();
+        if (total <= 0) {
+          setContinueError("עדיין לא נבחרה מתנה.");
+          return;
+        }
+        setContinueError("");
         router.push(guestEventPath(slug, "details"));
       }}
     >
@@ -314,6 +320,11 @@ export default function GuestGreetingForm() {
       </section>
       ) : null}
 
+      {continueError ? (
+        <p className={styles.fieldError} role="alert">
+          {continueError}
+        </p>
+      ) : null}
       <button type="submit" className={styles.cta}>
         ממשיכים · {formatGiftAmount(total)}
       </button>
