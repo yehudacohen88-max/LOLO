@@ -392,15 +392,16 @@ describe("shared guest rate limit decision", () => {
     assert.equal(guestRateLimitKey("203.0.113.10", "write"), "203.0.113.10:none");
   });
 
-  it("fails closed on Vercel for a timeout or firewall error and skips the shared store off Vercel", () => {
+  it("blocks only a real shared rate limit and keeps the in-memory layer for firewall errors", () => {
     assert.deepEqual(sharedLimitDecision({ onVercel: false, result: { failed: true } }), { ok: true });
-    assert.deepEqual(sharedLimitDecision({ onVercel: true }), {
-      ok: false,
-      retryAfterSeconds: 60,
-    });
-    assert.deepEqual(sharedLimitDecision({ onVercel: true, result: { failed: true } }), {
-      ok: false,
-      retryAfterSeconds: 60,
+    assert.deepEqual(sharedLimitDecision({ onVercel: true }), { ok: true });
+    assert.deepEqual(sharedLimitDecision({ onVercel: true, result: { failed: true } }), { ok: true });
+    assert.deepEqual(
+      sharedLimitDecision({ onVercel: true, result: { rateLimited: false, error: "not-found" } }),
+      { ok: true },
+    );
+    assert.deepEqual(sharedLimitDecision({ onVercel: true, result: { rateLimited: false } }), {
+      ok: true,
     });
     assert.deepEqual(
       sharedLimitDecision({ onVercel: true, result: { rateLimited: true, error: "blocked" } }),
@@ -409,13 +410,6 @@ describe("shared guest rate limit decision", () => {
     assert.deepEqual(sharedLimitDecision({ onVercel: true, result: { rateLimited: true } }), {
       ok: false,
       retryAfterSeconds: 60,
-    });
-    assert.deepEqual(
-      sharedLimitDecision({ onVercel: true, result: { rateLimited: false, error: "not-found" } }),
-      { ok: true },
-    );
-    assert.deepEqual(sharedLimitDecision({ onVercel: true, result: { rateLimited: false } }), {
-      ok: true,
     });
   });
 });

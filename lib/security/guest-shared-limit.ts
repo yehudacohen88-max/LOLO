@@ -25,6 +25,23 @@ function onVercel() {
   return process.env.VERCEL === "1";
 }
 
+function sharedLimitProblemCode(error: unknown) {
+  if (error instanceof Error) {
+    if (error.name === "TimeoutError" || error.name === "AbortError") {
+      return "timeout";
+    }
+    const status = /response status '[^']*': (\d+)/.exec(error.message);
+    if (status?.[1]) {
+      return `http-${status[1]}`;
+    }
+  }
+  return "failed";
+}
+
+function warnSharedLimit(id: string, code: string) {
+  console.warn("[LOLO] guest shared limit", { id, code });
+}
+
 async function firewallResult(
   id: string,
   key: string,
@@ -37,8 +54,13 @@ async function firewallResult(
       rateLimitKey: key,
       timeout: SHARED_LIMIT_TIMEOUT_MS,
     });
+    if (result.rateLimited) {
+      warnSharedLimit(id, result.error === "blocked" ? "blocked" : "rate-limited");
+    }
     return { rateLimited: result.rateLimited, error: result.error };
-  } catch {
+  } catch (error) {
+    const code = sharedLimitProblemCode(error);
+    warnSharedLimit(id, code);
     return { failed: true };
   }
 }

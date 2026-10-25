@@ -23,21 +23,17 @@ export type FirewallCheckResult = {
 };
 
 /**
- * On Vercel, a timeout or a firewall error closes (429).
- * `not-found` means the dashboard rule is not published yet. Treating that as
- * a block would reject every guest until the rule exists, so the in-memory
- * layer remains the limit until Yehuda publishes the IDs above.
+ * On Vercel, only `rateLimited: true` closes (429). That includes a firewall
+ * `blocked` result, which the SDK reports with `rateLimited: true`.
+ * A timeout, throw, missing result, or `not-found` (rule not published) falls
+ * through. The in-memory layer still runs either way.
  * Off Vercel the shared store is skipped; the in-memory layer still runs.
  */
 export function sharedLimitDecision(input: {
   onVercel: boolean;
   result?: FirewallCheckResult;
 }): LimitDecision {
-  if (!input.onVercel) {
-    return { ok: true };
-  }
-  const result = input.result;
-  if (!result || result.failed || result.error === "blocked" || result.rateLimited) {
+  if (input.onVercel && input.result?.rateLimited) {
     return { ok: false, retryAfterSeconds: SHARED_LIMIT_RETRY_AFTER_SECONDS };
   }
   return { ok: true };
