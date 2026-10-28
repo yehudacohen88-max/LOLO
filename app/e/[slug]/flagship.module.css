@@ -2443,8 +2443,15 @@
   opacity: 1;
 }
 
-.flow.flowPay > .flowBody {
-  display: contents;
+.flowMain {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.flowMain > .flowBody {
+  margin-top: 0;
 }
 
 .thanksAmount {
@@ -2633,8 +2640,7 @@
 .card,
 .venue,
 .status,
-.extra,
-.summary {
+.extra {
   box-shadow: var(--gx-shadow, 0 12px 28px -22px rgba(23, 47, 43, 0.55));
 }
 
@@ -2879,4 +2885,127 @@
 
 .payProgress {
   font-weight: 500;
+}
+
+.compactRow {
+  display: none;
+}
+
+.flowPay .flowAside {
+  display: none;
+}
+
+@media (max-width: 1023px) {
+  .flow .flowAside,
+  .flow .paySlot {
+    display: none;
+  }
+
+  .compactRow {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    border-radius: 20px;
+    background: #fff;
+    box-shadow: var(--gx-shadow, 0 12px 28px -22px rgba(23, 47, 43, 0.55));
+  }
+
+  .compactThumb {
+    display: grid;
+    place-items: center;
+    width: 56px;
+    height: 56px;
+    flex: none;
+    overflow: hidden;
+    border-radius: 14px;
+    object-fit: contain;
+    background: #f7f4ef;
+    color: #172f2b;
+    font-weight: 700;
+  }
+
+  .compactCover {
+    object-fit: cover;
+  }
+
+  .compactCopy {
+    min-width: 0;
+  }
+
+  .compactTitle,
+  .compactMeta {
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .compactTitle {
+    color: #172f2b;
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1.3;
+  }
+
+  .compactMeta {
+    margin-top: 2px;
+    color: #3e524c;
+    font-size: 0.92rem;
+    line-height: 1.3;
+  }
+
+  .detailsChoice {
+    display: none;
+  }
+}
+
+@media (min-width: 1024px) {
+  .flow.flowForm,
+  .flow.flowPay {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(260px, 340px);
+    align-items: start;
+    gap: 28px 32px;
+  }
+
+  .flow.flowForm .flowMain,
+  .flow.flowPay .flowMain {
+    grid-column: 1;
+    grid-row: 1;
+    align-self: start;
+  }
+
+  .flow.flowForm .flowAside,
+  .flow.flowPay .paySlot {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: start;
+    position: sticky;
+    top: 24px;
+    min-width: 0;
+  }
+
+  .flow.flowPay .payHero {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    width: 100%;
+    height: auto;
+    margin: 0;
+    padding: 16px;
+    border-radius: 20px;
+    background: #fff;
+    box-shadow: var(--gx-shadow, 0 12px 28px -22px rgba(23, 47, 43, 0.55));
+  }
+
+  .panel .summary {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
 }

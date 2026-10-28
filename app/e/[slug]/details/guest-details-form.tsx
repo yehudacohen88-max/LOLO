@@ -142,7 +142,7 @@ export default function GuestDetailsForm() {
         }
       }}
     >
-      {amountLine ? <p className={styles.quietLine}>{amountLine}</p> : null}
+      {amountLine ? <p className={`${styles.quietLine} ${styles.detailsChoice}`}>{amountLine}</p> : null}
       <label className={styles.stack}>
         <span>שם מלא</span>
         <input

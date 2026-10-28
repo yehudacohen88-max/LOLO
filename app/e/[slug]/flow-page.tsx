@@ -5,8 +5,9 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useEffect, useSyncExternalStore, type ReactNode } from "react";
+import { createContext, useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
 import { getEventBySlug, guestEventPath } from "@/lib/events";
+import { formatGiftAmount, getContributionsTotal, loadContributions } from "@/lib/guest-draft";
 import {
   DEMO_EVENT_SLUG,
   DEMO_IMAGE_CREDIT,
@@ -33,6 +34,8 @@ const steps = [
 
 type StepId = (typeof steps)[number]["id"] | "thanks";
 type StepState = "done" | "current" | "next";
+
+export const GuestPaySlotContext = createContext<HTMLElement | null>(null);
 
 function StepCheck({ size }: { size: number }) {
   return (
@@ -129,6 +132,23 @@ export function FlowPage({
 
   const current = step === "thanks" ? steps.length : steps.findIndex((item) => item.id === step);
   const letter = mark?.title.trim().charAt(0) ?? "";
+  const [paySlot, setPaySlot] = useState<HTMLDivElement | null>(null);
+  const choiceLine = useSyncExternalStore(
+    () => () => {},
+    () => {
+      if (!slug || step === "thanks") {
+        return "";
+      }
+      const chosen = loadContributions(slug);
+      const total = getContributionsTotal(chosen);
+      return chosen.length > 0 && total > 0
+        ? `${chosen.map((item) => item.giftName).join(" · ")} · ${formatGiftAmount(total)}`
+        : "";
+    },
+    () => "",
+  );
+
+  const compactSrc = mark?.giftImage || mark?.cover || "";
 
   return (
     <>
@@ -151,46 +171,8 @@ export function FlowPage({
           .filter(Boolean)
           .join(" ")}
       >
-        <aside className={styles.flowAside}>
-          <div className={styles.continuity} aria-busy={mark ? undefined : true}>
-            {mark?.cover ? (
-              <img
-                className={styles.thumb}
-                src={mark.cover}
-                alt=""
-                width={224}
-                height={280}
-              />
-            ) : (
-              <span
-                className={styles.thumbFallback}
-                data-continuity-letter={mark ? "" : undefined}
-                aria-hidden="true"
-              >
-                {letter}
-              </span>
-            )}
-            {mark?.giftImage ? (
-              <img className={styles.thumbGift} src={mark.giftImage} alt="" width={128} height={128} />
-            ) : (
-              <span className={styles.thumbGift} aria-hidden="true" />
-            )}
-            <div className={styles.continuityCopy}>
-              {mark ? (
-                <p className={styles.continuityTitle} data-continuity-title="">
-                  {mark.title}
-                </p>
-              ) : (
-                <div className={styles.bones} aria-label="טוענים את פרטי האירוע">
-                  <span />
-                  <span />
-                </div>
-              )}
-              {mark?.giftName ? <p className={styles.continuityMeta}>{mark.giftName}</p> : null}
-              {mark?.progress ? <p className={styles.continuityMeta}>{mark.progress}</p> : null}
-            </div>
-          </div>
-        </aside>
+        <GuestPaySlotContext.Provider value={paySlot}>
+        <div className={styles.flowMain}>
         <div className={`${styles.flowHead} ${styles.flowIn}`}>
           {step === "thanks" ? (
             <p className={styles.successMark} aria-hidden="true">
@@ -238,7 +220,69 @@ export function FlowPage({
           {lede ? <p className={styles.flowLede}>{lede}</p> : null}
           {notice ? <p className={styles.pay}>{notice}</p> : null}
         </div>
+        {step !== "thanks" && mark ? (
+          <div className={styles.compactRow}>
+            {compactSrc ? (
+              <img
+                className={
+                  mark.giftImage ? styles.compactThumb : `${styles.compactThumb} ${styles.compactCover}`
+                }
+                src={compactSrc}
+                alt=""
+                width={56}
+                height={56}
+              />
+            ) : (
+              <span className={styles.compactThumb} aria-hidden="true">
+                {letter}
+              </span>
+            )}
+            <div className={styles.compactCopy}>
+              <p className={styles.compactTitle}>{mark.title}</p>
+              {choiceLine ? <p className={styles.compactMeta}>{choiceLine}</p> : null}
+            </div>
+          </div>
+        ) : null}
         <div className={styles.flowBody}>{children}</div>
+        </div>
+        {step !== "thanks" ? (
+          <aside className={styles.flowAside}>
+            <div className={styles.continuity} aria-busy={mark ? undefined : true}>
+              {mark?.cover ? (
+                <img className={styles.thumb} src={mark.cover} alt="" width={224} height={280} />
+              ) : (
+                <span
+                  className={styles.thumbFallback}
+                  data-continuity-letter={mark ? "" : undefined}
+                  aria-hidden="true"
+                >
+                  {letter}
+                </span>
+              )}
+              {mark?.giftImage ? (
+                <img className={styles.thumbGift} src={mark.giftImage} alt="" width={128} height={128} />
+              ) : (
+                <span className={styles.thumbGift} aria-hidden="true" />
+              )}
+              <div className={styles.continuityCopy}>
+                {mark ? (
+                  <p className={styles.continuityTitle} data-continuity-title="">
+                    {mark.title}
+                  </p>
+                ) : (
+                  <div className={styles.bones} aria-label="טוענים את פרטי האירוע">
+                    <span />
+                    <span />
+                  </div>
+                )}
+                {mark?.giftName ? <p className={styles.continuityMeta}>{mark.giftName}</p> : null}
+                {mark?.progress ? <p className={styles.continuityMeta}>{mark.progress}</p> : null}
+              </div>
+            </div>
+          </aside>
+        ) : null}
+        {step === "payment" ? <div className={styles.paySlot} ref={setPaySlot} /> : null}
+        </GuestPaySlotContext.Provider>
       </div>
     </>
   );
