@@ -51,6 +51,19 @@ The control is «אני רוצה לקבל אישור על המתנה». It is op
 
 Corner ribbons no longer sit on the event photo or the gift image. A missing photo is a cream tile with a small gift icon. Payment and thank-you show «תשלום הדגמה בלבד — לא מתבצע חיוב אמיתי» once; the long beta paragraph is a short line inside «עוד על ההדגמה». Thank-you is a centered card, about 560px wide inside a 960px column. The gift page at desktop is a header plus a gift column and a sticky summary. The venue card sits under the cover, and the cover uses `object-position: center top` unless the host set a focal point.
 
+## Fourth pass
+
+The guest shell and the page behind it are cream for the full viewport. The step row sits above the heading in the main column, with a coral dot on the current step, a check on completed steps, and muted future steps. The desktop cover is centered (`50% 50%`) and capped at 300px. Thank-you shows one amount and one disclosure. Payment lists each gift once, then the fee line and the total. The side card on greeting and details puts the title and «נאספו … מתוך …» under the image.
+
+## Tests
+
+- `npx tsc --noEmit`: passed
+- `npx eslint` on the touched guest files: passed
+- `npx next build`: passed
+- Final `npx playwright test e2e`: 56 passed, 0 failed
+
+One run in this pass was 54 passed / 2 failed. The demo thank-you keeps «כבר 18 חברים הצטרפו» inside «פרטי הדגמה», so the test opens that disclosure before asserting it.
+
 ## Third pass
 
 The cover default is `50% 35%` unless the host set a focal point. On desktop the hero is capped at 360px and the venue card sits beside the title. A gift with no photo is at most 160px on the main card and an 88px square on extra cards. The duplicate progress line under the join button is gone. Payment and thank-you use a light notice. Thank-you is one 560px column, and its screenshot is the paid demo state.

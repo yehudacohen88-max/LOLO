@@ -121,7 +121,7 @@ function coverObjectPosition(event: StoredEvent) {
       return `${focusAxis(x)}% ${focusAxis(y)}%`;
     }
   }
-  return "50% 35%";
+  return "50% 50%";
 }
 
 function CheckIcon() {

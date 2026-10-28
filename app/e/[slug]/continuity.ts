@@ -88,7 +88,10 @@ export function continuityFromEvent(
     cover: stored.coverImage,
     giftName: chosen?.giftName || gift?.title || "",
     giftImage: gift?.imageUrl || "",
-    progress: short,
+    progress:
+      copy?.raisedText && copy.targetText
+        ? `נאספו ${copy.raisedText} מתוך ${copy.targetText}`
+        : short,
     fundingLine: copy
       ? [
           copy.countText,

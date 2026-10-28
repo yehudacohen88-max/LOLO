@@ -220,7 +220,7 @@ for (const viewport of widths) {
           expect(crop.ratio).toBeGreaterThan(1.5);
           expect(crop.ratio).toBeLessThan(1.7);
         }
-        expect(crop.position).toMatch(/35%/);
+        expect(crop.position).toMatch(/50%/);
       }
       if (viewport.name === "390" || viewport.name === "320") {
         const gift = await page.evaluate(() => {

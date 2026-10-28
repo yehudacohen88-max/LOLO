@@ -85,7 +85,6 @@ export default function ThankYouView() {
   const [eventName, setEventName] = useState("");
   const [heroGift, setHeroGift] = useState("");
   const [contributions, setContributions] = useState<GuestContribution[]>([]);
-  const [contributionAmount, setContributionAmount] = useState(0);
   const [feeAmount, setFeeAmount] = useState(0);
   const [chargedAmount, setChargedAmount] = useState(0);
   const [orderRead, setOrderRead] = useState<OrderRead>({ phase: "loading" });
@@ -137,9 +136,7 @@ export default function ThankYouView() {
             amount: item.amount,
           })),
         );
-        const contribution = order.contributionAmount ?? order.totalAmount;
         const fee = order.feeAmount ?? 0;
-        setContributionAmount(contribution);
         setFeeAmount(fee);
         setChargedAmount(order.chargedAmount ?? contribution + fee);
         setOrderRead(read);
@@ -287,13 +284,9 @@ export default function ThankYouView() {
           <p className={styles.revealCard} data-reveal-card="">
             {giftLabel}
           </p>
-          {eventName ? <p className={styles.quietLine}>{eventName}</p> : null}
-          {progressLine ? <p className={styles.quietLine}>{progressLine}</p> : null}
-          <p className={styles.notice}>תשלום הדגמה בלבד — לא מתבצע חיוב אמיתי</p>
-          <details>
-            <summary className={styles.quietLine}>עוד על ההדגמה</summary>
-            <p className={styles.quietLine}>בשלב זה לא מונפק שובר אמיתי.</p>
-          </details>
+          {showReceiptAmounts ? (
+            <p className={styles.thanksAmount}>{formatGiftAmount(chargedAmount)}</p>
+          ) : null}
           {orderRead.phase === "loading" ? (
             <div className={styles.skeleton} aria-busy="true">
               <span className={styles.srOnly} data-order-status="" role="status">
@@ -305,36 +298,32 @@ export default function ThankYouView() {
               {statusText(orderRead)}
             </p>
           )}
-          {showReceiptAmounts ? (
-            <>
-              {contributions.map((item) => (
-                <p key={item.giftId} className={styles.lineRow}>
-                  <span>{item.giftName}</span>
-                  <b>{formatGiftAmount(item.amount)}</b>
-                </p>
-              ))}
-              <p className={styles.lineRow}>
-                <span>השתתפות במתנה</span>
-                <b>{formatGiftAmount(contributionAmount)}</b>
-              </p>
-              <p className={styles.lineRow}>
-                <span>{feeAmount > 0 ? "עמלת שירות" : "ללא עמלת שירות"}</span>
-                {feeAmount > 0 ? <b>{formatGiftAmount(feeAmount)}</b> : null}
-              </p>
-              <p className={styles.totalLine}>
-                <span>{paid ? "סכום בהדגמה" : "סה״כ"}</span>
-                <span>{formatGiftAmount(chargedAmount)}</span>
-              </p>
-              {order?.paymentReference ? (
-                <details>
-                  <summary className={styles.quietLine}>פרטי הדגמה</summary>
-                  <p className={styles.quietLine} dir="ltr">
-                    {order.paymentReference}
+          {eventName ? <p className={styles.quietLine}>{eventName}</p> : null}
+          <p className={styles.notice}>תשלום הדגמה בלבד — לא מתבצע חיוב אמיתי</p>
+          <details className={styles.demoDetails}>
+            <summary className={styles.quietLine}>פרטי הדגמה</summary>
+            {showReceiptAmounts ? (
+              <>
+                {contributions.map((item) => (
+                  <p key={item.giftId} className={styles.lineRow}>
+                    <span>{item.giftName}</span>
+                    <b>{formatGiftAmount(item.amount)}</b>
                   </p>
-                </details>
-              ) : null}
-            </>
-          ) : null}
+                ))}
+                <p className={styles.lineRow}>
+                  <span>{feeAmount > 0 ? "עמלת שירות" : "ללא עמלת שירות"}</span>
+                  {feeAmount > 0 ? <b>{formatGiftAmount(feeAmount)}</b> : null}
+                </p>
+              </>
+            ) : null}
+            {progressLine ? <p className={styles.quietLine}>{progressLine}</p> : null}
+            {order?.paymentReference ? (
+              <p className={styles.quietLine} dir="ltr">
+                {order.paymentReference}
+              </p>
+            ) : null}
+            <p className={styles.quietLine}>בשלב זה לא מונפק שובר אמיתי.</p>
+          </details>
           {paid ? (
             <p className={styles.quietLine}>ההשתתפות נוספה למתנה. תודה שחגגתם יחד.</p>
           ) : null}

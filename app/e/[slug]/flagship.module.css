@@ -10,6 +10,7 @@
   --fs-hair: rgba(23, 47, 43, 0.12);
   --fs-sans: var(--font-premium-heebo), Heebo, "Arial Hebrew", Arial, sans-serif;
   --fs-serif: var(--font-premium-heebo), Heebo, "Arial Hebrew", Arial, sans-serif;
+  flex: 1 0 auto;
   min-height: 100dvh;
   overflow-x: clip;
   background-color: var(--gx-cream, #f7f4ef);
@@ -18,6 +19,12 @@
   font-family: var(--fs-sans);
   font-feature-settings: "tnum" 1;
   -webkit-font-smoothing: antialiased;
+}
+
+:global(html:has(.guest-shell)),
+:global(body:has(.guest-shell)) {
+  background: #f7f4ef;
+  min-height: 100dvh;
 }
 
 .root :focus-visible {
@@ -71,7 +78,7 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: 50% 35%;
+  object-position: 50% 50%;
 }
 
 .fallback {
@@ -2140,7 +2147,7 @@
   text-align: start;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 1024px) {
   .flow.flowForm {
     display: grid;
     direction: ltr;
@@ -2182,13 +2189,10 @@
   }
 
   .flow.flowForm .continuity {
-    display: grid;
-    grid-template-columns: 88px minmax(0, 1fr);
-    grid-template-areas:
-      "cover cover"
-      "gift copy";
-    gap: 12px 14px;
-    align-items: center;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
     min-height: 0;
     margin: 0;
     padding: 14px;
@@ -2246,8 +2250,61 @@
 .steps li + li::before {
   content: "←";
   margin-inline: 2px;
-  color: var(--gx-muted, #3e524c);
+  color: rgba(23, 47, 43, 0.35);
   font-weight: 500;
+}
+
+.stepDot {
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  margin-inline-end: 4px;
+  border-radius: 999px;
+  background: transparent;
+  color: #f7f4ef;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.steps [data-step="current"] {
+  color: #172f2b;
+  font-weight: 700;
+}
+
+.steps [data-step="current"] .stepDot {
+  background: #e07a6a;
+}
+
+.steps [data-step="done"] .stepDot {
+  background: #172f2b;
+}
+
+.steps [data-step="next"] {
+  color: rgba(23, 47, 43, 0.45);
+  font-weight: 500;
+}
+
+.flow .continuity {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+}
+
+.flow .thumb,
+.flow .thumbFallback {
+  width: 100%;
+  height: 148px;
+}
+
+.flow .continuityCopy,
+.flow .continuityMeta {
+  width: 100%;
+}
+
+.flow .continuityMeta {
+  white-space: nowrap;
 }
 
 .flowPay .revealStage .scene,
@@ -2356,6 +2413,43 @@
   opacity: 1;
 }
 
+.flow.flowPay > .flowBody {
+  display: contents;
+}
+
+.thanksAmount {
+  margin: 0;
+  color: #172f2b;
+  font-size: 2.4rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+.thanksReceipt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.successMark {
+  margin-inline: auto;
+}
+
+@media (min-width: 1024px) {
+  .flow.flowThanks .flowTitle {
+    font-size: 2.35rem;
+    white-space: nowrap;
+    color: #172f2b;
+    opacity: 1;
+  }
+
+  .flow.flowThanks {
+    width: min(720px, calc(100% - 48px));
+  }
+}
+
 .giftFallback {
   display: grid;
   place-items: center;
@@ -2406,8 +2500,8 @@
 }
 
 .thanksThumb {
-  width: 88px;
-  height: 88px;
+  width: 72px;
+  height: 72px;
   object-fit: cover;
   object-position: center top;
   border-radius: 16px;
@@ -2465,7 +2559,7 @@
 
   .root .portrait {
     aspect-ratio: 21 / 9;
-    max-height: 360px;
+    max-height: 300px;
     width: 100%;
   }
 

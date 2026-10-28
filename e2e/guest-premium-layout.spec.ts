@@ -337,38 +337,47 @@ test("filled guest screens at 390 and 1440", async ({ page }) => {
   });
   for (const viewport of [
     { name: "390", width: 390, height: 844 },
+    { name: "768", width: 768, height: 1024 },
     { name: "1440", width: 1440, height: 900 },
   ] as const) {
     await page.setViewportSize({ width: viewport.width, height: viewport.height });
     await page.goto("/e/flagship-fixture");
     await page.getByRole("button", { name: /350/ }).first().click();
     await page.getByRole("button", { name: "מצטרפים למתנה" }).click();
-    await page.screenshot({
-      path: path.join(artifactDir, `02-greeting-${viewport.name}.png`),
-      fullPage: true,
-    });
+    if (viewport.name === "390" || viewport.name === "768" || viewport.name === "1440") {
+      await page.screenshot({
+        path: path.join(artifactDir, `02-greeting-${viewport.name}.png`),
+        fullPage: true,
+      });
+    }
     await page.getByRole("button", { name: "אוהבים ושמחים לחגוג איתך." }).click();
     await page.getByRole("button", { name: /ממשיכים/ }).click();
     await page.getByLabel("שם מלא").fill("יעל כהן");
     await page.getByLabel("מספר טלפון").fill("0501234567");
     await page.getByLabel("אימייל").fill("yael@example.com");
-    await page.screenshot({
-      path: path.join(artifactDir, `03-details-${viewport.name}.png`),
-      fullPage: true,
-    });
+    if (viewport.name === "390" || viewport.name === "1440") {
+      await page.screenshot({
+        path: path.join(artifactDir, `03-details-${viewport.name}.png`),
+        fullPage: true,
+      });
+    }
     await page.getByRole("button", { name: "מעבר לתשלום" }).click();
     await expect(page.getByText("תשלום הדגמה בלבד — לא מתבצע חיוב אמיתי")).toBeVisible();
-    await page.screenshot({
-      path: path.join(artifactDir, `04-payment-${viewport.name}.png`),
-      fullPage: true,
-    });
+    if (viewport.name === "390" || viewport.name === "768" || viewport.name === "1440") {
+      await page.screenshot({
+        path: path.join(artifactDir, `04-payment-${viewport.name}.png`),
+        fullPage: true,
+      });
+    }
     await page.goto("/e/flagship-fixture/thank-you");
     await expect(page.locator("[data-order-status]")).toHaveText("שולם בהדגמה");
     await expect(page.getByText("350").first()).toBeVisible();
-    await page.screenshot({
-      path: path.join(artifactDir, `05-thanks-${viewport.name}.png`),
-      fullPage: true,
-    });
+    if (viewport.name === "390" || viewport.name === "768" || viewport.name === "1440") {
+      await page.screenshot({
+        path: path.join(artifactDir, `05-thanks-${viewport.name}.png`),
+        fullPage: true,
+      });
+    }
   }
 });
 

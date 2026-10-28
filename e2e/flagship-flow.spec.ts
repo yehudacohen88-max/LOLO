@@ -224,7 +224,7 @@ for (const viewport of [
     await expect(page.getByText(BETA_CLARITY)).toHaveCount(0);
     await expect(page.getByText("גרסת בטא — תשלומים מדומים בלבד")).toHaveCount(0);
     await expect(page.getByRole("button", { name: "שיתוף האירוע" })).toBeVisible();
-    await expect(page.getByText("כבר 23 חברים הצטרפו")).toBeVisible();
+    await expect(page.getByText("350").first()).toBeVisible();
     await expect(page.locator("[data-order-status]")).toHaveText("שולם בהדגמה");
     await expect(page.getByText("תשלום הדגמה בלבד — לא מתבצע חיוב אמיתי")).toBeVisible();
     await expect(page.locator("[data-reveal] [data-gift-photo]")).toBeVisible();
@@ -268,7 +268,7 @@ for (const viewport of [
     await expect(page.getByText(BETA_CLARITY)).toHaveCount(0);
     await expect(page.locator("[data-reveal] [data-gift-fallback]")).toBeVisible();
     await expect(page.locator("[data-reveal] [data-gift-photo]")).toHaveCount(0);
-    await expect(page.getByText("כבר 23 חברים הצטרפו")).toBeVisible();
+    await expect(page.getByText("350").first()).toBeVisible();
     await expect(page.locator("[data-order-status]")).toHaveText("שולם בהדגמה");
     await page.screenshot({
       path: path.join(artifactDir, `flagship_thanks_${viewport.name}_without_images.png`),
@@ -349,6 +349,7 @@ for (const viewport of [
     await page.goto("/e/demo-event/thank-you");
     await expect(page.locator("[data-order-status]")).toHaveText("עדיין אין אישור תשלום מהשרת.");
     await expect(page.getByText("שולם בהדגמה")).toHaveCount(0);
+    await page.getByText("פרטי הדגמה").click();
     await expect(page.getByText("כבר 18 חברים הצטרפו")).toBeVisible();
     await expect(page.getByText("אירוע הדגמה — נתונים לדוגמה").first()).toBeVisible();
     await expect(page.getByText("תשלום הדגמה בלבד — לא מתבצע חיוב אמיתי")).toBeVisible();

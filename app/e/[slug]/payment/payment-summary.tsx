@@ -1,8 +1,11 @@
 "use client";
 
+/* Host-uploaded gift images are not covered by next/image remote patterns. */
+/* eslint-disable @next/next/no-img-element */
+
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { getEventBySlug, guestEventPath } from "@/lib/events";
 import { fromRouteParam } from "@/lib/events/slug";
 import {
@@ -20,6 +23,8 @@ import {
   startGuestCheckout,
 } from "@/lib/payments/guest-client";
 import type { CheckoutQuote, PaymentOutcome } from "@/lib/payments/types";
+import { readContinuity, subscribeContinuity } from "../continuity";
+import { GiftFallback } from "../flagship-ui";
 import styles from "../flagship.module.css";
 
 function delay(ms: number) {
@@ -32,6 +37,7 @@ export default function GuestPaymentSummary() {
   const router = useRouter();
   const slug = fromRouteParam(useParams<{ slug: string }>().slug);
   const [eventName, setEventName] = useState("");
+  const [hostName, setHostName] = useState("");
   const [guestName, setGuestName] = useState("");
   const [greeting, setGreeting] = useState("");
   const [contributions, setContributions] = useState<GuestContribution[]>([]);
@@ -56,6 +62,7 @@ export default function GuestPaymentSummary() {
       }
 
       setEventName(stored?.title ?? "");
+      setHostName(stored?.hostName ?? "");
       setGuestName(loadGuestDetails(slug).name);
       setGreeting(loadGuestGreeting(slug).text);
       setContributions(loaded);
@@ -89,12 +96,17 @@ export default function GuestPaymentSummary() {
     };
   }, [slug]);
 
+  const mark = useSyncExternalStore(
+    subscribeContinuity,
+    () => (slug ? readContinuity(slug) : null),
+    () => null,
+  );
+
   if (!ready) {
     return <p className={styles.quietLine}>טוענים את התשלום...</p>;
   }
 
   const localTotal = getContributionsTotal(contributions);
-  const contributionAmount = quote?.contributionAmount ?? localTotal;
   const feeAmount = quote?.feeAmount ?? 0;
   const chargedAmount = quote?.chargedAmount ?? localTotal;
   const showDemo = quote ? quote.isDemo : true;
@@ -167,34 +179,39 @@ export default function GuestPaymentSummary() {
     );
   }
 
+  const sideImage = mark?.giftImage || "";
+
   return (
+    <>
+    <div className={styles.payHero} data-pay-hero="">
+      <div data-reveal="">
+        {sideImage ? (
+          <img className={styles.thanksThumb} src={sideImage} alt="" width={72} height={72} data-gift-photo="" />
+        ) : (
+          <GiftFallback compact />
+        )}
+        <p className={styles.revealCard} data-reveal-card="">
+          {contributions[0]?.giftName || mark?.giftName || "המתנה"}
+        </p>
+        {eventName ? <p className={styles.quietLine}>{eventName}</p> : null}
+        {hostName ? <p className={styles.quietLine}>הזמנה מאת {hostName}</p> : null}
+        {guestName ? <p className={styles.quietLine}>{guestName}</p> : null}
+        {greeting ? <p className={styles.quietLine}>״{greeting}״</p> : null}
+        {mark?.fundingLine ? <p className={styles.nowrap}>{mark.fundingLine}</p> : null}
+      </div>
+    </div>
     <div className={styles.flowBody} aria-busy={phase === "processing"}>
       <section className={styles.card}>
         <h2>סיכום התשלום</h2>
         {showDemo && !unavailable ? (
-          <>
-            <p className={styles.notice}>תשלום הדגמה בלבד — לא מתבצע חיוב אמיתי</p>
-            <details>
-              <summary className={styles.quietLine}>עוד על ההדגמה</summary>
-              <p className={styles.quietLine}>בשלב זה לא מונפק שובר אמיתי.</p>
-            </details>
-          </>
+          <p className={styles.notice}>תשלום הדגמה בלבד — לא מתבצע חיוב אמיתי</p>
         ) : null}
-        {eventName ? <p className={styles.lineRow}>{eventName}</p> : null}
-        {guestName ? <p className={styles.quietLine}>{guestName}</p> : null}
-        {greeting ? <p className={styles.quietLine}>״{greeting}״</p> : null}
-
         {contributions.map((item) => (
           <p key={item.giftId} className={styles.lineRow}>
             <span>{item.giftName}</span>
             <b>{formatGiftAmount(item.amount)}</b>
           </p>
         ))}
-
-        <p className={styles.lineRow}>
-          <span>השתתפות במתנה</span>
-          <b>{formatGiftAmount(contributionAmount)}</b>
-        </p>
         <p className={styles.lineRow}>
           <span>{feeAmount > 0 ? "עמלת שירות" : "ללא עמלת שירות"}</span>
           {feeAmount > 0 ? <b>{formatGiftAmount(feeAmount)}</b> : null}
@@ -245,5 +262,6 @@ export default function GuestPaymentSummary() {
         </>
       ) : null}
     </div>
+    </>
   );
 }

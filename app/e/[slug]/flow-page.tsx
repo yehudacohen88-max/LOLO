@@ -21,7 +21,7 @@ import {
   writeContinuity,
   type ContinuityFunding,
 } from "./continuity";
-import { GiftReveal, Wordmark } from "./flagship-ui";
+import { Wordmark } from "./flagship-ui";
 import styles from "./flagship.module.css";
 
 const steps = [
@@ -112,7 +112,6 @@ export function FlowPage({
   }, [slug]);
 
   const current = step === "thanks" ? steps.length : steps.findIndex((item) => item.id === step);
-  const fill = step === "thanks" ? 1 : (current + 1) / steps.length;
   const letter = mark?.title.trim().charAt(0) ?? "";
 
   return (
@@ -175,38 +174,28 @@ export function FlowPage({
               {mark?.progress ? <p className={styles.continuityMeta}>{mark.progress}</p> : null}
             </div>
           </div>
+        </aside>
+        <div className={`${styles.flowHead} ${styles.flowIn}`}>
           <ol className={styles.steps} aria-label="שלבי ההשתתפות">
             {steps.map((item, index) => {
               const done = step === "thanks" || index < current;
+              const state = item.id === step ? "current" : done ? "done" : "next";
               const href = slug
                 ? item.id === "gift"
                   ? guestEventPath(slug)
                   : guestEventPath(slug, item.id)
                 : "";
+              const label = done && href ? <Link href={href}>{item.label}</Link> : <span>{item.label}</span>;
               return (
-                <li key={item.id} aria-current={item.id === step ? "step" : undefined}>
-                  {done && href ? <Link href={href}>{item.label}</Link> : <span>{item.label}</span>}
+                <li key={item.id} data-step={state} aria-current={state === "current" ? "step" : undefined}>
+                  <span className={styles.stepDot} aria-hidden="true">
+                    {state === "done" ? "✓" : ""}
+                  </span>
+                  {label}
                 </li>
               );
             })}
           </ol>
-          <div className={styles.stepTrack} aria-hidden="true">
-            <span className={styles.stepFill} style={{ ["--fs-step" as string]: String(fill) }} />
-          </div>
-        </aside>
-        {step === "payment" && mark ? (
-          <div className={styles.payHero} data-pay-hero="">
-            <GiftReveal
-              label={mark.giftName || mark.title}
-              caption={mark.title}
-              image={mark.giftImage}
-              cover={mark.cover}
-              funding={mark.fundingLine || mark.progress}
-              untie={false}
-            />
-          </div>
-        ) : null}
-        <div className={`${styles.flowHead} ${styles.flowIn}`}>
           <h1 className={styles.flowTitle}>{title}</h1>
           {lede ? <p className={styles.flowLede}>{lede}</p> : null}
           {notice ? <p className={styles.pay}>{notice}</p> : null}
