@@ -1,6 +1,6 @@
 import type { StoredEvent } from "@/lib/events";
 import { loadContributions } from "@/lib/guest-draft";
-import { giftProgressCopy, participationLine } from "./progress-copy";
+import { giftProgressCopy } from "./progress-copy";
 
 export type ContinuityMark = {
   title: string;
@@ -89,6 +89,15 @@ export function continuityFromEvent(
     giftName: chosen?.giftName || gift?.title || "",
     giftImage: gift?.imageUrl || "",
     progress: short,
-    fundingLine: copy ? participationLine(copy) : "",
+    fundingLine: copy
+      ? [
+          copy.countText,
+          copy.raisedText && copy.targetText
+            ? `${copy.raisedText} מתוך ${copy.targetText}`
+            : (copy.raisedText ?? ""),
+        ]
+          .filter(Boolean)
+          .join(" · ")
+      : "",
   };
 }

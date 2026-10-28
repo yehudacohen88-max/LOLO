@@ -121,7 +121,7 @@ function coverObjectPosition(event: StoredEvent) {
       return `${focusAxis(x)}% ${focusAxis(y)}%`;
     }
   }
-  return "center top";
+  return "50% 35%";
 }
 
 function CheckIcon() {
@@ -588,22 +588,6 @@ export default function GuestEventView() {
   ].filter(Boolean);
   const message = event.message.trim();
   const quoted = /^[״"“«]/.test(message);
-  const primaryFunding = primary ? funding?.[primary.id] : undefined;
-  const primaryCopy =
-    primary && primaryFunding
-      ? giftProgressCopy({
-          raisedAmount: primaryFunding.raisedAmount,
-          contributorCount: primaryFunding.contributorCount,
-          percentOfTarget: primaryFunding.percentOfTarget,
-          targetAmount: primary.price > 0 ? primary.price : null,
-          prominent: true,
-        })
-      : null;
-  const showMini =
-    Boolean(primaryFunding) &&
-    ((primaryFunding?.raisedAmount ?? 0) > 0 ||
-      (primaryFunding?.contributorCount ?? 0) > 0);
-
   return (
     <Frame>
       {event.slug === DEMO_EVENT_SLUG ? (
@@ -622,31 +606,6 @@ export default function GuestEventView() {
             nameOnChip={!message}
             objectPosition={coverObjectPosition(event)}
           />
-          {venueName || address ? (
-            <section className={`${styles.venue} ${styles.venueOnCover}`} data-venue="">
-              <p className={styles.venueKicker}>איפה חוגגים</p>
-              {venueName ? <p className={styles.venueName}>{venueName}</p> : null}
-              {address ? <p className={styles.venueAddress}>{address}</p> : null}
-              {address ? (
-                <div className={styles.venueActions}>
-                  <a
-                    href={`https://waze.com/ul?q=${mapQuery}&navigate=yes`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    Waze
-                  </a>
-                  <a
-                    href={`https://www.google.com/maps/search/?api=1&query=${mapQuery}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    Google Maps
-                  </a>
-                </div>
-              ) : null}
-            </section>
-          ) : null}
         </div>
 
         <div className={`${styles.copy} ${styles.rise}`}>
@@ -686,6 +645,32 @@ export default function GuestEventView() {
             </button>
           ) : null}
         </div>
+
+        {venueName || address ? (
+          <section className={styles.venue} data-venue="">
+            <p className={styles.venueKicker}>איפה חוגגים</p>
+            {venueName ? <p className={styles.venueName}>{venueName}</p> : null}
+            {address ? <p className={styles.venueAddress}>{address}</p> : null}
+            {address ? (
+              <div className={styles.venueActions}>
+                <a
+                  href={`https://waze.com/ul?q=${mapQuery}&navigate=yes`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Waze
+                </a>
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${mapQuery}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Google Maps
+                </a>
+              </div>
+            ) : null}
+          </section>
+        ) : null}
 
         <div className={styles.story}>
         {primary ? (
@@ -751,31 +736,6 @@ export default function GuestEventView() {
           <p className={styles.ease}>בוחרים סכום, כותבים ברכה — וזהו.</p>
 
           <div className={styles.join} data-join="">
-            {showMini && primaryCopy && primary ? (
-              <>
-                <div className={styles.mini}>
-                  <span>
-                    {others.length > 0 ? `${primary.name}: ` : null}
-                    {primaryCopy.raisedText ? <b>{primaryCopy.raisedText}</b> : null}
-                    {primaryCopy.targetText ? ` מתוך ${primaryCopy.targetText}` : null}
-                    {primaryCopy.countShort ? ` · ${primaryCopy.countShort}` : null}
-                  </span>
-                  {primaryCopy.remainingText ? (
-                    <span className={styles.miniAside}>
-                      עוד {primaryCopy.remainingText}
-                    </span>
-                  ) : null}
-                </div>
-                {primaryCopy.bar != null ? (
-                  <div className={styles.miniBar} aria-hidden="true">
-                    <span
-                      className={styles.miniFill}
-                      style={{ ["--fs-p" as string]: String(primaryCopy.bar) }}
-                    />
-                  </div>
-                ) : null}
-              </>
-            ) : null}
             {amountHint ? (
               <p id="join-amount-hint" className={styles.hint} role="alert">
                 בחרו סכום כדי להצטרף

@@ -51,13 +51,17 @@ The control is «אני רוצה לקבל אישור על המתנה». It is op
 
 Corner ribbons no longer sit on the event photo or the gift image. A missing photo is a cream tile with a small gift icon. Payment and thank-you show «תשלום הדגמה בלבד — לא מתבצע חיוב אמיתי» once; the long beta paragraph is a short line inside «עוד על ההדגמה». Thank-you is a centered card, about 560px wide inside a 960px column. The gift page at desktop is a header plus a gift column and a sticky summary. The venue card sits under the cover, and the cover uses `object-position: center top` unless the host set a focal point.
 
+## Third pass
+
+The cover default is `50% 35%` unless the host set a focal point. On desktop the hero is capped at 360px and the venue card sits beside the title. A gift with no photo is at most 160px on the main card and an 88px square on extra cards. The duplicate progress line under the join button is gone. Payment and thank-you use a light notice. Thank-you is one 560px column, and its screenshot is the paid demo state.
+
+Guest screens no longer paint gradient blobs behind the product photo. The create-event empty cover still uses its own ribbon background, because that screen is not the guest flow.
+
 ## Tests
 
-Final run after the last CSS change:
-
-- `npx eslint` on the touched guest components: passed
 - `npx tsc --noEmit`: passed
+- `npx eslint` on the touched guest files: passed
 - `npx next build`: passed
-- `npx playwright test e2e`: 56 passed, 0 failed
+- Final `npx playwright test e2e`: 56 passed, 0 failed
 
-Earlier in this pass, one screenshot test failed because the order save was not mocked, so the flow never reached payment. The test now mocks that save. A previous full run was 55 passed and that 1 failure.
+One run in this pass was 55 passed / 1 failed. The thank-you screenshot assertion used `getByText("350")`, which matched three amount lines. It now uses the first match. The paid status was already on screen.

@@ -307,29 +307,33 @@ test("filled guest screens at 390 and 1440", async ({ page }) => {
       },
     });
   });
+  const paidOrder = {
+    id: "order-flagship",
+    eventId: "flagship-fixture-id",
+    eventSlug: "flagship-fixture",
+    guestName: "יעל כהן",
+    totalAmount: 350,
+    contributionAmount: 350,
+    feeAmount: 0,
+    chargedAmount: 350,
+    paymentStatus: "paid",
+    paymentProvider: "demo",
+    paymentReference: "DEMO-FLAGSHIP",
+    paidAt: "2026-10-28T09:00:00.000Z",
+    accessToken: "11111111-1111-4111-8111-111111111111",
+    items: [{ giftId: "gift-espresso", giftName: "מכונת אספרסו פרימיום", amount: 350 }],
+  };
   await page.route("**/api/orders**", async (route) => {
-    if (route.request().method() === "POST") {
-      await route.fulfill({
-        json: {
-          id: "order-flagship",
-          eventId: "flagship-fixture-id",
-          eventSlug: "flagship-fixture",
-          guestName: "יעל כהן",
-          totalAmount: 350,
-          contributionAmount: 350,
-          feeAmount: 0,
-          chargedAmount: 350,
-          paymentStatus: "pending",
-          paymentProvider: null,
-          paymentReference: null,
-          paidAt: null,
-          accessToken: "11111111-1111-4111-8111-111111111111",
-          items: [{ giftId: "gift-espresso", giftName: "מכונת אספרסו פרימיום", amount: 350 }],
-        },
-      });
-      return;
-    }
-    await route.fallback();
+    await route.fulfill({ json: paidOrder });
+  });
+  await page.addInitScript(() => {
+    localStorage.setItem(
+      "lolo-guest-order:flagship-fixture",
+      JSON.stringify({
+        id: "order-flagship",
+        accessToken: "11111111-1111-4111-8111-111111111111",
+      }),
+    );
   });
   for (const viewport of [
     { name: "390", width: 390, height: 844 },
@@ -359,7 +363,8 @@ test("filled guest screens at 390 and 1440", async ({ page }) => {
       fullPage: true,
     });
     await page.goto("/e/flagship-fixture/thank-you");
-    await expect(page.getByRole("heading", { name: "איזה כיף, השתתפת במתנה!" })).toBeVisible();
+    await expect(page.locator("[data-order-status]")).toHaveText("שולם בהדגמה");
+    await expect(page.getByText("350").first()).toBeVisible();
     await page.screenshot({
       path: path.join(artifactDir, `05-thanks-${viewport.name}.png`),
       fullPage: true,

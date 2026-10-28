@@ -71,7 +71,7 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center top;
+  object-position: 50% 35%;
 }
 
 .fallback {
@@ -354,7 +354,7 @@
   place-items: center;
   overflow: hidden;
   border-radius: 16px;
-  background: linear-gradient(180deg, #f3f1f6 0%, #efeaf0 68%, #e9ddda 68%);
+  background: #f7f4ef;
 }
 
 .wishThumb img {
@@ -443,31 +443,21 @@
   height: 240px;
   overflow: hidden;
   border-radius: 26px;
-  background:
-    radial-gradient(120% 70% at 85% 8%, rgba(255, 255, 255, 0.92) 0%, transparent 55%),
-    radial-gradient(80% 60% at 12% 28%, #ffe9df 0%, transparent 70%),
-    linear-gradient(180deg, #f3f1f6 0%, #efeaf0 64%, #e9ddda 64.2%, #efe4e1 100%);
+  background: #f7f4ef;
 }
 
 .sceneLight {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    118deg,
-    transparent 30%,
-    rgba(255, 255, 255, 0.45) 44%,
-    transparent 54%
-  );
-  pointer-events: none;
+  display: none;
 }
 
 .sceneEdge {
+  display: none;
   position: absolute;
   right: 0;
   left: 0;
   top: 64%;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(22, 32, 77, 0.1), transparent);
+  background: transparent;
 }
 
 .sceneStage {
@@ -504,7 +494,7 @@
   width: 146px;
   height: 92px;
   border-radius: 14px;
-  background: linear-gradient(180deg, #fff 0%, #f7efe9 100%);
+  background: #f7f4ef;
   box-shadow:
     0 0 0 1px rgba(22, 32, 77, 0.06),
     0 18px 24px -18px rgba(22, 32, 77, 0.65);
@@ -513,7 +503,7 @@
 .parcelV,
 .parcelH {
   position: absolute;
-  background: linear-gradient(180deg, #ffb2a4 0%, #f2553f 46%, #c9361f 100%);
+  background: #e07a6a;
 }
 
 .parcelV {
@@ -547,7 +537,8 @@
   width: 128px;
   height: 16px;
   border-radius: 50%;
-  background: radial-gradient(ellipse at center, rgba(40, 30, 40, 0.32), transparent 72%);
+  display: none;
+  background: transparent;
 }
 
 .gmeta {
@@ -634,6 +625,12 @@
   font-size: 1rem;
   font-weight: 500;
   text-align: left;
+}
+
+.pct,
+.got,
+.of {
+  white-space: nowrap;
 }
 
 .pct {
@@ -1234,13 +1231,14 @@
 
 @media (prefers-reduced-motion: no-preference) {
   .cta::after {
+    display: none;
     content: "";
     position: absolute;
     top: 0;
     bottom: 0;
     left: 0;
     width: 28%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.34), transparent);
+    background: transparent;
     pointer-events: none;
     transform: translateX(-180%) skewX(-18deg);
     animation: sheen 700ms 1.2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
@@ -1353,9 +1351,7 @@
   width: 64px;
   object-fit: contain;
   padding: 6px;
-  background:
-    radial-gradient(80% 60% at 12% 28%, #ffe9df 0%, transparent 70%),
-    linear-gradient(180deg, #f3f1f6 0%, #efeaf0 68%, #e9ddda 68%);
+  background: #f7f4ef;
 }
 
 .thumbFallback {
@@ -1365,9 +1361,7 @@
   font-size: 1.8rem;
   font-weight: 700;
   color: var(--fs-navy);
-  background:
-    radial-gradient(90% 80% at 78% 0%, #ffe3d3 0%, transparent 56%),
-    linear-gradient(165deg, #fbf7f4, #f3e6ea);
+  background: #f7f4ef;
 }
 
 .continuityCopy {
@@ -1426,6 +1420,14 @@
   transform-origin: right center;
   border-radius: 4px;
   background: var(--fs-coral);
+}
+
+.title,
+.flowTitle,
+.giftName,
+.joined {
+  color: #172f2b;
+  opacity: 1;
 }
 
 .flowTitle {
@@ -1583,12 +1585,15 @@
 }
 
 .notice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   margin: 0;
   padding: 12px 14px;
   border-radius: 14px;
-  background: #172f2b;
-  color: #f8f5ef;
-  font-size: 1.05rem;
+  background: #f8ebe6;
+  color: #172f2b;
+  font-size: 1rem;
   font-weight: 700;
   line-height: 1.45;
 }
@@ -1632,11 +1637,9 @@
   flex-direction: column;
   gap: 14px;
   padding: 12px;
-  border-radius: 28px;
-  background:
-    radial-gradient(80% 50% at 80% 0%, #fff 0%, transparent 55%),
-    radial-gradient(70% 50% at 10% 20%, #ffe9df 0%, transparent 70%),
-    linear-gradient(180deg, #f7f3f1, #f3e8e6);
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 0 0 1px rgba(23, 47, 43, 0.12);
 }
 
 .revealStage .scene {
@@ -1663,9 +1666,7 @@
 .revealMark {
   display: grid;
   place-items: center;
-  background:
-    radial-gradient(90% 80% at 80% 0%, #ffe3d3 0%, transparent 56%),
-    linear-gradient(165deg, #fbf7f4, #f3e6ea);
+  background: #f7f4ef;
   color: var(--fs-navy);
   font-family: var(--fs-serif);
   font-size: 1.8rem;
@@ -1716,7 +1717,36 @@
   line-height: 1.25;
 }
 
-.revealCaption,
+.revealCaption {
+  margin: 2px 0 0;
+  color: #172f2b;
+  font-size: 1rem;
+}
+
+.flow.flowPay .payHero {
+  align-self: start;
+  height: auto;
+  background: transparent;
+}
+
+.flow.flowPay .revealStage .scene,
+.flow.flowPay .revealStage .scene.sceneEmpty {
+  height: 140px;
+  max-height: 140px;
+  background: #f7f4ef;
+  background-image: none;
+}
+
+.flow.flowPay .revealStage {
+  height: auto;
+  max-height: none;
+  background: #fff;
+}
+
+.revealFunding {
+  white-space: nowrap;
+}
+
 .revealFunding {
   margin: 4px 0 0;
   color: var(--fs-navy);
@@ -1845,7 +1875,7 @@
   display: block;
   height: 14px;
   border-radius: 8px;
-  background: linear-gradient(90deg, #f3ece8 0%, #fff 50%, #f3ece8 100%);
+  background: #efeae3;
   background-size: 200% 100%;
 }
 
@@ -1859,11 +1889,8 @@
 }
 
 .scene.sceneEmpty {
-  height: 168px;
-  background:
-    radial-gradient(90% 70% at 100% 0%, #fff 0%, transparent 52%),
-    radial-gradient(80% 80% at 0% 100%, #e4ebf8 0%, transparent 64%),
-    linear-gradient(180deg, #f8e4dc 0%, #f6d4cb 68%, #ead4d0 68.2%);
+  height: 160px;
+  background: #f7f4ef;
 }
 
 .shareRow {
@@ -2251,6 +2278,84 @@
   margin-inline: auto;
 }
 
+.feature .scene.sceneEmpty,
+.feature .scene.sceneEmpty .giftFallback {
+  height: 160px;
+  max-height: 160px;
+  aspect-ratio: auto;
+}
+
+.extra {
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr);
+  column-gap: 14px;
+  align-items: start;
+}
+
+.extra .scene,
+.extra .giftFallback {
+  grid-column: 1;
+  grid-row: 1 / span 4;
+  width: 88px;
+  height: 88px;
+  max-height: 88px;
+  aspect-ratio: 1;
+}
+
+.extra .gmeta,
+.extra .joined,
+.extra .nums,
+.extra .amounts,
+.extra .rib {
+  grid-column: 2;
+}
+
+.skeleton {
+  height: 18px;
+  width: min(220px, 70%);
+  border-radius: 999px;
+  background: #efeae3;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.flowThanks .shareRow .ghost,
+.flowThanks .ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1 1 140px;
+  min-height: 48px;
+  padding: 0 12px;
+  border: 1.5px solid #172f2b;
+  border-radius: 999px;
+  background: #fff;
+  color: #172f2b;
+  text-decoration: none;
+}
+
+.flowThanks .cta {
+  width: 100%;
+}
+
+.flowIn,
+.rise,
+.d1,
+.d2 {
+  animation: none;
+  opacity: 1;
+}
+
 .giftFallback {
   display: grid;
   place-items: center;
@@ -2321,7 +2426,7 @@
     grid-template-columns: minmax(0, 1fr) minmax(300px, 380px);
     grid-template-areas:
       "hero hero"
-      "copy copy"
+      "copy venue"
       "story panel"
       "more panel"
       "footer footer";
@@ -2359,12 +2464,20 @@
   }
 
   .root .portrait {
-    aspect-ratio: 16 / 10;
+    aspect-ratio: 21 / 9;
+    max-height: 360px;
+    width: 100%;
+  }
+
+  .root .venue {
+    grid-area: venue;
+    align-self: end;
+    margin: 0;
   }
 
   .flow.flowThanks {
     display: block;
-    width: min(960px, calc(100% - 48px));
+    width: min(560px, calc(100% - 32px));
     margin-inline: auto;
     direction: rtl;
     padding-inline: 0;
@@ -2376,8 +2489,16 @@
   .flow.flowThanks > .flowBody {
     display: flex;
     flex-direction: column;
+    align-items: stretch;
     grid-column: auto;
     width: 100%;
+    text-align: center;
+    color: #172f2b;
+  }
+
+  .flow.flowThanks .flowTitle {
+    color: #172f2b;
+    opacity: 1;
   }
 
   .flow.flowThanks .thanksHero {
@@ -2399,9 +2520,12 @@
   }
 
   .flow.flowForm,
-  .flow.flowPay,
-  .flow.flowThanks {
+  .flow.flowPay {
     width: min(var(--gx-max, 1080px), calc(100% - 48px));
+  }
+
+  .flow.flowThanks {
+    width: min(560px, calc(100% - 32px));
   }
 }
 

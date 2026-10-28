@@ -13,12 +13,14 @@ export async function expectGiftFallback(page: Page) {
       continue;
     }
     const ratio = box.width / box.height;
-    if (box.width >= 160) {
-      expect(ratio).toBeGreaterThan(1.4);
-      expect(ratio).toBeLessThan(1.8);
-    } else {
+    if (box.width <= 120) {
       expect(ratio).toBeGreaterThan(0.85);
       expect(ratio).toBeLessThan(1.15);
+    } else if (box.height <= 180) {
+      expect(box.height).toBeGreaterThan(80);
+    } else {
+      expect(ratio).toBeGreaterThan(1.4);
+      expect(ratio).toBeLessThan(1.8);
     }
   }
   const overflow = await tiles.first().evaluate((element) => {

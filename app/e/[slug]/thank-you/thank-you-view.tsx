@@ -294,9 +294,17 @@ export default function ThankYouView() {
             <summary className={styles.quietLine}>עוד על ההדגמה</summary>
             <p className={styles.quietLine}>בשלב זה לא מונפק שובר אמיתי.</p>
           </details>
-          <p className={styles.orderStatus} data-order-status="" role="status">
-            {statusText(orderRead)}
-          </p>
+          {orderRead.phase === "loading" ? (
+            <div className={styles.skeleton} aria-busy="true">
+              <span className={styles.srOnly} data-order-status="" role="status">
+                {statusText(orderRead)}
+              </span>
+            </div>
+          ) : (
+            <p className={styles.orderStatus} data-order-status="" role="status">
+              {statusText(orderRead)}
+            </p>
+          )}
           {showReceiptAmounts ? (
             <>
               {contributions.map((item) => (
@@ -361,21 +369,21 @@ export default function ThankYouView() {
           <button type="button" className={styles.ghost} onClick={() => void copyLink()}>
             העתקת קישור
           </button>
+          {failed ? (
+            <Link href={guestEventPath(slug, "payment")} className={styles.ghost}>
+              חזרה לתשלום
+            </Link>
+          ) : (
+            <Link href={guestEventPath(slug)} className={styles.ghost}>
+              חזרה לאירוע
+            </Link>
+          )}
         </div>
         {shareNote === "copied" ? (
           <p className={styles.quietLine} role="status">
             הקישור הועתק
           </p>
         ) : null}
-        {failed ? (
-          <Link href={guestEventPath(slug, "payment")} className={styles.cta}>
-            חזרה לתשלום
-          </Link>
-        ) : (
-          <Link href={guestEventPath(slug)} className={styles.ghost}>
-            חזרה לאירוע
-          </Link>
-        )}
       </div>
     </div>
   );

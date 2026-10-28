@@ -209,12 +209,18 @@ for (const viewport of widths) {
           const box = element.getBoundingClientRect();
           return {
             ratio: box.width / box.height,
+            height: box.height,
             position: getComputedStyle(element).objectPosition,
           };
         });
-        expect(crop.ratio).toBeGreaterThan(1.5);
-        expect(crop.ratio).toBeLessThan(1.7);
-        expect(crop.position).toMatch(/top|0%/);
+        if (viewport.name === "1440") {
+          expect(crop.ratio).toBeGreaterThan(2);
+          expect(crop.height).toBeLessThanOrEqual(380);
+        } else {
+          expect(crop.ratio).toBeGreaterThan(1.5);
+          expect(crop.ratio).toBeLessThan(1.7);
+        }
+        expect(crop.position).toMatch(/35%/);
       }
       if (viewport.name === "390" || viewport.name === "320") {
         const gift = await page.evaluate(() => {
