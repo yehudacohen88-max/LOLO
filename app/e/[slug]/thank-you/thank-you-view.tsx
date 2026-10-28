@@ -137,8 +137,10 @@ export default function ThankYouView() {
           })),
         );
         const fee = order.feeAmount ?? 0;
+        const contribution = order.contributionAmount ?? 0;
+        const charged = order.chargedAmount ?? order.totalAmount ?? contribution + fee;
         setFeeAmount(fee);
-        setChargedAmount(order.chargedAmount ?? order.contributionAmount + fee);
+        setChargedAmount(Number.isFinite(charged) ? charged : 0);
         setOrderRead(read);
       } else if (read.phase === "error" && !decision.confirmedPaid) {
         setOrderRead({ phase: "error" });

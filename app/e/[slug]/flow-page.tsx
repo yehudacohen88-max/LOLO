@@ -22,7 +22,8 @@ import {
   writeContinuity,
   type ContinuityFunding,
 } from "./continuity";
-import { Wordmark } from "./flagship-ui";
+import { displayTitle } from "./display-title";
+import { GiftFallback, Wordmark } from "./flagship-ui";
 import styles from "./flagship.module.css";
 
 const steps = [
@@ -131,7 +132,6 @@ export function FlowPage({
   }, [slug]);
 
   const current = step === "thanks" ? steps.length : steps.findIndex((item) => item.id === step);
-  const letter = mark?.title.trim().charAt(0) ?? "";
   const [paySlot, setPaySlot] = useState<HTMLDivElement | null>(null);
   const choiceLine = useSyncExternalStore(
     () => () => {},
@@ -233,12 +233,10 @@ export function FlowPage({
                 height={56}
               />
             ) : (
-              <span className={styles.compactThumb} aria-hidden="true">
-                {letter}
-              </span>
+              <GiftFallback compact />
             )}
             <div className={styles.compactCopy}>
-              <p className={styles.compactTitle}>{mark.title}</p>
+              <p className={styles.compactTitle}>{displayTitle(mark.title)}</p>
               {choiceLine ? <p className={styles.compactMeta}>{choiceLine}</p> : null}
             </div>
           </div>
@@ -251,23 +249,15 @@ export function FlowPage({
               {mark?.cover ? (
                 <img className={styles.thumb} src={mark.cover} alt="" width={224} height={280} />
               ) : (
-                <span
-                  className={styles.thumbFallback}
-                  data-continuity-letter={mark ? "" : undefined}
-                  aria-hidden="true"
-                >
-                  {letter}
-                </span>
+                <GiftFallback compact />
               )}
               {mark?.giftImage ? (
                 <img className={styles.thumbGift} src={mark.giftImage} alt="" width={128} height={128} />
-              ) : (
-                <span className={styles.thumbGift} aria-hidden="true" />
-              )}
+              ) : null}
               <div className={styles.continuityCopy}>
                 {mark ? (
                   <p className={styles.continuityTitle} data-continuity-title="">
-                    {mark.title}
+                    {displayTitle(mark.title)}
                   </p>
                 ) : (
                   <div className={styles.bones} aria-label="טוענים את פרטי האירוע">

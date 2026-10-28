@@ -328,29 +328,30 @@ export default function GuestGreetingForm() {
       <button type="submit" className={styles.cta}>
         ממשיכים · {formatGiftAmount(total)}
       </button>
-      <button
-        type="button"
-        className={styles.ghost}
-        onClick={() => {
-          setText("");
-          saveGuestGreeting(slug, {
-            text: "",
-            imageDataUrl,
-            audioDataUrl,
-            audioName,
-            videoDataUrl,
-            videoName,
-          });
-          if (total <= 0) {
-            setContinueError("עדיין לא נבחרה מתנה.");
-            return;
-          }
-          setContinueError("");
-          router.push(guestEventPath(slug, "details"));
-        }}
-      >
-        בלי ברכה
-      </button>
+      {text.trim() ? null : (
+        <button
+          type="button"
+          className={styles.ghost}
+          onClick={() => {
+            saveGuestGreeting(slug, {
+              text: "",
+              imageDataUrl,
+              audioDataUrl,
+              audioName,
+              videoDataUrl,
+              videoName,
+            });
+            if (total <= 0) {
+              setContinueError("עדיין לא נבחרה מתנה.");
+              return;
+            }
+            setContinueError("");
+            router.push(guestEventPath(slug, "details"));
+          }}
+        >
+          בלי ברכה
+        </button>
+      )}
       <button
         type="button"
         onClick={() => {

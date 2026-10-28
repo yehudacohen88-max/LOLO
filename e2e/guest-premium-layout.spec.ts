@@ -427,3 +427,101 @@ test("a long event title and gift name stay inside the frame", async ({ page }) 
     fullPage: true,
   });
 });
+
+test("a photo-less beta event stays compact and fills progress from the right", async ({ page }) => {
+  test.setTimeout(60_000);
+  await installReadRoutes(page);
+  await page.route("**/api/events/flagship-fixture", async (route) => {
+    const body = eventPayload();
+    body.event.coverImage = "";
+    body.event.title = "אירוע בדיקה LOLO – בטא";
+    body.event.message = "";
+    body.event.hostName = "צוות LOLO";
+    body.event.gifts = [
+      {
+        ...body.event.gifts[0],
+        id: "gift-weekend",
+        title: "סופ״ש זוגי במלון",
+        description: "לילה או שניים במלון בוטיק, בלי לדאוג לכלום.",
+        targetAmount: 1500,
+        imageUrl: "",
+      },
+      {
+        ...body.event.gifts[1],
+        id: "gift-family",
+        title: "חופשה משפחתית",
+        description: "יציאה משפחתית שכולם זוכרים, לא עוד מתנה למגירה.",
+        targetAmount: 4000,
+        imageUrl: "",
+      },
+    ];
+    await route.fulfill({ json: body });
+  });
+  await page.route("**/api/events/flagship-fixture/funding", async (route) => {
+    await route.fulfill({
+      json: {
+        gifts: [
+          { giftId: "gift-weekend", raisedAmount: 0, contributorCount: 0, percentOfTarget: 0 },
+          { giftId: "gift-family", raisedAmount: 150, contributorCount: 1, percentOfTarget: 3.75 },
+        ],
+      },
+    });
+  });
+
+  for (const viewport of [
+    { name: "390", width: 390, height: 844 },
+    { name: "768", width: 768, height: 1024 },
+    { name: "1440", width: 1440, height: 900 },
+  ] as const) {
+    await page.setViewportSize({ width: viewport.width, height: viewport.height });
+    await page.goto("/e/flagship-fixture");
+    await expect(page.getByRole("heading", { name: /אירוע בדיקה LOLO/ })).toBeVisible();
+    await expect(page.locator("[data-empty-letter]")).toHaveCount(0);
+    await expect(page.locator("[data-portrait]")).toHaveCount(0);
+    const title = await page.locator("h1").evaluate((node) => node.textContent || "");
+    expect(title).toContain("\u00A0–");
+    const bars = await page.locator("[role=progressbar]").evaluateAll((nodes) =>
+      nodes.map((node) => {
+        const track = node.getBoundingClientRect();
+        const fill = node.querySelectorAll("div")[1]?.getBoundingClientRect();
+        if (!fill || fill.width < 2) {
+          return { width: fill?.width ?? 0, fromRight: 0, fromLeft: 0 };
+        }
+        return {
+          width: fill.width,
+          fromRight: Math.abs(track.right - fill.right),
+          fromLeft: Math.abs(fill.left - track.left),
+        };
+      }),
+    );
+    for (const bar of bars) {
+      if (bar.width >= 2) {
+        expect(bar.fromRight).toBeLessThan(bar.fromLeft);
+      }
+    }
+    await expectNoOverflowAndLargeTargets(page);
+    await page.screenshot({
+      path: path.join(artifactDir, `06-nophoto-gift-${viewport.name}.png`),
+      fullPage: true,
+    });
+  }
+
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.getByRole("button", { name: /200/ }).first().click();
+  await page.getByRole("button", { name: "מצטרפים למתנה" }).click();
+  await expect(page.getByRole("heading", { name: "מוסיפים ברכה אישית" })).toBeVisible();
+  await expect(page.locator("[data-continuity-letter]")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "בלי ברכה" })).toBeVisible();
+  await page.screenshot({
+    path: path.join(artifactDir, "06-nophoto-greeting-1440.png"),
+    fullPage: true,
+  });
+  await page.getByRole("button", { name: "בלי ברכה" }).click();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.getByRole("heading", { name: "למי נגיד תודה?" })).toBeVisible();
+  await expect(page.locator("[data-continuity-letter]")).toHaveCount(0);
+  await page.screenshot({
+    path: path.join(artifactDir, "06-nophoto-details-390.png"),
+    fullPage: true,
+  });
+});

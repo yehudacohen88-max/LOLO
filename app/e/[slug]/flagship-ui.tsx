@@ -13,6 +13,14 @@ function useSvgId(prefix: string) {
   return `${prefix}${useId().replace(/:/g, "")}`;
 }
 
+export function EventMark() {
+  return (
+    <span className={styles.eventMark} aria-hidden="true">
+      <SatinBow className={styles.eventMarkBow} mark />
+    </span>
+  );
+}
+
 export function Wordmark() {
   return (
     <Link href="/" className={styles.wordmark}>
@@ -224,9 +232,6 @@ export function Portrait({
       )}
       {hostName && nameOnChip ? (
         <p className={styles.host}>
-          <span className={styles.avatar} aria-hidden="true">
-            {hostName.trim().charAt(0)}
-          </span>
           <span>{`הזמנה מאת ${hostName}`}</span>
         </p>
       ) : null}
@@ -367,7 +372,6 @@ export function GiftReveal({
   funding?: string;
   untie?: boolean;
 }) {
-  const letter = (caption || label || "ל").trim().charAt(0) || "ל";
   return (
     <div className={styles.revealStage} data-reveal="">
       <GiftScene src={image || ""} alt={label || "המתנה"} untie={untie} />
@@ -381,9 +385,7 @@ export function GiftReveal({
             height={90}
           />
         ) : (
-          <span className={styles.revealMark} aria-hidden="true">
-            {letter}
-          </span>
+          <GiftFallback compact />
         )}
         <div className={styles.revealCopy}>
           <p className={styles.revealCard} data-reveal-card="">

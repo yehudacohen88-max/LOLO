@@ -12,7 +12,7 @@
   --fs-serif: var(--font-premium-heebo), Heebo, "Arial Hebrew", Arial, sans-serif;
   flex: 1 0 auto;
   min-height: 100dvh;
-  overflow-x: clip;
+  overflow-x: visible;
   background-color: var(--gx-cream, #f7f4ef);
   background-image: none;
   color: var(--fs-navy);
@@ -1442,9 +1442,11 @@
 .title,
 .flowTitle,
 .giftName,
-.joined {
+.joined,
+.compactTitle {
   color: #172f2b;
   opacity: 1;
+  text-wrap: balance;
 }
 
 .flowTitle {
@@ -2885,6 +2887,150 @@
 
 .payProgress {
   font-weight: 500;
+}
+
+.eventMark {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  margin: 0 0 8px;
+}
+
+.eventMarkBow {
+  width: 28px;
+  height: 36px;
+}
+
+.hostLine {
+  margin: 8px 0 0;
+  color: #3e524c;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.label,
+.wishLabel,
+.feature .muted,
+.extra .muted,
+.giftCopy .muted {
+  font-size: 14px;
+  color: #3e524c;
+}
+
+.noPhotoTitle {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 16px 0;
+}
+
+.noPhotoTitle .giftFallbackCompact {
+  width: 80px;
+  height: 80px;
+  flex: none;
+}
+
+.giftCopy {
+  padding: 8px 16px 0;
+}
+
+.extra.noPhoto {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  padding-bottom: 14px;
+}
+
+.continuity .giftFallbackCompact {
+  width: 72px;
+  height: 72px;
+  aspect-ratio: 1;
+  flex: none;
+}
+
+.compactRow .giftFallbackCompact {
+  width: 56px;
+  height: 56px;
+  aspect-ratio: 1;
+  flex: none;
+}
+
+@media (min-width: 430px) {
+  .noPhotoTitle .giftFallbackCompact {
+    width: 80px;
+    height: 80px;
+  }
+}
+
+@media (max-width: 429px) {
+  .noPhotoTitle .giftFallbackCompact {
+    width: 56px;
+    height: 56px;
+  }
+}
+
+.prompts {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.prompt {
+  width: 100%;
+  height: 100%;
+  text-align: center;
+}
+
+@media (min-width: 1024px) {
+  .prompts {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .root .spread.spreadBare {
+    grid-template-areas:
+      "copy copy"
+      "story panel"
+      "more panel"
+      "footer footer";
+  }
+
+  .root .panel {
+    position: sticky;
+    top: 24px;
+    align-self: start;
+    height: fit-content;
+  }
+}
+
+.wish {
+  display: inline-flex;
+}
+
+.wish:focus-visible {
+  outline: 2px solid #172f2b;
+  outline-offset: 3px;
+}
+
+.rib {
+  direction: rtl;
+}
+
+.track {
+  right: 0;
+  left: 0;
+  direction: rtl;
+  overflow: hidden;
+}
+
+.fill {
+  top: 6px;
+  right: auto;
+  left: auto;
+  inset-inline-start: 0;
+  width: calc(100% * var(--fs-p, 0));
+  max-width: 100%;
 }
 
 .compactRow {

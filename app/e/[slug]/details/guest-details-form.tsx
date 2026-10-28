@@ -89,6 +89,18 @@ export default function GuestDetailsForm() {
     };
   }, [slug]);
 
+  useEffect(() => {
+    if (!ready || !slug) {
+      return;
+    }
+    saveGuestDetails(slug, {
+      name,
+      phone,
+      email,
+      wantReceipt,
+    });
+  }, [ready, slug, name, phone, email, wantReceipt]);
+
   if (!ready) {
     return <p className={styles.quietLine}>טוענים את הפרטים...</p>;
   }

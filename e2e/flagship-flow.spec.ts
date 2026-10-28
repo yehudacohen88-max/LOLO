@@ -252,7 +252,8 @@ for (const viewport of [
     await page.getByRole("button", { name: /350/ }).click();
     await page.getByRole("button", { name: "מצטרפים למתנה" }).click();
     await expect(page.locator("[data-continuity-title]")).toHaveText("חוגגים 40 לדנה");
-    await expect(page.locator("[data-continuity-letter]")).toHaveText("ח");
+    await expect(page.locator("[data-continuity-letter]")).toHaveCount(0);
+    await expect(page.locator("[data-gift-fallback]").first()).toBeVisible();
     await page.getByRole("button", { name: /ממשיכים/ }).click();
     await page.getByLabel("שם מלא").fill("יעל כהן");
     await page.getByLabel("מספר טלפון").fill("0501234567");

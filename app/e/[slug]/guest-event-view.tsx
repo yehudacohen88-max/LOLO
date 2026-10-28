@@ -20,7 +20,9 @@ import {
 } from "@/lib/guest-draft";
 import {
   CountAmount,
+  EventMark,
   Frame,
+  GiftFallback,
   GiftIcon,
   GiftScene,
   LockIcon,
@@ -29,6 +31,7 @@ import {
   WishThumb,
 } from "./flagship-ui";
 import { continuityFromEvent, writeContinuity, type ContinuityFunding } from "./continuity";
+import { displayTitle } from "./display-title";
 import { giftProgressCopy } from "./progress-copy";
 import styles from "./flagship.module.css";
 
@@ -83,7 +86,7 @@ function standaloneNumber(parts: string[], index: number) {
 }
 
 function TitleText({ title }: { title: string }) {
-  const parts = title.split(/(\d+)/);
+  const parts = displayTitle(title).split(/(\d+)/);
   return parts.map((part, index) =>
     standaloneNumber(parts, index) ? (
       <span key={`${part}-${index}`} className={styles.accent}>
@@ -93,11 +96,6 @@ function TitleText({ title }: { title: string }) {
       <Fragment key={`${part}-${index}`}>{part}</Fragment>
     ),
   );
-}
-
-function monogramFor(title: string) {
-  const letter = title.trim().charAt(0);
-  return letter || "ל";
 }
 
 function focusAxis(value: number) {
@@ -600,19 +598,22 @@ export default function GuestEventView() {
           <p className={styles.demoCredit}>{DEMO_IMAGE_CREDIT}</p>
         </div>
       ) : null}
-      <div className={styles.spread}>
-        <div className={styles.hero}>
-          <Portrait
-            src={event.coverImage}
-            alt={event.title ? `תמונה לאירוע ${event.title}` : "תמונת האירוע"}
-            monogram={monogramFor(event.title)}
-            hostName={event.hostName.trim()}
-            nameOnChip={!message}
-            objectPosition={coverObjectPosition(event)}
-          />
-        </div>
+      <div className={`${styles.spread} ${event.coverImage ? "" : styles.spreadBare}`}>
+        {event.coverImage ? (
+          <div className={styles.hero}>
+            <Portrait
+              src={event.coverImage}
+              alt={event.title ? `תמונה לאירוע ${event.title}` : "תמונת האירוע"}
+              monogram=""
+              hostName={event.hostName.trim()}
+              nameOnChip={!message}
+              objectPosition={coverObjectPosition(event)}
+            />
+          </div>
+        ) : null}
 
         <div className={`${styles.copy} ${styles.rise}`}>
+          {event.coverImage ? null : <EventMark />}
           {kicker.length > 0 ? (
             <p className={styles.kicker}>
               {kicker.map((part, index) => (
@@ -627,6 +628,9 @@ export default function GuestEventView() {
             <TitleText title={event.title || "האירוע"} />
           </h1>
           <p className={styles.sub}>מתנה מכל החברים</p>
+          {!event.coverImage && !message && event.hostName.trim() ? (
+            <p className={styles.hostLine}>הזמנה מאת {event.hostName.trim()}</p>
+          ) : null}
           {primary ? (
             <button
               type="button"
@@ -678,24 +682,42 @@ export default function GuestEventView() {
 
         <div className={styles.story}>
         {primary ? (
-          <section className={`${styles.feature} ${styles.rise} ${styles.d2}`} id={`gift-${primary.id}`}>
-            <GiftScene src={primary.imageUrl} alt={primary.name} primary />
-            <div className={styles.gmeta}>
-              <p className={styles.label}>המשאלה</p>
-              <h2 className={styles.giftName}>{primary.name}</h2>
-              {primary.description ? (
-                <p className={styles.muted}>{primary.description}</p>
-              ) : null}
-              {primary.storeName ? (
-                <p className={styles.muted}>חנות: {primary.storeName}</p>
-              ) : null}
-              {primary.price > 0 ? (
-                <p className={styles.muted}>
-                  יעד: {formatGiftAmount(primary.price)}
-                  <span className={styles.muted}> אפשר להשתתף בכל סכום.</span>
-                </p>
-              ) : null}
+          <section
+            className={`${styles.feature} ${primary.imageUrl ? "" : styles.noPhoto} ${styles.rise} ${styles.d2}`}
+            id={`gift-${primary.id}`}
+          >
+            {primary.imageUrl ? <GiftScene src={primary.imageUrl} alt={primary.name} primary /> : null}
+            <div className={primary.imageUrl ? styles.gmeta : styles.noPhotoTitle}>
+              {primary.imageUrl ? null : <GiftFallback compact />}
+              <div>
+                <p className={styles.label}>המשאלה</p>
+                <h2 className={styles.giftName}>{displayTitle(primary.name)}</h2>
+                {primary.imageUrl ? (
+                  <>
+                    {primary.description ? <p className={styles.muted}>{primary.description}</p> : null}
+                    {primary.storeName ? <p className={styles.muted}>חנות: {primary.storeName}</p> : null}
+                    {primary.price > 0 ? (
+                      <p className={styles.muted}>
+                        יעד: {formatGiftAmount(primary.price)}
+                        <span className={styles.muted}> אפשר להשתתף בכל סכום.</span>
+                      </p>
+                    ) : null}
+                  </>
+                ) : null}
+              </div>
             </div>
+            {primary.imageUrl ? null : (
+              <div className={styles.giftCopy}>
+                {primary.description ? <p className={styles.muted}>{primary.description}</p> : null}
+                {primary.storeName ? <p className={styles.muted}>חנות: {primary.storeName}</p> : null}
+                {primary.price > 0 ? (
+                  <p className={styles.muted}>
+                    יעד: {formatGiftAmount(primary.price)}
+                    <span className={styles.muted}> אפשר להשתתף בכל סכום.</span>
+                  </p>
+                ) : null}
+              </div>
+            )}
             <div className={styles.giftPicker}>
               {renderProgress(primary, true)}
               {renderAmounts(primary)}
@@ -792,23 +814,42 @@ export default function GuestEventView() {
             </h2>
             <div className={styles.moreGrid}>
               {others.map((gift) => (
-                <article key={gift.id} className={styles.extra} id={`gift-${gift.id}`}>
-                  <GiftScene src={gift.imageUrl} alt={gift.name} />
-                  <div className={styles.gmeta}>
-                    <h3 className={styles.giftName}>{gift.name}</h3>
-                    {gift.description ? (
-                      <p className={styles.muted}>{gift.description}</p>
-                    ) : null}
-                    {gift.storeName ? (
-                      <p className={styles.muted}>חנות: {gift.storeName}</p>
-                    ) : null}
-                    {gift.price > 0 ? (
-                      <p className={styles.muted}>
-                        יעד: {formatGiftAmount(gift.price)}
-                        <span> אפשר להשתתף בכל סכום.</span>
-                      </p>
-                    ) : null}
+                <article
+                  key={gift.id}
+                  className={`${styles.extra} ${gift.imageUrl ? "" : styles.noPhoto}`}
+                  id={`gift-${gift.id}`}
+                >
+                  {gift.imageUrl ? <GiftScene src={gift.imageUrl} alt={gift.name} /> : null}
+                  <div className={gift.imageUrl ? styles.gmeta : styles.noPhotoTitle}>
+                    {gift.imageUrl ? null : <GiftFallback compact />}
+                    <div>
+                      <h3 className={styles.giftName}>{displayTitle(gift.name)}</h3>
+                      {gift.imageUrl ? (
+                        <>
+                          {gift.description ? <p className={styles.muted}>{gift.description}</p> : null}
+                          {gift.storeName ? <p className={styles.muted}>חנות: {gift.storeName}</p> : null}
+                          {gift.price > 0 ? (
+                            <p className={styles.muted}>
+                              יעד: {formatGiftAmount(gift.price)}
+                              <span> אפשר להשתתף בכל סכום.</span>
+                            </p>
+                          ) : null}
+                        </>
+                      ) : null}
+                    </div>
                   </div>
+                  {gift.imageUrl ? null : (
+                    <div className={styles.giftCopy}>
+                      {gift.description ? <p className={styles.muted}>{gift.description}</p> : null}
+                      {gift.storeName ? <p className={styles.muted}>חנות: {gift.storeName}</p> : null}
+                      {gift.price > 0 ? (
+                        <p className={styles.muted}>
+                          יעד: {formatGiftAmount(gift.price)}
+                          <span> אפשר להשתתף בכל סכום.</span>
+                        </p>
+                      ) : null}
+                    </div>
+                  )}
                   {renderProgress(gift, false)}
                   {renderAmounts(gift)}
                 </article>
