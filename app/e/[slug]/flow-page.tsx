@@ -48,6 +48,23 @@ function readChoice(slug: string) {
   };
 }
 
+function MoneyLine({ text, className }: { text: string; className: string }) {
+  const parts = text.split(/(\u2066[^\u2069]*\u2069)/g).filter(Boolean);
+  return (
+    <p className={className}>
+      {parts.map((part, index) =>
+        part.startsWith("\u2066") ? (
+          <span key={index} className={styles.moneyKeep}>
+            {part.replace(/ ₪/g, "\u00A0₪")}
+          </span>
+        ) : (
+          <span key={index}>{part}</span>
+        ),
+      )}
+    </p>
+  );
+}
+
 function StepCheck({ size }: { size: number }) {
   return (
     <svg viewBox="0 0 16 16" width={size} height={size} aria-hidden="true">
@@ -184,7 +201,7 @@ export function FlowPage({
                   {item.name}
                 </p>
                 {index === 0 && mark?.progress ? (
-                  <p className={styles.choiceProgress}>{mark.progress}</p>
+                  <MoneyLine text={mark.progress} className={styles.choiceProgress} />
                 ) : null}
               </div>
             </div>

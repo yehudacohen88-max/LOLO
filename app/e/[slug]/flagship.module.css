@@ -2717,7 +2717,7 @@
   height: 20px;
   flex: none;
   border-radius: 999px;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 700;
   line-height: 1;
 }
@@ -2749,13 +2749,13 @@
 }
 
 .stepNav [data-step="next"] .stepMark {
-  border: 1.5px solid rgba(23, 47, 43, 0.35);
+  border: 1.5px solid #5b6b66;
   background: transparent;
-  color: rgba(23, 47, 43, 0.45);
+  color: #5b6b66;
 }
 
 .stepNav [data-step="next"] .stepLabel {
-  color: rgba(23, 47, 43, 0.45);
+  color: #5b6b66;
   font-weight: 500;
 }
 
@@ -2923,6 +2923,16 @@
   align-items: center;
   gap: 14px;
   padding: 16px 16px 0;
+}
+
+.noPhotoTitle > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.noPhotoTitle .giftName {
+  overflow-wrap: normal;
+  word-break: normal;
 }
 
 .noPhotoTitle .giftFallbackCompact {
@@ -3179,10 +3189,36 @@
 .field input {
   appearance: textfield;
   border: 0;
-  outline: 0;
+  outline: none;
   box-shadow: none;
   text-align: right;
   min-height: 48px;
+}
+
+.field:focus-within {
+  border-color: #172f2b;
+  outline: 2px solid #172f2b;
+  outline-offset: 2px;
+}
+
+.field input:focus,
+.field input:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+.shekel {
+  padding-inline-end: 14px;
+}
+
+.moneyKeep {
+  white-space: nowrap;
+}
+
+.collectedLabel {
+  font-size: 15px;
+  font-weight: 600;
+  color: #3e524c;
 }
 
 .field input::-webkit-outer-spin-button,
