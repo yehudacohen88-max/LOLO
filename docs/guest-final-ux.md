@@ -48,15 +48,6 @@ Shared pieces:
 
 The control is `אני רוצה לקבל אישור על המתנה`. It is optional. It is not a terms consent. A new guest starts with it checked: `emptyDetails.wantReceipt` is `true`, and a saved draft treats a missing value as checked. Submit stores it as `wantsConfirmation` on the pending order.
 
-## Tests
-
-- `npx tsc --noEmit`: passed
-- `npx eslint` on the touched guest files: passed
-- `npx next build`: passed
-- Final `npx playwright test e2e`: 56 passed, 0 failed
-
-The final run is the one after the payment-column and compact-row change (`be3379b`).
-
 ## Files
 
 - `app/e/[slug]/guest-system.module.css` — tokens
@@ -70,6 +61,19 @@ The final run is the one after the payment-column and compact-row change (`be337
 - `app/e/[slug]/thank-you/thank-you-view.tsx`, `thank-you/page.tsx`
 - `app/e/[slug]/continuity.ts`, `layout.tsx`
 - `e2e/guest-premium-layout.spec.ts`, `e2e/flagship-flow.spec.ts`, `e2e/flagship-guest.spec.ts`, `e2e/empty-cover.ts`
+
+## Photo-less events
+
+A missing cover is not a panel. The page starts with a 40px bow, then the date, the title, and the invite line. A missing gift photo is an 80px glyph beside the name (56px under 430px), and the description uses the full card width. Titles use `text-wrap: balance`, and a display formatter keeps the dash on the same line as the word before it. Progress fills from the right at every width. The sticky summary uses `top: 24px` and does not stretch with the gift column.
+
+On main, guest details are written to the browser draft only when the form is submitted. This branch also writes name, phone, email, and the checkbox on each change, using the same `saveGuestDetails` storage, so the stepper can return to what was typed. «בלי ברכה» is shown only while the textarea is empty.
+
+## Tests
+
+- `npx tsc --noEmit`: passed
+- `npx eslint` on the touched guest files: passed
+- `npx next build`: passed
+- Final `npx playwright test e2e`: 57 passed, 0 failed
 
 ## Follow-ups that are not this UI
 
