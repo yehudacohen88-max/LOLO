@@ -2931,6 +2931,7 @@
 }
 
 .noPhotoTitle .giftName {
+  font-size: 1.25rem;
   overflow-wrap: normal;
   word-break: normal;
 }
