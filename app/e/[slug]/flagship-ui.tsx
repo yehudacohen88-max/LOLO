@@ -21,6 +21,18 @@ export function Wordmark() {
   );
 }
 
+export function GiftFallback({ compact = false }: { compact?: boolean }) {
+  return (
+    <div
+      className={`${styles.giftFallback} ${compact ? styles.giftFallbackCompact : ""}`}
+      data-gift-fallback=""
+      aria-hidden="true"
+    >
+      <GiftIcon />
+    </div>
+  );
+}
+
 export function EmptyCover({
   monogram,
   compact = false,
@@ -178,7 +190,6 @@ export function CornerRibbon({
 export function Portrait({
   src,
   alt,
-  monogram,
   hostName,
   nameOnChip = true,
   objectPosition = "center 28%",
@@ -209,15 +220,8 @@ export function Portrait({
           onError={() => setBroken(true)}
         />
       ) : (
-        <div className={styles.fallback} aria-hidden="true">
-          <span className={styles.fallbackRibbon} />
-          <SatinBow className={styles.fallbackBow} mark />
-          <span className={styles.monogram} data-empty-letter="">
-            {monogram}
-          </span>
-        </div>
+        <GiftFallback />
       )}
-      <CornerRibbon />
       {hostName && nameOnChip ? (
         <p className={styles.host}>
           <span className={styles.avatar} aria-hidden="true">
@@ -234,7 +238,6 @@ export function GiftScene({
   src,
   alt,
   primary = false,
-  untie = false,
 }: {
   src: string;
   alt: string;
@@ -263,16 +266,8 @@ export function GiftScene({
           />
         </div>
       ) : (
-        <div className={styles.sceneFallback} aria-hidden="true">
-          <div className={styles.parcel} data-parcel="">
-            <span className={styles.parcelV} />
-            <span className={styles.parcelH} />
-            <SatinBow className={styles.sceneBow} />
-          </div>
-          <span className={styles.sceneShadow} />
-        </div>
+        <GiftFallback />
       )}
-      <CornerRibbon still={!untie} small={!untie} untie={untie} center={untie} />
     </div>
   );
 }
@@ -285,7 +280,7 @@ export function WishThumb({ src }: { src: string }) {
       {showPhoto ? (
         <img src={src} alt="" decoding="async" onError={() => setBroken(true)} />
       ) : (
-        <SatinBow className={styles.wishBow} />
+        <GiftIcon />
       )}
     </span>
   );

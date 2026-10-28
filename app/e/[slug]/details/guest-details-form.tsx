@@ -22,7 +22,7 @@ export default function GuestDetailsForm() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
-  const [wantReceipt, setWantReceipt] = useState(false);
+  const [wantReceipt, setWantReceipt] = useState(true);
   const [amountLine, setAmountLine] = useState("");
   const [errors, setErrors] = useState<{
     name?: string;
@@ -70,11 +70,10 @@ export default function GuestDetailsForm() {
         return;
       }
 
-      const saved = Boolean(name || phone || details.email);
       setName(name);
       setPhone(phone);
       setEmail(details.email);
-      setWantReceipt(saved ? details.wantReceipt : false);
+      setWantReceipt(details.wantReceipt);
       const chosen = loadContributions(slug);
       const total = getContributionsTotal(chosen);
       setAmountLine(

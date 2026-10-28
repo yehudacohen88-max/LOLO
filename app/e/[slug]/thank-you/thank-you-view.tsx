@@ -12,15 +12,13 @@ import { fromRouteParam } from "@/lib/events/slug";
 import {
   formatGiftAmount,
   loadContributions,
-  loadGuestDetails,
   saveContributions,
   type GuestContribution,
 } from "@/lib/guest-draft";
 import { clearGuestOrderRef, loadGuestOrderRef } from "@/lib/orders/guest-ref";
 import { thankYouAfterLoad } from "@/lib/orders/thank-you-ref";
 import type { StoredOrder } from "@/lib/orders/types";
-import { BETA_CLARITY } from "@/app/design/beta-notice";
-import { EmptyCover, GiftReveal } from "../flagship-ui";
+import { GiftFallback } from "../flagship-ui";
 import { giftProgressCopy, participationLine } from "../progress-copy";
 import styles from "../flagship.module.css";
 
@@ -85,14 +83,12 @@ function statusText(read: OrderRead) {
 export default function ThankYouView() {
   const slug = fromRouteParam(useParams<{ slug: string }>().slug);
   const [eventName, setEventName] = useState("");
-  const [guestName, setGuestName] = useState("");
   const [heroGift, setHeroGift] = useState("");
   const [contributions, setContributions] = useState<GuestContribution[]>([]);
   const [contributionAmount, setContributionAmount] = useState(0);
   const [feeAmount, setFeeAmount] = useState(0);
   const [chargedAmount, setChargedAmount] = useState(0);
   const [orderRead, setOrderRead] = useState<OrderRead>({ phase: "loading" });
-  const [coverImage, setCoverImage] = useState("");
   const [giftImage, setGiftImage] = useState("");
   const [together, setTogether] = useState("");
   const [shareNote, setShareNote] = useState("");
@@ -112,7 +108,6 @@ export default function ThankYouView() {
 
       const local = loadContributions(slug);
       setHeroGift(local[0]?.giftName ?? "");
-      setGuestName(loadGuestDetails(slug).name);
 
       const [stored, read] = await Promise.all([
         getEventBySlug(slug),
@@ -135,7 +130,6 @@ export default function ThankYouView() {
       const order = read.phase === "ready" ? read.order : null;
       if (order && decision.replaceDisplay) {
         setEventName(stored?.title ?? "");
-        setGuestName(order.guestName || loadGuestDetails(slug).name);
         setContributions(
           order.items.map((item) => ({
             giftId: item.giftId,
@@ -172,7 +166,6 @@ export default function ThankYouView() {
         [...gifts].sort((a, b) => a.priority - b.priority)[0];
       if (!cancelled && stored) {
         setEventName((current) => current || stored.title);
-        setCoverImage(stored.coverImage || "");
         setGiftImage(pictured?.imageUrl || "");
         setHeroGift((current) => current || pictured?.title || "");
       }
@@ -243,7 +236,10 @@ export default function ThankYouView() {
   const showReceiptAmounts = orderRead.phase === "ready";
   const giftLabel = contributions[0]?.giftName || heroGift || eventName || "המתנה";
   const shareText = eventName ? `בואו לחגוג: ${eventName}` : "בואו לחגוג ב-LOLO";
-  const letter = (eventName || giftLabel).trim().charAt(0) || "";
+  const progressLine = together
+    .split(" · ")
+    .filter((part) => !part.includes("%"))
+    .join(" · ");
 
   async function shareEvent() {
     const payload = { title: eventName || "LOLO", text: shareText, url: eventUrl() };
@@ -270,37 +266,34 @@ export default function ThankYouView() {
   }
 
   return (
-    <div className={styles.thanksLayout}>
-      <div className={`${styles.thanksHero} ${styles.festive}`}>
-        <svg className={styles.thanksBow} viewBox="0 0 72 28" aria-hidden="true">
-          <path d="M36 14 C26 2 6 2 8 11 C10 18 26 18 36 14Z" fill="#E87563" />
-          <path d="M36 14 C46 2 66 2 64 11 C62 18 46 18 36 14Z" fill="#E87563" />
-          <circle cx="36" cy="14" r="4.2" fill="#E07A6A" />
-        </svg>
-        <div className={styles.thanksCelebrant}>
-          {coverImage ? (
-            <img src={coverImage} alt="" width={160} height={200} />
-          ) : (
-            <EmptyCover monogram={letter} compact />
-          )}
-          <div>
-            <p className={styles.thanksKicker}>חוגגים יחד</p>
-            <p className={styles.thanksName}>{eventName || "המתנה המשותפת"}</p>
-          </div>
-        </div>
-        <GiftReveal
-          label={giftLabel}
-          caption={guestName ? `מאת ${guestName}` : undefined}
-          image={giftImage}
-          cover=""
-          funding={together}
-          untie={Boolean(paid)}
-        />
-      </div>
+    <div className={styles.thanksLayout} data-reveal="">
       <div className={styles.thanksMain}>
         <div className={`${styles.card} ${styles.thanksReceipt}`}>
+          <p className={styles.successMark} aria-hidden="true">
+            ✓
+          </p>
+          {giftImage ? (
+            <img
+              className={styles.thanksThumb}
+              src={giftImage}
+              alt=""
+              width={88}
+              height={88}
+              data-gift-photo=""
+            />
+          ) : (
+            <GiftFallback compact />
+          )}
+          <p className={styles.revealCard} data-reveal-card="">
+            {giftLabel}
+          </p>
+          {eventName ? <p className={styles.quietLine}>{eventName}</p> : null}
+          {progressLine ? <p className={styles.quietLine}>{progressLine}</p> : null}
           <p className={styles.notice}>תשלום הדגמה בלבד — לא מתבצע חיוב אמיתי</p>
-          <p className={styles.quietLine}>{BETA_CLARITY}</p>
+          <details>
+            <summary className={styles.quietLine}>עוד על ההדגמה</summary>
+            <p className={styles.quietLine}>בשלב זה לא מונפק שובר אמיתי.</p>
+          </details>
           <p className={styles.orderStatus} data-order-status="" role="status">
             {statusText(orderRead)}
           </p>

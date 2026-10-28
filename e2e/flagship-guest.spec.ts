@@ -1,7 +1,7 @@
 import { mkdirSync } from "node:fs";
 import path from "node:path";
 import { expect, test, type Page } from "@playwright/test";
-import { expectLetterClearOfBow } from "./empty-cover";
+import { expectGiftFallback } from "./empty-cover";
 
 const artifactDir = process.env.FLAGSHIP_ARTIFACT_DIR || "/opt/cursor/artifacts";
 // Mockup photos for this test only. They are not the guest page's default images.
@@ -201,7 +201,7 @@ for (const viewport of widths) {
         await expect(page.locator("img[alt='תמונה לאירוע חוגגים 40 לדנה']")).toBeVisible();
       } else {
         await expect(page.locator("img[alt='תמונה לאירוע חוגגים 40 לדנה']")).toHaveCount(0);
-        await expectLetterClearOfBow(page);
+        await expectGiftFallback(page);
       }
       await settle(page);
       if (withImages) {
@@ -214,7 +214,7 @@ for (const viewport of widths) {
         });
         expect(crop.ratio).toBeGreaterThan(1.5);
         expect(crop.ratio).toBeLessThan(1.7);
-        expect(crop.position).toMatch(/28%/);
+        expect(crop.position).toMatch(/top|0%/);
       }
       if (viewport.name === "390" || viewport.name === "320") {
         const gift = await page.evaluate(() => {

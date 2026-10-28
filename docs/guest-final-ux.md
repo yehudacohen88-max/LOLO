@@ -43,13 +43,21 @@ Type is Heebo at 400, 500, and 700. Headings stay on the existing `.flowTitle` s
 
 The step row is «מתנה ← ברכה ← פרטים ← תשלום». Completed steps are links back to saved drafts. Thank-you is the success state.
 
+## Confirmation checkbox
+
+The control is «אני רוצה לקבל אישור על המתנה». It is optional. It is not a terms consent. On main, a new guest starts with it checked: `emptyDetails.wantReceipt` is `true`, and a saved draft treats a missing value as checked (`wantReceipt !== false`). Submit stores it as `wantsConfirmation` on the pending order. This pass keeps that default. An earlier draft of this branch had turned it off for unsaved guests; that would have changed what a guest stores if they never touch the box, so it was put back.
+
+## Second pass
+
+Corner ribbons no longer sit on the event photo or the gift image. A missing photo is a cream tile with a small gift icon. Payment and thank-you show «תשלום הדגמה בלבד — לא מתבצע חיוב אמיתי» once; the long beta paragraph is a short line inside «עוד על ההדגמה». Thank-you is a centered card, about 560px wide inside a 960px column. The gift page at desktop is a header plus a gift column and a sticky summary. The venue card sits under the cover, and the cover uses `object-position: center top` unless the host set a focal point.
+
 ## Tests
 
-From `/workspace` after `npm ci`:
+Final run after the last CSS change:
 
-- `npx eslint` on the touched guest components: passed (the new CSS module is ignored by the eslint config)
+- `npx eslint` on the touched guest components: passed
 - `npx tsc --noEmit`: passed
 - `npx next build`: passed
-- `npx playwright test e2e`: 53 passed, then 1 failed (`screenshot 320 without_images`, the shortened empty cover overlapped the bow). After removing that shrink, `npx playwright test e2e/flagship-guest.spec.ts e2e/flagship-flow.spec.ts e2e/guest-premium-layout.spec.ts` passed 26, and a later check of the empty-cover and layout widths passed 11. The host, smoke, beta, create-event, and guest-access specs had already passed in the full run and were not changed again.
+- `npx playwright test e2e`: 56 passed, 0 failed
 
-Imageless extra gifts no longer show the large parcel drawing (`.extra .scene.sceneEmpty`). The primary empty cover still keeps the letter clear of the small bow, which the regression test requires. After that last CSS change, the empty-cover screenshots and the seven layout widths passed (11 tests). Host, smoke, beta, create-event, and guest-access had passed in the earlier full run and do not use that rule.
+Earlier in this pass, one screenshot test failed because the order save was not mocked, so the flow never reached payment. The test now mocks that save. A previous full run was 55 passed and that 1 failure.

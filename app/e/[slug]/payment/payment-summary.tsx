@@ -20,7 +20,6 @@ import {
   startGuestCheckout,
 } from "@/lib/payments/guest-client";
 import type { CheckoutQuote, PaymentOutcome } from "@/lib/payments/types";
-import { BETA_CLARITY } from "@/app/design/beta-notice";
 import styles from "../flagship.module.css";
 
 function delay(ms: number) {
@@ -175,7 +174,10 @@ export default function GuestPaymentSummary() {
         {showDemo && !unavailable ? (
           <>
             <p className={styles.notice}>תשלום הדגמה בלבד — לא מתבצע חיוב אמיתי</p>
-            <p className={styles.quietLine}>{BETA_CLARITY}</p>
+            <details>
+              <summary className={styles.quietLine}>עוד על ההדגמה</summary>
+              <p className={styles.quietLine}>בשלב זה לא מונפק שובר אמיתי.</p>
+            </details>
           </>
         ) : null}
         {eventName ? <p className={styles.lineRow}>{eventName}</p> : null}

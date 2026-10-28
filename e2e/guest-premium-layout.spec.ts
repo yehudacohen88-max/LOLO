@@ -17,10 +17,6 @@ const widths = [
 
 const reviewShots: Record<string, string> = {
   event: "01-gift",
-  greeting: "02-greeting",
-  details: "03-details",
-  payment: "04-payment",
-  thanks: "05-thanks",
 };
 
 function eventPayload() {
@@ -294,6 +290,101 @@ test("order post keeps greeting text and demo payment still confirms", async ({ 
   await expect(page.locator("[data-order-status]")).toHaveText("שולם בהדגמה");
   expect(started).toBe(true);
   expect(confirmed).toBe(true);
+});
+
+test("filled guest screens at 390 and 1440", async ({ page }) => {
+  test.setTimeout(90_000);
+  await installReadRoutes(page);
+  await page.route("**/api/checkout/quote", async (route) => {
+    await route.fulfill({
+      json: {
+        contributionAmount: 350,
+        feeAmount: 0,
+        chargedAmount: 350,
+        feeEnabled: false,
+        provider: "demo",
+        isDemo: true,
+      },
+    });
+  });
+  await page.route("**/api/orders**", async (route) => {
+    if (route.request().method() === "POST") {
+      await route.fulfill({
+        json: {
+          id: "order-flagship",
+          eventId: "flagship-fixture-id",
+          eventSlug: "flagship-fixture",
+          guestName: "יעל כהן",
+          totalAmount: 350,
+          contributionAmount: 350,
+          feeAmount: 0,
+          chargedAmount: 350,
+          paymentStatus: "pending",
+          paymentProvider: null,
+          paymentReference: null,
+          paidAt: null,
+          accessToken: "11111111-1111-4111-8111-111111111111",
+          items: [{ giftId: "gift-espresso", giftName: "מכונת אספרסו פרימיום", amount: 350 }],
+        },
+      });
+      return;
+    }
+    await route.fallback();
+  });
+  for (const viewport of [
+    { name: "390", width: 390, height: 844 },
+    { name: "1440", width: 1440, height: 900 },
+  ] as const) {
+    await page.setViewportSize({ width: viewport.width, height: viewport.height });
+    await page.goto("/e/flagship-fixture");
+    await page.getByRole("button", { name: /350/ }).first().click();
+    await page.getByRole("button", { name: "מצטרפים למתנה" }).click();
+    await page.screenshot({
+      path: path.join(artifactDir, `02-greeting-${viewport.name}.png`),
+      fullPage: true,
+    });
+    await page.getByRole("button", { name: "אוהבים ושמחים לחגוג איתך." }).click();
+    await page.getByRole("button", { name: /ממשיכים/ }).click();
+    await page.getByLabel("שם מלא").fill("יעל כהן");
+    await page.getByLabel("מספר טלפון").fill("0501234567");
+    await page.getByLabel("אימייל").fill("yael@example.com");
+    await page.screenshot({
+      path: path.join(artifactDir, `03-details-${viewport.name}.png`),
+      fullPage: true,
+    });
+    await page.getByRole("button", { name: "מעבר לתשלום" }).click();
+    await expect(page.getByText("תשלום הדגמה בלבד — לא מתבצע חיוב אמיתי")).toBeVisible();
+    await page.screenshot({
+      path: path.join(artifactDir, `04-payment-${viewport.name}.png`),
+      fullPage: true,
+    });
+    await page.goto("/e/flagship-fixture/thank-you");
+    await expect(page.getByRole("heading", { name: "איזה כיף, השתתפת במתנה!" })).toBeVisible();
+    await page.screenshot({
+      path: path.join(artifactDir, `05-thanks-${viewport.name}.png`),
+      fullPage: true,
+    });
+  }
+});
+
+test("a gift without a photo uses the neutral fallback", async ({ page }) => {
+  test.setTimeout(60_000);
+  await installReadRoutes(page);
+  await page.route("**/api/events/flagship-fixture", async (route) => {
+    const body = eventPayload();
+    body.event.coverImage = "";
+    body.event.gifts[0].imageUrl = "";
+    body.event.gifts[1].imageUrl = "";
+    await route.fulfill({ json: body });
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/e/flagship-fixture");
+  await expect(page.locator("[data-gift-fallback]").first()).toBeVisible();
+  await expect(page.locator("[data-empty-letter]")).toHaveCount(0);
+  await page.screenshot({
+    path: path.join(artifactDir, "01-gift-nophoto-390.png"),
+    fullPage: true,
+  });
 });
 
 test("a long event title and gift name stay inside the frame", async ({ page }) => {

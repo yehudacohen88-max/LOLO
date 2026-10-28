@@ -1,7 +1,7 @@
 import path from "node:path";
 import { expect, test, type Page, type Route } from "@playwright/test";
 import { BETA_CLARITY } from "@/app/design/beta-notice";
-import { expectLetterClearOfBow } from "./empty-cover";
+import { expectGiftFallback } from "./empty-cover";
 
 const artifactDir = process.env.FLAGSHIP_ARTIFACT_DIR || "/opt/cursor/artifacts";
 const portraitPath = path.join(__dirname, "fixtures/flagship/portrait.jpg");
@@ -204,7 +204,7 @@ for (const viewport of [
 
     await expect(page.getByRole("heading", { name: "כמעט סיימנו", exact: true })).toBeVisible();
     await expect(page.getByText("תשלום הדגמה בלבד — לא מתבצע חיוב אמיתי")).toBeVisible();
-    await expect(page.getByText(BETA_CLARITY)).toHaveCount(1);
+    await expect(page.getByText(BETA_CLARITY)).toHaveCount(0);
     if (viewport.name === "1440") {
       const hero = page.locator("[data-pay-hero]");
       await expect(hero.locator("[data-reveal-card]")).toHaveText("מכונת אספרסו פרימיום");
@@ -221,7 +221,7 @@ for (const viewport of [
 
     await expect(page.getByRole("heading", { name: "איזה כיף, השתתפת במתנה!" })).toBeVisible();
     await expect(page.locator("[data-reveal-card]")).toBeVisible();
-    await expect(page.getByText(BETA_CLARITY)).toHaveCount(1);
+    await expect(page.getByText(BETA_CLARITY)).toHaveCount(0);
     await expect(page.getByText("גרסת בטא — תשלומים מדומים בלבד")).toHaveCount(0);
     await expect(page.getByRole("button", { name: "שיתוף האירוע" })).toBeVisible();
     await expect(page.getByText("כבר 23 חברים הצטרפו")).toBeVisible();
@@ -248,7 +248,7 @@ for (const viewport of [
     await installFlow(page, false);
     await page.setViewportSize({ width: viewport.width, height: viewport.height });
     await page.goto("/e/flagship-fixture");
-    await expectLetterClearOfBow(page);
+    await expectGiftFallback(page);
     await page.getByRole("button", { name: /350/ }).click();
     await page.getByRole("button", { name: "מצטרפים למתנה" }).click();
     await expect(page.locator("[data-continuity-title]")).toHaveText("חוגגים 40 לדנה");
@@ -259,14 +259,14 @@ for (const viewport of [
     await page.getByLabel("אימייל").fill("yael@example.com");
     await page.getByRole("button", { name: "מעבר לתשלום" }).click();
     if (viewport.name === "1440") {
-      await expect(page.locator("[data-pay-hero] [data-parcel]")).toBeVisible();
+      await expect(page.locator("[data-pay-hero] [data-gift-fallback]")).toBeVisible();
       await expect(page.locator("[data-pay-hero] [data-gift-photo]")).toHaveCount(0);
     }
     await page.getByRole("button", { name: "אישור תשלום הדגמה" }).click();
     await expect(page.getByRole("heading", { name: "איזה כיף, השתתפת במתנה!" })).toBeVisible();
-    await expectLetterClearOfBow(page);
-    await expect(page.getByText(BETA_CLARITY)).toHaveCount(1);
-    await expect(page.locator("[data-reveal] [data-parcel]")).toBeVisible();
+    await expectGiftFallback(page);
+    await expect(page.getByText(BETA_CLARITY)).toHaveCount(0);
+    await expect(page.locator("[data-reveal] [data-gift-fallback]")).toBeVisible();
     await expect(page.locator("[data-reveal] [data-gift-photo]")).toHaveCount(0);
     await expect(page.getByText("כבר 23 חברים הצטרפו")).toBeVisible();
     await expect(page.locator("[data-order-status]")).toHaveText("שולם בהדגמה");
@@ -300,7 +300,7 @@ test("thank-you shows an error when the order read fails", async ({ page }) => {
   await expect(page.getByText("שולם בהדגמה")).toHaveCount(0);
   await expect(page.getByText("התשלום התקבל")).toHaveCount(0);
   await expect(page.getByText("תשלום הדגמה בלבד — לא מתבצע חיוב אמיתי")).toBeVisible();
-  await expect(page.getByText(BETA_CLARITY)).toHaveCount(1);
+  await expect(page.getByText(BETA_CLARITY)).toHaveCount(0);
   await expect(page.getByText("גרסת בטא — תשלומים מדומים בלבד")).toHaveCount(0);
 });
 
@@ -338,7 +338,7 @@ for (const viewport of [
     await page.getByRole("button", { name: "מעבר לתשלום" }).click();
     await expect(page.getByRole("heading", { name: "כמעט סיימנו", exact: true })).toBeVisible();
     await expect(page.getByText("תשלום הדגמה בלבד — לא מתבצע חיוב אמיתי")).toBeVisible();
-    await expect(page.getByText(BETA_CLARITY)).toHaveCount(1);
+    await expect(page.getByText(BETA_CLARITY)).toHaveCount(0);
     await page.screenshot({
       path: path.join(artifactDir, `flagship_demo_payment_${viewport.name}.png`),
       fullPage: true,
@@ -352,7 +352,7 @@ for (const viewport of [
     await expect(page.getByText("כבר 18 חברים הצטרפו")).toBeVisible();
     await expect(page.getByText("אירוע הדגמה — נתונים לדוגמה").first()).toBeVisible();
     await expect(page.getByText("תשלום הדגמה בלבד — לא מתבצע חיוב אמיתי")).toBeVisible();
-    await expect(page.getByText(BETA_CLARITY)).toHaveCount(1);
+    await expect(page.getByText(BETA_CLARITY)).toHaveCount(0);
     await page.screenshot({
       path: path.join(artifactDir, `flagship_demo_thanks_${viewport.name}.png`),
       fullPage: true,
