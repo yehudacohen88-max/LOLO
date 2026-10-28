@@ -352,7 +352,7 @@ export default function ThankYouView() {
             className={styles.ghost}
             onClick={() => void shareEvent()}
           >
-            שיתוף האירוע
+            שיתוף בדרך אחרת
           </button>
           <button type="button" className={styles.ghost} onClick={() => void copyLink()}>
             העתקת קישור

@@ -223,7 +223,7 @@ for (const viewport of [
     await expect(page.locator("[data-reveal-card]")).toBeVisible();
     await expect(page.getByText(BETA_CLARITY)).toHaveCount(0);
     await expect(page.getByText("גרסת בטא — תשלומים מדומים בלבד")).toHaveCount(0);
-    await expect(page.getByRole("button", { name: "שיתוף האירוע" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "שיתוף בדרך אחרת" })).toBeVisible();
     await expect(page.getByText("350").first()).toBeVisible();
     await expect(page.locator("[data-order-status]")).toHaveText("שולם בהדגמה");
     await expect(page.getByText("תשלום הדגמה בלבד — לא מתבצע חיוב אמיתי")).toBeVisible();

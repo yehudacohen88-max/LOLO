@@ -161,23 +161,45 @@ export function FlowPage({
     }
     return <GiftFallback compact />;
   }
-  function renderLines() {
+  function renderChoice(amounts: boolean, labelled: boolean) {
+    const rows = parsed.items.length > 0 ? parsed.items : mark?.giftName ? [{ name: mark.giftName, amount: 0 }] : [];
     return (
-      <>
-        {parsed.items.map((item) => (
-          <p key={`${item.name}-${item.amount}`} className={styles.choiceLine}>
-            <span data-reveal-card="">{item.name}</span>
-            <b>{formatGiftAmount(item.amount)}</b>
+      <div className={styles.choiceCard}>
+        {mark ? (
+          <p className={styles.choiceEvent} data-continuity-title={labelled ? "" : undefined}>
+            {displayTitle(mark.title)}
           </p>
+        ) : (
+          <div className={styles.bones} aria-label="טוענים את פרטי האירוע">
+            <span />
+            <span />
+          </div>
+        )}
+        {rows.map((item, index) => (
+          <div key={`${item.name}-${item.amount}`} className={styles.choiceGift}>
+            <div className={styles.choiceGiftMain}>
+              {renderThumb()}
+              <div className={styles.choiceGiftCopy}>
+                <p className={styles.choiceName} data-reveal-card="">
+                  {item.name}
+                </p>
+                {index === 0 && mark?.progress ? (
+                  <p className={styles.choiceProgress}>{mark.progress}</p>
+                ) : null}
+              </div>
+            </div>
+            {amounts && item.amount > 0 ? (
+              <b className={styles.choiceAmount}>{formatGiftAmount(item.amount)}</b>
+            ) : null}
+          </div>
         ))}
-        {parsed.total > 0 ? (
+        {amounts && parsed.total > 0 ? (
           <p className={styles.choiceTotal}>
             <span>סה״כ</span>
             <b>{formatGiftAmount(parsed.total)}</b>
           </p>
         ) : null}
-        {mark?.progress ? <p className={styles.choiceProgress}>{mark.progress}</p> : null}
-      </>
+      </div>
     );
   }
 
@@ -250,14 +272,8 @@ export function FlowPage({
           {lede ? <p className={styles.flowLede}>{lede}</p> : null}
           {notice ? <p className={styles.pay}>{notice}</p> : null}
         </div>
-        {step !== "thanks" && mark ? (
-          <div className={styles.compactRow}>
-            {renderThumb()}
-            <div className={styles.compactCopy}>
-              {renderLines()}
-              <p className={styles.compactTitle}>{displayTitle(mark.title)}</p>
-            </div>
-          </div>
+        {step !== "thanks" && step !== "payment" && mark ? (
+          <div className={styles.compactRow}>{renderChoice(true, false)}</div>
         ) : null}
         <div className={styles.flowBody}>{children}</div>
         </div>
@@ -266,22 +282,7 @@ export function FlowPage({
             className={styles.flowAside}
             data-pay-hero={step === "payment" ? "" : undefined}
           >
-            <div className={styles.choiceCard} aria-busy={mark ? undefined : true}>
-              {renderThumb()}
-              <div className={styles.continuityCopy}>
-                {mark ? (
-                  <p className={styles.continuityTitle} data-continuity-title="">
-                    {displayTitle(mark.title)}
-                  </p>
-                ) : (
-                  <div className={styles.bones} aria-label="טוענים את פרטי האירוע">
-                    <span />
-                    <span />
-                  </div>
-                )}
-                {renderLines()}
-              </div>
-            </div>
+            <div aria-busy={mark ? undefined : true}>{renderChoice(step !== "payment", true)}</div>
           </aside>
         ) : null}
       </div>

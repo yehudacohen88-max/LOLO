@@ -68,7 +68,7 @@ A missing cover is not a panel. The page starts with a 40px bow, then the date, 
 
 On main, guest details are written to the browser draft only when the form is submitted. This branch also writes name, phone, email, and the checkbox on each change, using the same `saveGuestDetails` storage, so the stepper can return to what was typed. «בלי ברכה» is shown only while the textarea is empty.
 
-Greeting, details, and payment share one side card: a thumb, the event title, each chosen gift with its amount, the total, and the collected line. The in-column «המתנה שלכם» card is not repeated. Suggestion chips are one full-width column. The «המשאלה» shortcut appears only when there are three or more gifts. A custom amount field opens only for «סכום אחר». The collected figure is labeled «נאספו». On a phone the gift page has a 16px gutter and the summary is a white card; at 768 the column is centered at about 640px.
+Greeting and details share one side card. The event title is the small line at the top, then each gift with its thumbnail and the amount on the left edge, then «נאספו … מתוך …», then a divider and «סה״כ». On a phone, payment shows only «סיכום התשלום». On a wide screen the payment side card keeps the gift and the collected line, and «סה״כ לחיוב» stays in the summary. The native share button is labeled «שיתוף בדרך אחרת». Suggestion chips are one full-width column. The «המשאלה» shortcut appears only when there are three or more gifts. A custom amount field opens only for «סכום אחר». The collected figure is labeled «נאספו». On a phone the gift page has a 16px gutter and the summary is a white card; at 768 the column is centered at about 640px.
 
 ## Tests
 
