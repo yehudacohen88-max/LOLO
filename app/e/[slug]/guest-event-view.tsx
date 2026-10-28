@@ -685,6 +685,7 @@ export default function GuestEventView() {
           <section
             className={`${styles.feature} ${primary.imageUrl ? "" : styles.noPhoto} ${styles.rise} ${styles.d2}`}
             id={`gift-${primary.id}`}
+            data-gift-scene=""
           >
             {primary.imageUrl ? <GiftScene src={primary.imageUrl} alt={primary.name} primary /> : null}
             <div className={primary.imageUrl ? styles.gmeta : styles.noPhotoTitle}>
