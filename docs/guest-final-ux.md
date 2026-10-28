@@ -41,7 +41,20 @@ Type is Heebo at 400, 500, and 700. Headings stay on the existing `.flowTitle` s
 4. Payment. Title «כמעט סיימנו». The exact sentence «תשלום הדגמה בלבד — לא מתבצע חיוב אמיתי» is the disclosure. Quote, start, and confirm are unchanged.
 5. Thank-you. Title «איזה כיף, השתתפת במתנה!». Status still comes from the server, including «שולם בהדגמה». WhatsApp is the main share. The payment reference sits under «פרטי הדגמה».
 
-The step row is «מתנה ← ברכה ← פרטים ← תשלום». Completed steps are links back to saved drafts. Thank-you is the success state.
+The step row is «מתנה ← ברכה ← פרטים ← תשלום». Each step is a 20px circle and a label on one line. Completed steps are links back to saved drafts, with a white check and no underline until hover. Thank-you is the success state and does not show the row.
+
+## Fifth pass
+
+The step row is one compact line: 20px circles, 13–14px labels, short connectors, hidden under 360px so the row stays on one line at 320. Completed circles are dark green with a white check. The current step is coral. Future steps are an outline. Thank-you drops the row. Its success check is a 48px circle above the heading, and the 72px product thumbnail sits inside the card. The payment side column is a white card again: thumbnail, gift, event, «מאת {host}», the greeting, and «נאספו … מתוך …». Greeting and details covers use a centered 16:9 crop. The main gift is one white card, and the percent sits on the same line as «מתוך».
+
+## Tests
+
+- `npx tsc --noEmit`: passed
+- `npx eslint` on the touched guest files: passed
+- `npx next build`: passed
+- Final `npx playwright test e2e`: 56 passed, 0 failed
+
+The final run was green on the first attempt after the last layout change. An earlier run in this pass was also 56 passed.
 
 ## Confirmation checkbox
 
