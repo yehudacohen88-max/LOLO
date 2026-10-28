@@ -208,7 +208,7 @@ for (const viewport of [
     if (viewport.name === "1440") {
       const hero = page.locator("[data-pay-hero]");
       await expect(hero.locator("[data-reveal-card]")).toHaveText("מכונת אספרסו פרימיום");
-      await expect(hero.getByText("כבר 23 חברים הצטרפו")).toBeVisible();
+      await expect(hero.getByText(/נאספו/)).toBeVisible();
       await expect(hero.locator("[data-gift-photo]")).toBeVisible();
     }
     const pay = page.getByRole("button", { name: "אישור תשלום הדגמה" });

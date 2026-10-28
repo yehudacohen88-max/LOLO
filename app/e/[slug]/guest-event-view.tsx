@@ -511,19 +511,23 @@ export default function GuestEventView() {
             <span className={styles.got}>
               <CountAmount value={progress.raisedAmount} />
             </span>
-            {copy.targetText ? (
-              <span className={styles.of}>מתוך {copy.targetText}</span>
-            ) : null}
-            {copy.percentText && copy.reached !== "over" ? (
-              <span className={styles.pct}>{copy.percentText}</span>
-            ) : null}
+            <span className={styles.amountMeta}>
+              {copy.targetText ? (
+                <span className={styles.of}>מתוך {copy.targetText}</span>
+              ) : null}
+              {copy.percentText && copy.reached !== "over" ? (
+                <span className={styles.pct}>{copy.percentText}</span>
+              ) : null}
+            </span>
           </div>
         ) : copy.targetText ? (
           <p className={styles.nums}>
-            <span className={styles.of}>יעד {copy.targetText}</span>
-            {copy.percentText && copy.reached !== "over" ? (
-              <span className={styles.pct}>{copy.percentText}</span>
-            ) : null}
+            <span className={styles.amountMeta}>
+              <span className={styles.of}>יעד {copy.targetText}</span>
+              {copy.percentText && copy.reached !== "over" ? (
+                <span className={styles.pct}>{copy.percentText}</span>
+              ) : null}
+            </span>
           </p>
         ) : null}
 
@@ -692,6 +696,10 @@ export default function GuestEventView() {
                 </p>
               ) : null}
             </div>
+            <div className={styles.giftPicker}>
+              {renderProgress(primary, true)}
+              {renderAmounts(primary)}
+            </div>
           </section>
         ) : null}
 
@@ -711,10 +719,7 @@ export default function GuestEventView() {
         </div>
 
         <aside className={styles.panel}>
-          {primary ? renderProgress(primary, true) : (
-            <p className={styles.quiet}>עדיין אין מתנות באירוע.</p>
-          )}
-          {primary ? renderAmounts(primary) : null}
+          {primary ? null : <p className={styles.quiet}>עדיין אין מתנות באירוע.</p>}
 
           <section className={styles.summary}>
             <h2>המתנה שלכם</h2>

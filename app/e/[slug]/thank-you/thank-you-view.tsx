@@ -138,7 +138,7 @@ export default function ThankYouView() {
         );
         const fee = order.feeAmount ?? 0;
         setFeeAmount(fee);
-        setChargedAmount(order.chargedAmount ?? contribution + fee);
+        setChargedAmount(order.chargedAmount ?? order.contributionAmount + fee);
         setOrderRead(read);
       } else if (read.phase === "error" && !decision.confirmedPaid) {
         setOrderRead({ phase: "error" });
@@ -266,16 +266,13 @@ export default function ThankYouView() {
     <div className={styles.thanksLayout} data-reveal="">
       <div className={styles.thanksMain}>
         <div className={`${styles.card} ${styles.thanksReceipt}`}>
-          <p className={styles.successMark} aria-hidden="true">
-            ✓
-          </p>
           {giftImage ? (
             <img
               className={styles.thanksThumb}
               src={giftImage}
               alt=""
-              width={88}
-              height={88}
+              width={72}
+              height={72}
               data-gift-photo=""
             />
           ) : (

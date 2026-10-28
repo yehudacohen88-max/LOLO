@@ -32,6 +32,22 @@ const steps = [
 ] as const;
 
 type StepId = (typeof steps)[number]["id"] | "thanks";
+type StepState = "done" | "current" | "next";
+
+function StepCheck({ size }: { size: number }) {
+  return (
+    <svg viewBox="0 0 16 16" width={size} height={size} aria-hidden="true">
+      <path
+        d="M3.2 8.2 6.4 11.2 12.8 4.6"
+        fill="none"
+        stroke="white"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
 
 export function FlowPage({
   step,
@@ -176,26 +192,48 @@ export function FlowPage({
           </div>
         </aside>
         <div className={`${styles.flowHead} ${styles.flowIn}`}>
-          <ol className={styles.steps} aria-label="שלבי ההשתתפות">
-            {steps.map((item, index) => {
-              const done = step === "thanks" || index < current;
-              const state = item.id === step ? "current" : done ? "done" : "next";
-              const href = slug
-                ? item.id === "gift"
-                  ? guestEventPath(slug)
-                  : guestEventPath(slug, item.id)
-                : "";
-              const label = done && href ? <Link href={href}>{item.label}</Link> : <span>{item.label}</span>;
-              return (
-                <li key={item.id} data-step={state} aria-current={state === "current" ? "step" : undefined}>
-                  <span className={styles.stepDot} aria-hidden="true">
-                    {state === "done" ? "✓" : ""}
-                  </span>
-                  {label}
-                </li>
-              );
-            })}
-          </ol>
+          {step === "thanks" ? (
+            <p className={styles.successMark} aria-hidden="true">
+              <StepCheck size={22} />
+            </p>
+          ) : (
+            <ol className={styles.stepNav} aria-label="שלבי ההשתתפות">
+              {steps.map((item, index) => {
+                const state: StepState = item.id === step ? "current" : index < current ? "done" : "next";
+                const href = slug
+                  ? item.id === "gift"
+                    ? guestEventPath(slug)
+                    : guestEventPath(slug, item.id)
+                  : "";
+                const face = (
+                  <>
+                    <span className={styles.stepMark} aria-hidden="true">
+                      {state === "done" ? <StepCheck size={12} /> : index + 1}
+                    </span>
+                    <span className={styles.stepLabel}>{item.label}</span>
+                  </>
+                );
+                return (
+                  <li
+                    key={item.id}
+                    className={styles.stepSlot}
+                    data-step={state}
+                    aria-current={state === "current" ? "step" : undefined}
+                    aria-label={`שלב ${index + 1} מתוך 4`}
+                  >
+                    {index > 0 ? <span className={styles.stepLine} aria-hidden="true" /> : null}
+                    {state === "done" && href ? (
+                      <Link href={href} className={styles.stepLink}>
+                        {face}
+                      </Link>
+                    ) : (
+                      <span className={styles.stepFace}>{face}</span>
+                    )}
+                  </li>
+                );
+              })}
+            </ol>
+          )}
           <h1 className={styles.flowTitle}>{title}</h1>
           {lede ? <p className={styles.flowLede}>{lede}</p> : null}
           {notice ? <p className={styles.pay}>{notice}</p> : null}

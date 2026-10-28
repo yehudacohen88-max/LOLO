@@ -166,6 +166,12 @@ for (const viewport of widths) {
         await expect(page.getByText("תשלום הדגמה בלבד — לא מתבצע חיוב אמיתי")).toBeVisible();
       }
       await expectNoOverflowAndLargeTargets(page);
+      if (viewport.name === "320" && name === "greeting") {
+        await page.screenshot({
+          path: path.join(artifactDir, "00-stepper-320.png"),
+          clip: { x: 0, y: 0, width: 320, height: 300 },
+        });
+      }
       if (viewport.name === "390" || viewport.name === "1440") {
         await page.screenshot({
           path: path.join(artifactDir, `guest-live-${name}-${viewport.name}.png`),

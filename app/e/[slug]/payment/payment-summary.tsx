@@ -12,7 +12,6 @@ import {
   formatGiftAmount,
   getContributionsTotal,
   loadContributions,
-  loadGuestDetails,
   loadGuestGreeting,
   type GuestContribution,
 } from "@/lib/guest-draft";
@@ -38,7 +37,6 @@ export default function GuestPaymentSummary() {
   const slug = fromRouteParam(useParams<{ slug: string }>().slug);
   const [eventName, setEventName] = useState("");
   const [hostName, setHostName] = useState("");
-  const [guestName, setGuestName] = useState("");
   const [greeting, setGreeting] = useState("");
   const [contributions, setContributions] = useState<GuestContribution[]>([]);
   const [ready, setReady] = useState(false);
@@ -63,7 +61,6 @@ export default function GuestPaymentSummary() {
 
       setEventName(stored?.title ?? "");
       setHostName(stored?.hostName ?? "");
-      setGuestName(loadGuestDetails(slug).name);
       setGreeting(loadGuestGreeting(slug).text);
       setContributions(loaded);
       setReady(true);
@@ -184,21 +181,18 @@ export default function GuestPaymentSummary() {
   return (
     <>
     <div className={styles.payHero} data-pay-hero="">
-      <div data-reveal="">
-        {sideImage ? (
-          <img className={styles.thanksThumb} src={sideImage} alt="" width={72} height={72} data-gift-photo="" />
-        ) : (
-          <GiftFallback compact />
-        )}
-        <p className={styles.revealCard} data-reveal-card="">
-          {contributions[0]?.giftName || mark?.giftName || "המתנה"}
-        </p>
-        {eventName ? <p className={styles.quietLine}>{eventName}</p> : null}
-        {hostName ? <p className={styles.quietLine}>הזמנה מאת {hostName}</p> : null}
-        {guestName ? <p className={styles.quietLine}>{guestName}</p> : null}
-        {greeting ? <p className={styles.quietLine}>״{greeting}״</p> : null}
-        {mark?.fundingLine ? <p className={styles.nowrap}>{mark.fundingLine}</p> : null}
-      </div>
+      {sideImage ? (
+        <img className={styles.payThumb} src={sideImage} alt="" width={72} height={72} data-gift-photo="" />
+      ) : (
+        <GiftFallback compact />
+      )}
+      <p className={styles.revealCard} data-reveal-card="">
+        {contributions[0]?.giftName || mark?.giftName || "המתנה"}
+      </p>
+      {eventName ? <p className={styles.quietLine}>{eventName}</p> : null}
+      {hostName ? <p className={styles.payHost}>מאת {hostName}</p> : null}
+      {greeting ? <p className={styles.payQuote}>״{greeting}״</p> : null}
+      {mark?.progress ? <p className={styles.payProgress}>{mark.progress}</p> : null}
     </div>
     <div className={styles.flowBody} aria-busy={phase === "processing"}>
       <section className={styles.card}>

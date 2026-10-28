@@ -441,8 +441,12 @@
 }
 
 .feature {
-  margin: 12px 12px 0;
+  margin: 12px 0 0;
   scroll-margin-top: 16px;
+  overflow: hidden;
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: var(--gx-shadow, 0 12px 28px -22px rgba(23, 47, 43, 0.55));
 }
 
 .scene {
@@ -469,10 +473,10 @@
 
 .sceneStage {
   position: absolute;
-  top: 10%;
+  top: 8%;
   right: 8%;
-  bottom: 9%;
-  left: 20%;
+  bottom: 8%;
+  left: 8%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -485,7 +489,7 @@
   width: auto;
   height: auto;
   object-fit: contain;
-  filter: drop-shadow(-10px 12px 14px rgba(60, 40, 50, 0.16));
+  filter: none;
 }
 
 .sceneFallback {
@@ -549,7 +553,7 @@
 }
 
 .gmeta {
-  padding: 10px 8px 0;
+  padding: 14px 16px 0;
 }
 
 .label {
@@ -614,9 +618,17 @@
 .nums {
   display: flex;
   align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  gap: 8px 12px;
   margin-top: 14px;
+}
+
+.amountMeta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap;
 }
 
 .got {
@@ -631,7 +643,7 @@
   color: var(--fs-navy-2);
   font-size: 1rem;
   font-weight: 500;
-  text-align: left;
+  text-align: start;
 }
 
 .pct,
@@ -1174,16 +1186,14 @@
   }
 
   .story .feature {
-    z-index: 2;
-    margin: 0 -28px 0 0;
+    z-index: auto;
+    margin: 0;
   }
 
   .scene {
-    height: 292px;
-    border-radius: 28px;
-    box-shadow:
-      0 0 0 6px var(--fs-paper),
-      0 30px 60px -36px rgba(22, 32, 77, 0.4);
+    height: 240px;
+    border-radius: 0;
+    box-shadow: none;
   }
 
   .panel {
@@ -1350,7 +1360,7 @@
   flex: none;
   border-radius: 18px;
   object-fit: cover;
-  object-position: center top;
+  object-position: 50% 50%;
   background: #f4ece8;
 }
 
@@ -1733,7 +1743,6 @@
 .flow.flowPay .payHero {
   align-self: start;
   height: auto;
-  background: transparent;
 }
 
 .flow.flowPay .revealStage .scene,
@@ -2053,13 +2062,22 @@
 
   .flowPay .payHero {
     display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
     grid-column: 2;
-    grid-row: 1 / span 2;
+    grid-row: 1;
     position: sticky;
     top: 24px;
-    align-self: stretch;
+    align-self: start;
     min-width: 0;
-    max-height: calc(100vh - 48px);
+    height: auto;
+    max-height: none;
+    padding: 16px;
+    overflow: visible;
+    border-radius: 20px;
+    background: #fff;
+    box-shadow: var(--gx-shadow, 0 12px 28px -22px rgba(23, 47, 43, 0.55));
   }
 
   .flowPay .revealStage {
@@ -2205,7 +2223,11 @@
   .flow.flowForm .thumbFallback {
     grid-area: cover;
     width: 100%;
-    height: 200px;
+    height: auto;
+    aspect-ratio: 16 / 9;
+    max-height: 180px;
+    object-fit: cover;
+    object-position: 50% 50%;
   }
 
   .flow.flowForm .thumbGift {
@@ -2295,7 +2317,11 @@
 .flow .thumb,
 .flow .thumbFallback {
   width: 100%;
-  height: 148px;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  max-height: 180px;
+  object-fit: cover;
+  object-position: 50% 50%;
 }
 
 .flow .continuityCopy,
@@ -2365,6 +2391,10 @@
 .extra .amounts,
 .extra .rib {
   grid-column: 2;
+}
+
+.extra .gmeta {
+  padding: 0;
 }
 
 .skeleton {
@@ -2631,4 +2661,198 @@
     transition: none !important;
     scroll-behavior: auto !important;
   }
+}
+
+.stepNav {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0;
+  margin: 0 0 8px;
+  padding: 0;
+  list-style: none;
+}
+
+.stepSlot {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+}
+
+.stepLine {
+  width: 20px;
+  height: 1.5px;
+  margin-inline: 8px;
+  background: rgba(23, 47, 43, 0.28);
+  flex: none;
+}
+
+.stepLink,
+.stepFace {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.stepLink {
+  min-width: 44px;
+}
+
+.stepMark {
+  box-sizing: border-box;
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  flex: none;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.stepLabel {
+  font-size: 14px;
+  line-height: 1;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.stepNav [data-step="done"] .stepMark {
+  background: #172f2b;
+}
+
+.stepNav [data-step="done"] .stepLabel {
+  color: #172f2b;
+  font-weight: 600;
+}
+
+.stepNav [data-step="current"] .stepMark {
+  background: #e07a6a;
+  color: #fff;
+}
+
+.stepNav [data-step="current"] .stepLabel {
+  color: #172f2b;
+  font-weight: 700;
+}
+
+.stepNav [data-step="next"] .stepMark {
+  border: 1.5px solid rgba(23, 47, 43, 0.35);
+  background: transparent;
+  color: rgba(23, 47, 43, 0.45);
+}
+
+.stepNav [data-step="next"] .stepLabel {
+  color: rgba(23, 47, 43, 0.45);
+  font-weight: 500;
+}
+
+.stepLink:hover .stepLabel,
+.stepLink:focus-visible .stepLabel {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+@media (max-width: 359px) {
+  .stepLine {
+    display: none;
+  }
+
+  .stepNav {
+    gap: 6px;
+  }
+
+  .stepLabel {
+    font-size: 12px;
+  }
+
+  .stepLink,
+  .stepFace {
+    gap: 4px;
+  }
+}
+
+.feature .scene,
+.extra .scene {
+  box-shadow: none;
+  background: #f7f4ef;
+}
+
+.feature .scene {
+  height: 200px;
+  border-radius: 0;
+}
+
+.extra .scene {
+  border-radius: 14px;
+}
+
+.giftPicker {
+  padding: 0 16px 16px;
+}
+
+.flowThanks .flowHead {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.flowThanks .successMark {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 12px;
+  border-radius: 999px;
+  background: #e07a6a;
+  color: #fff;
+}
+
+.thanksThumb,
+.payThumb {
+  display: block;
+  width: 72px;
+  height: 72px;
+  flex: none;
+  object-fit: contain;
+  object-position: center;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.thanksReceipt .thanksThumb {
+  margin-inline: auto;
+}
+
+.thanksReceipt .giftFallbackCompact,
+.payHero .giftFallbackCompact {
+  width: 72px;
+  height: 72px;
+}
+
+.payHost,
+.payProgress {
+  margin: 4px 0 0;
+  color: #172f2b;
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.payQuote {
+  margin: 8px 0 0;
+  padding: 8px 12px;
+  border-inline-start: 3px solid rgba(23, 47, 43, 0.16);
+  color: rgba(23, 47, 43, 0.72);
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+.payProgress {
+  font-weight: 500;
 }
