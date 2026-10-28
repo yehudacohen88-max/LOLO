@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { guestEventPath } from "@/lib/events";
 import { fromRouteParam } from "@/lib/events/slug";
 import {
+  formatGiftAmount,
   getContributionsTotal,
   isValidEmail,
   isValidPhone,
@@ -21,7 +22,8 @@ export default function GuestDetailsForm() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
-  const [wantReceipt, setWantReceipt] = useState(true);
+  const [wantReceipt, setWantReceipt] = useState(false);
+  const [amountLine, setAmountLine] = useState("");
   const [errors, setErrors] = useState<{
     name?: string;
     phone?: string;
@@ -68,10 +70,18 @@ export default function GuestDetailsForm() {
         return;
       }
 
+      const saved = Boolean(name || phone || details.email);
       setName(name);
       setPhone(phone);
       setEmail(details.email);
-      setWantReceipt(details.wantReceipt);
+      setWantReceipt(saved ? details.wantReceipt : false);
+      const chosen = loadContributions(slug);
+      const total = getContributionsTotal(chosen);
+      setAmountLine(
+        chosen.length > 0
+          ? `${chosen.map((item) => item.giftName).join(" · ")} · ${formatGiftAmount(total)}`
+          : "",
+      );
       setReady(true);
     })();
 
@@ -133,34 +143,55 @@ export default function GuestDetailsForm() {
         }
       }}
     >
+      {amountLine ? <p className={styles.quietLine}>{amountLine}</p> : null}
       <label className={styles.stack}>
         <span>שם מלא</span>
         <input
           value={name}
           onChange={(event) => setName(event.target.value)}
           autoComplete="name"
+          aria-invalid={errors.name ? true : undefined}
+          aria-describedby={errors.name ? "guest-name-error" : undefined}
         />
-        {errors.name ? <span className={styles.fieldError}>{errors.name}</span> : null}
+        {errors.name ? (
+          <span id="guest-name-error" className={styles.fieldError}>
+            {errors.name}
+          </span>
+        ) : null}
       </label>
       <label className={styles.stack}>
         <span>מספר טלפון</span>
         <input
           type="tel"
+          inputMode="tel"
           value={phone}
           onChange={(event) => setPhone(event.target.value)}
           autoComplete="tel"
+          aria-invalid={errors.phone ? true : undefined}
+          aria-describedby={errors.phone ? "guest-phone-error" : undefined}
         />
-        {errors.phone ? <span className={styles.fieldError}>{errors.phone}</span> : null}
+        {errors.phone ? (
+          <span id="guest-phone-error" className={styles.fieldError}>
+            {errors.phone}
+          </span>
+        ) : null}
       </label>
       <label className={styles.stack}>
         <span>אימייל</span>
         <input
           type="email"
+          inputMode="email"
           value={email}
           onChange={(event) => setEmail(event.target.value)}
           autoComplete="email"
+          aria-invalid={errors.email ? true : undefined}
+          aria-describedby={errors.email ? "guest-email-error" : undefined}
         />
-        {errors.email ? <span className={styles.fieldError}>{errors.email}</span> : null}
+        {errors.email ? (
+          <span id="guest-email-error" className={styles.fieldError}>
+            {errors.email}
+          </span>
+        ) : null}
       </label>
       <label className={styles.check}>
         <input

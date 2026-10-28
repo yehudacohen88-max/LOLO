@@ -111,7 +111,7 @@ test("guest page keeps contribution flow and hides an empty invitation", async (
   await page.getByRole("button", { name: /350/ }).click();
   await join.click();
   await expect(page).toHaveURL(/\/e\/flagship-fixture\/greeting/);
-  await expect(page.getByRole("heading", { name: "משאירים ברכה" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "מוסיפים ברכה אישית" })).toBeVisible();
   await expect(page.locator("[data-continuity-title]")).toHaveText("חוגגים 40 לדנה");
   await expect(page.locator("[data-continuity-letter]")).toHaveText("ח");
 

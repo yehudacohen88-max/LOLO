@@ -330,6 +330,29 @@ export default function GuestGreetingForm() {
       </button>
       <button
         type="button"
+        className={styles.ghost}
+        onClick={() => {
+          setText("");
+          saveGuestGreeting(slug, {
+            text: "",
+            imageDataUrl,
+            audioDataUrl,
+            audioName,
+            videoDataUrl,
+            videoName,
+          });
+          if (total <= 0) {
+            setContinueError("עדיין לא נבחרה מתנה.");
+            return;
+          }
+          setContinueError("");
+          router.push(guestEventPath(slug, "details"));
+        }}
+      >
+        בלי ברכה
+      </button>
+      <button
+        type="button"
         onClick={() => {
           persistGreeting();
           router.push(guestEventPath(slug));

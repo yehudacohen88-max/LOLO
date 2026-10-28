@@ -275,7 +275,7 @@ export default function ThankYouView() {
         <svg className={styles.thanksBow} viewBox="0 0 72 28" aria-hidden="true">
           <path d="M36 14 C26 2 6 2 8 11 C10 18 26 18 36 14Z" fill="#E87563" />
           <path d="M36 14 C46 2 66 2 64 11 C62 18 46 18 36 14Z" fill="#E87563" />
-          <circle cx="36" cy="14" r="4.2" fill="#C7A36A" />
+          <circle cx="36" cy="14" r="4.2" fill="#E07A6A" />
         </svg>
         <div className={styles.thanksCelebrant}>
           {coverImage ? (
@@ -325,9 +325,12 @@ export default function ThankYouView() {
                 <span>{formatGiftAmount(chargedAmount)}</span>
               </p>
               {order?.paymentReference ? (
-                <p className={styles.quietLine} dir="ltr">
-                  {order.paymentReference}
-                </p>
+                <details>
+                  <summary className={styles.quietLine}>פרטי הדגמה</summary>
+                  <p className={styles.quietLine} dir="ltr">
+                    {order.paymentReference}
+                  </p>
+                </details>
               ) : null}
             </>
           ) : null}
@@ -344,14 +347,7 @@ export default function ThankYouView() {
         <div className={styles.shareRow}>
           <button
             type="button"
-            className={failed ? styles.ghost : styles.cta}
-            onClick={() => void shareEvent()}
-          >
-            שיתוף האירוע
-          </button>
-          <button
-            type="button"
-            className={styles.ghost}
+            className={styles.cta}
             onClick={() => {
               window.open(
                 `https://wa.me/?text=${encodeURIComponent(`${shareText} ${eventUrl()}`)}`,
@@ -360,7 +356,14 @@ export default function ThankYouView() {
               );
             }}
           >
-            וואטסאפ
+            שיתוף בוואטסאפ
+          </button>
+          <button
+            type="button"
+            className={styles.ghost}
+            onClick={() => void shareEvent()}
+          >
+            שיתוף האירוע
           </button>
           <button type="button" className={styles.ghost} onClick={() => void copyLink()}>
             העתקת קישור

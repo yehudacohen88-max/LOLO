@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 export default function ThankYouPage() {
   return (
-    <FlowPage step="thanks" title="תודה" lede="ההשתתפות שלכם כבר חלק מהמתנה.">
+    <FlowPage step="thanks" title="איזה כיף, השתתפת במתנה!" lede="ההשתתפות שלכם כבר חלק מהמתנה.">
       <ThankYouView />
     </FlowPage>
   );

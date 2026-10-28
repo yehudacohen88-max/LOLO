@@ -1,0 +1,14 @@
+/* Guest-only visual system. Host screens do not compose this file. */
+.theme {
+  --gx-ink: #172f2b;
+  --gx-muted: #3e524c;
+  --gx-cream: #f7f4ef;
+  --gx-coral: #e07a6a;
+  --gx-line: rgba(23, 47, 43, 0.12);
+  --gx-radius: 20px;
+  --gx-radius-sm: 14px;
+  --gx-shadow: 0 12px 28px -22px rgba(23, 47, 43, 0.55);
+  --gx-max: 1080px;
+  --gx-form: 640px;
+  --gx-space: 16px;
+}

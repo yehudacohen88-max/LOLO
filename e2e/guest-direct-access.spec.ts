@@ -175,9 +175,9 @@ test("an old slug still opens and a guest can finish demo payment without a beta
   await page.getByLabel("מספר טלפון").fill("0501234567");
   await page.getByLabel("אימייל").fill("yael@example.com");
   await page.getByRole("button", { name: "מעבר לתשלום" }).click();
-  await expect(page.getByRole("heading", { name: "תשלום", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "כמעט סיימנו", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "אישור תשלום הדגמה" }).click();
-  await expect(page.getByRole("heading", { name: "תודה" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "איזה כיף, השתתפת במתנה!" })).toBeVisible();
   await expect(page).toHaveURL(/\/thank-you/);
 });
 

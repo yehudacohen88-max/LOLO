@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { Fragment, useEffect, useMemo, useState } from "react";
-import { BETA_CLARITY } from "@/app/design/beta-notice";
 import { formatEventTime } from "@/lib/event-draft";
 import { getEventBySlug, guestEventPath, type StoredEvent } from "@/lib/events";
 import {
@@ -818,7 +817,6 @@ export default function GuestEventView() {
               <LockIcon />
               תשלום הדגמה — לא מתבצע חיוב אמיתי
             </p>
-            <p className={styles.quiet}>{BETA_CLARITY}</p>
           </div>
         </aside>
 

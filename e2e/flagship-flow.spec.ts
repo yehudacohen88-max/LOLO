@@ -182,7 +182,7 @@ for (const viewport of [
     await expect(page.getByText("הזמנה", { exact: true })).toHaveCount(0);
     await page.getByRole("button", { name: /350/ }).click();
     await page.getByRole("button", { name: "מצטרפים למתנה" }).click();
-    await expect(page.getByRole("heading", { name: "משאירים ברכה" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "מוסיפים ברכה אישית" })).toBeVisible();
     await expect(page.locator("[data-continuity-title]")).toHaveText("חוגגים 40 לדנה");
     await expect(page.getByText("האירוע", { exact: true })).toHaveCount(0);
     await page.getByRole("button", { name: "אוהבים ושמחים לחגוג איתך." }).click();
@@ -192,7 +192,7 @@ for (const viewport of [
     });
     await page.getByRole("button", { name: /ממשיכים/ }).click();
 
-    await expect(page.getByRole("heading", { name: "עוד רגע מסיימים" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "למי נגיד תודה?" })).toBeVisible();
     await page.getByLabel("שם מלא").fill("יעל כהן");
     await page.getByLabel("מספר טלפון").fill("0501234567");
     await page.getByLabel("אימייל").fill("yael@example.com");
@@ -202,7 +202,7 @@ for (const viewport of [
     });
     await page.getByRole("button", { name: "מעבר לתשלום" }).click();
 
-    await expect(page.getByRole("heading", { name: "תשלום", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "כמעט סיימנו", exact: true })).toBeVisible();
     await expect(page.getByText("תשלום הדגמה בלבד — לא מתבצע חיוב אמיתי")).toBeVisible();
     await expect(page.getByText(BETA_CLARITY)).toHaveCount(1);
     if (viewport.name === "1440") {
@@ -219,7 +219,7 @@ for (const viewport of [
     });
     await pay.click();
 
-    await expect(page.getByRole("heading", { name: "תודה" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "איזה כיף, השתתפת במתנה!" })).toBeVisible();
     await expect(page.locator("[data-reveal-card]")).toBeVisible();
     await expect(page.getByText(BETA_CLARITY)).toHaveCount(1);
     await expect(page.getByText("גרסת בטא — תשלומים מדומים בלבד")).toHaveCount(0);
@@ -263,7 +263,7 @@ for (const viewport of [
       await expect(page.locator("[data-pay-hero] [data-gift-photo]")).toHaveCount(0);
     }
     await page.getByRole("button", { name: "אישור תשלום הדגמה" }).click();
-    await expect(page.getByRole("heading", { name: "תודה" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "איזה כיף, השתתפת במתנה!" })).toBeVisible();
     await expectLetterClearOfBow(page);
     await expect(page.getByText(BETA_CLARITY)).toHaveCount(1);
     await expect(page.locator("[data-reveal] [data-parcel]")).toBeVisible();
@@ -336,7 +336,7 @@ for (const viewport of [
     await page.getByLabel("מספר טלפון").fill("0501234567");
     await page.getByLabel("אימייל").fill("yael@example.com");
     await page.getByRole("button", { name: "מעבר לתשלום" }).click();
-    await expect(page.getByRole("heading", { name: "תשלום", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "כמעט סיימנו", exact: true })).toBeVisible();
     await expect(page.getByText("תשלום הדגמה בלבד — לא מתבצע חיוב אמיתי")).toBeVisible();
     await expect(page.getByText(BETA_CLARITY)).toHaveCount(1);
     await page.screenshot({

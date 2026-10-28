@@ -3,9 +3,10 @@
 /* Host-uploaded image URLs are arbitrary, so next/image remote patterns cannot cover them. */
 /* eslint-disable @next/next/no-img-element */
 
+import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useSyncExternalStore, type ReactNode } from "react";
-import { getEventBySlug } from "@/lib/events";
+import { getEventBySlug, guestEventPath } from "@/lib/events";
 import {
   DEMO_EVENT_SLUG,
   DEMO_IMAGE_CREDIT,
@@ -175,11 +176,19 @@ export function FlowPage({
             </div>
           </div>
           <ol className={styles.steps} aria-label="שלבי ההשתתפות">
-            {steps.map((item) => (
-              <li key={item.id} aria-current={item.id === step ? "step" : undefined}>
-                {item.label}
-              </li>
-            ))}
+            {steps.map((item, index) => {
+              const done = step === "thanks" || index < current;
+              const href = slug
+                ? item.id === "gift"
+                  ? guestEventPath(slug)
+                  : guestEventPath(slug, item.id)
+                : "";
+              return (
+                <li key={item.id} aria-current={item.id === step ? "step" : undefined}>
+                  {done && href ? <Link href={href}>{item.label}</Link> : <span>{item.label}</span>}
+                </li>
+              );
+            })}
           </ol>
           <div className={styles.stepTrack} aria-hidden="true">
             <span className={styles.stepFill} style={{ ["--fs-step" as string]: String(fill) }} />

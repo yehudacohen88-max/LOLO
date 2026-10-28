@@ -6,11 +6,22 @@ const portraitPath = path.join(__dirname, "fixtures/flagship/portrait.jpg");
 const giftPath = path.join(__dirname, "fixtures/flagship/gift.png");
 
 const widths = [
+  { name: "320", width: 320, height: 800 },
   { name: "360", width: 360, height: 800 },
   { name: "390", width: 390, height: 844 },
+  { name: "430", width: 430, height: 900 },
   { name: "768", width: 768, height: 1024 },
+  { name: "1024", width: 1024, height: 900 },
   { name: "1440", width: 1440, height: 900 },
 ] as const;
+
+const reviewShots: Record<string, string> = {
+  event: "01-gift",
+  greeting: "02-greeting",
+  details: "03-details",
+  payment: "04-payment",
+  thanks: "05-thanks",
+};
 
 function eventPayload() {
   return {
@@ -132,10 +143,10 @@ async function expectNoOverflowAndLargeTargets(page: Page) {
 
 const screens = [
   ["event", "/e/flagship-fixture", "מצטרפים למתנה"],
-  ["greeting", "/e/flagship-fixture/greeting", "משאירים ברכה"],
-  ["details", "/e/flagship-fixture/details", "עוד רגע מסיימים"],
-  ["payment", "/e/flagship-fixture/payment", "תשלום"],
-  ["thanks", "/e/flagship-fixture/thank-you", "תודה"],
+  ["greeting", "/e/flagship-fixture/greeting", "מוסיפים ברכה אישית"],
+  ["details", "/e/flagship-fixture/details", "למי נגיד תודה?"],
+  ["payment", "/e/flagship-fixture/payment", "כמעט סיימנו"],
+  ["thanks", "/e/flagship-fixture/thank-you", "איזה כיף, השתתפת במתנה!"],
   ["missing", "/e/missing-demo-event", "האירוע לא נמצא"],
 ] as const;
 
@@ -152,7 +163,7 @@ for (const viewport of widths) {
           : page.getByRole("heading", { name: marker, exact: true });
       await expect(markerLocator).toBeVisible();
       if (name === "greeting" || name === "details") {
-        await expect(page.getByText("תשלום הדגמה — לא מתבצע חיוב אמיתי")).toBeVisible();
+        await expect(page.getByText("תשלום הדגמה — לא מתבצע חיוב אמיתי")).toHaveCount(0);
         await expect(page.getByText("תשלום הדגמה בלבד — לא מתבצע חיוב אמיתי")).toHaveCount(0);
       }
       if (name === "payment" || name === "thanks") {
@@ -164,6 +175,13 @@ for (const viewport of widths) {
           path: path.join(artifactDir, `guest-live-${name}-${viewport.name}.png`),
           fullPage: true,
         });
+        const shot = reviewShots[name];
+        if (shot) {
+          await page.screenshot({
+            path: path.join(artifactDir, `${shot}-${viewport.name}.png`),
+            fullPage: true,
+          });
+        }
       }
       if (
         (name === "greeting" || name === "details") &&
@@ -276,4 +294,25 @@ test("order post keeps greeting text and demo payment still confirms", async ({ 
   await expect(page.locator("[data-order-status]")).toHaveText("שולם בהדגמה");
   expect(started).toBe(true);
   expect(confirmed).toBe(true);
+});
+
+test("a long event title and gift name stay inside the frame", async ({ page }) => {
+  test.setTimeout(60_000);
+  await installReadRoutes(page);
+  await page.route("**/api/events/flagship-fixture", async (route) => {
+    const body = eventPayload();
+    body.event.title = "חוגגים יום הולדת ארוך במיוחד לדנה וכל החברים שמגיעים מהצפון";
+    body.event.gifts[0].title = "מכונת אספרסו מקצועית לבית עם מקציף חלב ומטחנת פולים מובנית";
+    body.event.gifts[0].description =
+      "תיאור ארוך שנשאר בתוך הכרטיס ולא דוחף את המסך לצדדים גם כשהמתנה מתוארת בכמה משפטים מלאים.";
+    await route.fulfill({ json: body });
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/e/flagship-fixture");
+  await expect(page.getByRole("heading", { name: /חוגגים יום הולדת ארוך/ })).toBeVisible();
+  await expectNoOverflowAndLargeTargets(page);
+  await page.screenshot({
+    path: path.join(artifactDir, "01-gift-long-390.png"),
+    fullPage: true,
+  });
 });
