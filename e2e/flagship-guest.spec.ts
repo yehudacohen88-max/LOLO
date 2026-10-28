@@ -1,7 +1,7 @@
 import { mkdirSync } from "node:fs";
 import path from "node:path";
 import { expect, test, type Page } from "@playwright/test";
-import { expectLetterClearOfBow } from "./empty-cover";
+import { expectGiftFallback } from "./empty-cover";
 
 const artifactDir = process.env.FLAGSHIP_ARTIFACT_DIR || "/opt/cursor/artifacts";
 // Mockup photos for this test only. They are not the guest page's default images.
@@ -111,9 +111,10 @@ test("guest page keeps contribution flow and hides an empty invitation", async (
   await page.getByRole("button", { name: /350/ }).click();
   await join.click();
   await expect(page).toHaveURL(/\/e\/flagship-fixture\/greeting/);
-  await expect(page.getByRole("heading", { name: "משאירים ברכה" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "מוסיפים ברכה אישית" })).toBeVisible();
   await expect(page.locator("[data-continuity-title]")).toHaveText("חוגגים 40 לדנה");
-  await expect(page.locator("[data-continuity-letter]")).toHaveText("ח");
+  await expect(page.locator("[data-continuity-letter]")).toHaveCount(0);
+  await expect(page.locator("[data-gift-fallback]:visible").first()).toBeVisible();
 
   await page.unroute("**/api/events/flagship-fixture");
   await page.route("**/api/events/flagship-fixture", async (route) => {
@@ -201,7 +202,7 @@ for (const viewport of widths) {
         await expect(page.locator("img[alt='תמונה לאירוע חוגגים 40 לדנה']")).toBeVisible();
       } else {
         await expect(page.locator("img[alt='תמונה לאירוע חוגגים 40 לדנה']")).toHaveCount(0);
-        await expectLetterClearOfBow(page);
+        await expectGiftFallback(page);
       }
       await settle(page);
       if (withImages) {
@@ -209,12 +210,18 @@ for (const viewport of widths) {
           const box = element.getBoundingClientRect();
           return {
             ratio: box.width / box.height,
+            height: box.height,
             position: getComputedStyle(element).objectPosition,
           };
         });
-        expect(crop.ratio).toBeGreaterThan(1.5);
-        expect(crop.ratio).toBeLessThan(1.7);
-        expect(crop.position).toMatch(/28%/);
+        if (viewport.name === "1440") {
+          expect(crop.ratio).toBeGreaterThan(2);
+          expect(crop.height).toBeLessThanOrEqual(380);
+        } else {
+          expect(crop.ratio).toBeGreaterThan(1.5);
+          expect(crop.ratio).toBeLessThan(1.7);
+        }
+        expect(crop.position).toMatch(/50%/);
       }
       if (viewport.name === "390" || viewport.name === "320") {
         const gift = await page.evaluate(() => {

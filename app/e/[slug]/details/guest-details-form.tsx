@@ -80,6 +80,18 @@ export default function GuestDetailsForm() {
     };
   }, [slug]);
 
+  useEffect(() => {
+    if (!ready || !slug) {
+      return;
+    }
+    saveGuestDetails(slug, {
+      name,
+      phone,
+      email,
+      wantReceipt,
+    });
+  }, [ready, slug, name, phone, email, wantReceipt]);
+
   if (!ready) {
     return <p className={styles.quietLine}>טוענים את הפרטים...</p>;
   }
@@ -139,28 +151,48 @@ export default function GuestDetailsForm() {
           value={name}
           onChange={(event) => setName(event.target.value)}
           autoComplete="name"
+          aria-invalid={errors.name ? true : undefined}
+          aria-describedby={errors.name ? "guest-name-error" : undefined}
         />
-        {errors.name ? <span className={styles.fieldError}>{errors.name}</span> : null}
+        {errors.name ? (
+          <span id="guest-name-error" className={styles.fieldError}>
+            {errors.name}
+          </span>
+        ) : null}
       </label>
       <label className={styles.stack}>
         <span>מספר טלפון</span>
         <input
           type="tel"
+          inputMode="tel"
           value={phone}
           onChange={(event) => setPhone(event.target.value)}
           autoComplete="tel"
+          aria-invalid={errors.phone ? true : undefined}
+          aria-describedby={errors.phone ? "guest-phone-error" : undefined}
         />
-        {errors.phone ? <span className={styles.fieldError}>{errors.phone}</span> : null}
+        {errors.phone ? (
+          <span id="guest-phone-error" className={styles.fieldError}>
+            {errors.phone}
+          </span>
+        ) : null}
       </label>
       <label className={styles.stack}>
         <span>אימייל</span>
         <input
           type="email"
+          inputMode="email"
           value={email}
           onChange={(event) => setEmail(event.target.value)}
           autoComplete="email"
+          aria-invalid={errors.email ? true : undefined}
+          aria-describedby={errors.email ? "guest-email-error" : undefined}
         />
-        {errors.email ? <span className={styles.fieldError}>{errors.email}</span> : null}
+        {errors.email ? (
+          <span id="guest-email-error" className={styles.fieldError}>
+            {errors.email}
+          </span>
+        ) : null}
       </label>
       <label className={styles.check}>
         <input

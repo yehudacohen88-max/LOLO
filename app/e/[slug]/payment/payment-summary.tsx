@@ -3,14 +3,12 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { getEventBySlug, guestEventPath } from "@/lib/events";
+import { guestEventPath } from "@/lib/events";
 import { fromRouteParam } from "@/lib/events/slug";
 import {
   formatGiftAmount,
   getContributionsTotal,
   loadContributions,
-  loadGuestDetails,
-  loadGuestGreeting,
   type GuestContribution,
 } from "@/lib/guest-draft";
 import { savePendingGuestOrder } from "@/lib/orders/client";
@@ -20,7 +18,6 @@ import {
   startGuestCheckout,
 } from "@/lib/payments/guest-client";
 import type { CheckoutQuote, PaymentOutcome } from "@/lib/payments/types";
-import { BETA_CLARITY } from "@/app/design/beta-notice";
 import styles from "../flagship.module.css";
 
 function delay(ms: number) {
@@ -32,9 +29,6 @@ function delay(ms: number) {
 export default function GuestPaymentSummary() {
   const router = useRouter();
   const slug = fromRouteParam(useParams<{ slug: string }>().slug);
-  const [eventName, setEventName] = useState("");
-  const [guestName, setGuestName] = useState("");
-  const [greeting, setGreeting] = useState("");
   const [contributions, setContributions] = useState<GuestContribution[]>([]);
   const [ready, setReady] = useState(false);
   const [quote, setQuote] = useState<CheckoutQuote | null>(null);
@@ -50,15 +44,11 @@ export default function GuestPaymentSummary() {
         return;
       }
 
-      const stored = await getEventBySlug(slug);
       const loaded = loadContributions(slug);
       if (cancelled) {
         return;
       }
 
-      setEventName(stored?.title ?? "");
-      setGuestName(loadGuestDetails(slug).name);
-      setGreeting(loadGuestGreeting(slug).text);
       setContributions(loaded);
       setReady(true);
 
@@ -95,7 +85,6 @@ export default function GuestPaymentSummary() {
   }
 
   const localTotal = getContributionsTotal(contributions);
-  const contributionAmount = quote?.contributionAmount ?? localTotal;
   const feeAmount = quote?.feeAmount ?? 0;
   const chargedAmount = quote?.chargedAmount ?? localTotal;
   const showDemo = quote ? quote.isDemo : true;
@@ -173,26 +162,14 @@ export default function GuestPaymentSummary() {
       <section className={styles.card}>
         <h2>סיכום התשלום</h2>
         {showDemo && !unavailable ? (
-          <>
-            <p className={styles.notice}>תשלום הדגמה בלבד — לא מתבצע חיוב אמיתי</p>
-            <p className={styles.quietLine}>{BETA_CLARITY}</p>
-          </>
+          <p className={styles.notice}>תשלום הדגמה בלבד — לא מתבצע חיוב אמיתי</p>
         ) : null}
-        {eventName ? <p className={styles.lineRow}>{eventName}</p> : null}
-        {guestName ? <p className={styles.quietLine}>{guestName}</p> : null}
-        {greeting ? <p className={styles.quietLine}>״{greeting}״</p> : null}
-
         {contributions.map((item) => (
           <p key={item.giftId} className={styles.lineRow}>
             <span>{item.giftName}</span>
             <b>{formatGiftAmount(item.amount)}</b>
           </p>
         ))}
-
-        <p className={styles.lineRow}>
-          <span>השתתפות במתנה</span>
-          <b>{formatGiftAmount(contributionAmount)}</b>
-        </p>
         <p className={styles.lineRow}>
           <span>{feeAmount > 0 ? "עמלת שירות" : "ללא עמלת שירות"}</span>
           {feeAmount > 0 ? <b>{formatGiftAmount(feeAmount)}</b> : null}

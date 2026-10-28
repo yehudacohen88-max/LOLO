@@ -3,9 +3,11 @@
 /* Host-uploaded image URLs are arbitrary, so next/image remote patterns cannot cover them. */
 /* eslint-disable @next/next/no-img-element */
 
+import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useSyncExternalStore, type ReactNode } from "react";
-import { getEventBySlug } from "@/lib/events";
+import { getEventBySlug, guestEventPath } from "@/lib/events";
+import { formatGiftAmount, getContributionsTotal, loadContributions } from "@/lib/guest-draft";
 import {
   DEMO_EVENT_SLUG,
   DEMO_IMAGE_CREDIT,
@@ -20,7 +22,8 @@ import {
   writeContinuity,
   type ContinuityFunding,
 } from "./continuity";
-import { GiftReveal, Wordmark } from "./flagship-ui";
+import { displayTitle } from "./display-title";
+import { GiftFallback, Wordmark } from "./flagship-ui";
 import styles from "./flagship.module.css";
 
 const steps = [
@@ -31,6 +34,51 @@ const steps = [
 ] as const;
 
 type StepId = (typeof steps)[number]["id"] | "thanks";
+type StepState = "done" | "current" | "next";
+
+type ChoiceItem = { name: string; amount: number };
+
+function readChoice(slug: string) {
+  const chosen = loadContributions(slug);
+  return {
+    items: chosen
+      .filter((item) => item.amount > 0)
+      .map((item) => ({ name: item.giftName, amount: item.amount })),
+    total: getContributionsTotal(chosen),
+  };
+}
+
+function MoneyLine({ text, className }: { text: string; className: string }) {
+  const parts = text.split(/(\u2066[^\u2069]*\u2069)/g).filter(Boolean);
+  return (
+    <p className={className}>
+      {parts.map((part, index) =>
+        part.startsWith("\u2066") ? (
+          <span key={index} className={styles.moneyKeep}>
+            {part.replace(/ ₪/g, "\u00A0₪")}
+          </span>
+        ) : (
+          <span key={index}>{part}</span>
+        ),
+      )}
+    </p>
+  );
+}
+
+function StepCheck({ size }: { size: number }) {
+  return (
+    <svg viewBox="0 0 16 16" width={size} height={size} aria-hidden="true">
+      <path
+        d="M3.2 8.2 6.4 11.2 12.8 4.6"
+        fill="none"
+        stroke="white"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
 
 export function FlowPage({
   step,
@@ -111,8 +159,66 @@ export function FlowPage({
   }, [slug]);
 
   const current = step === "thanks" ? steps.length : steps.findIndex((item) => item.id === step);
-  const fill = step === "thanks" ? 1 : (current + 1) / steps.length;
-  const letter = mark?.title.trim().charAt(0) ?? "";
+  const choice = useSyncExternalStore(
+    () => () => {},
+    () => (slug && step !== "thanks" ? JSON.stringify(readChoice(slug)) : ""),
+    () => "",
+  );
+  const parsed = choice ? (JSON.parse(choice) as { items: ChoiceItem[]; total: number }) : { items: [], total: 0 };
+
+  const compactSrc = mark?.giftImage || mark?.cover || "";
+  function renderThumb() {
+    if (mark?.giftImage) {
+      return (
+        <img className={styles.choiceThumb} src={mark.giftImage} alt="" width={72} height={72} data-gift-photo="" />
+      );
+    }
+    if (compactSrc) {
+      return <img className={styles.choiceThumb} src={compactSrc} alt="" width={72} height={72} />;
+    }
+    return <GiftFallback compact />;
+  }
+  function renderChoice(amounts: boolean, labelled: boolean) {
+    const rows = parsed.items.length > 0 ? parsed.items : mark?.giftName ? [{ name: mark.giftName, amount: 0 }] : [];
+    return (
+      <div className={styles.choiceCard}>
+        {mark ? (
+          <p className={styles.choiceEvent} data-continuity-title={labelled ? "" : undefined}>
+            {displayTitle(mark.title)}
+          </p>
+        ) : (
+          <div className={styles.bones} aria-label="טוענים את פרטי האירוע">
+            <span />
+            <span />
+          </div>
+        )}
+        {rows.map((item, index) => (
+          <div key={`${item.name}-${item.amount}`} className={styles.choiceGift}>
+            <div className={styles.choiceGiftMain}>
+              {renderThumb()}
+              <div className={styles.choiceGiftCopy}>
+                <p className={styles.choiceName} data-reveal-card="">
+                  {item.name}
+                </p>
+                {index === 0 && mark?.progress ? (
+                  <MoneyLine text={mark.progress} className={styles.choiceProgress} />
+                ) : null}
+              </div>
+            </div>
+            {amounts && item.amount > 0 ? (
+              <b className={styles.choiceAmount}>{formatGiftAmount(item.amount)}</b>
+            ) : null}
+          </div>
+        ))}
+        {amounts && parsed.total > 0 ? (
+          <p className={styles.choiceTotal}>
+            <span>סה״כ</span>
+            <b>{formatGiftAmount(parsed.total)}</b>
+          </p>
+        ) : null}
+      </div>
+    );
+  }
 
   return (
     <>
@@ -135,74 +241,67 @@ export function FlowPage({
           .filter(Boolean)
           .join(" ")}
       >
-        <aside className={styles.flowAside}>
-          <div className={styles.continuity} aria-busy={mark ? undefined : true}>
-            {mark?.cover ? (
-              <img
-                className={styles.thumb}
-                src={mark.cover}
-                alt=""
-                width={224}
-                height={280}
-              />
-            ) : (
-              <span
-                className={styles.thumbFallback}
-                data-continuity-letter={mark ? "" : undefined}
-                aria-hidden="true"
-              >
-                {letter}
-              </span>
-            )}
-            {mark?.giftImage ? (
-              <img className={styles.thumbGift} src={mark.giftImage} alt="" width={128} height={128} />
-            ) : (
-              <span className={styles.thumbGift} aria-hidden="true" />
-            )}
-            <div className={styles.continuityCopy}>
-              {mark ? (
-                <p className={styles.continuityTitle} data-continuity-title="">
-                  {mark.title}
-                </p>
-              ) : (
-                <div className={styles.bones} aria-label="טוענים את פרטי האירוע">
-                  <span />
-                  <span />
-                </div>
-              )}
-              {mark?.giftName ? <p className={styles.continuityMeta}>{mark.giftName}</p> : null}
-              {mark?.progress ? <p className={styles.continuityMeta}>{mark.progress}</p> : null}
-            </div>
-          </div>
-          <ol className={styles.steps} aria-label="שלבי ההשתתפות">
-            {steps.map((item) => (
-              <li key={item.id} aria-current={item.id === step ? "step" : undefined}>
-                {item.label}
-              </li>
-            ))}
-          </ol>
-          <div className={styles.stepTrack} aria-hidden="true">
-            <span className={styles.stepFill} style={{ ["--fs-step" as string]: String(fill) }} />
-          </div>
-        </aside>
-        {step === "payment" && mark ? (
-          <div className={styles.payHero} data-pay-hero="">
-            <GiftReveal
-              label={mark.giftName || mark.title}
-              caption={mark.title}
-              image={mark.giftImage}
-              cover={mark.cover}
-              funding={mark.fundingLine || mark.progress}
-              untie={false}
-            />
-          </div>
-        ) : null}
+        <div className={styles.flowMain}>
         <div className={`${styles.flowHead} ${styles.flowIn}`}>
+          {step === "thanks" ? (
+            <p className={styles.successMark} aria-hidden="true">
+              <StepCheck size={22} />
+            </p>
+          ) : (
+            <ol className={styles.stepNav} aria-label="שלבי ההשתתפות">
+              {steps.map((item, index) => {
+                const state: StepState = item.id === step ? "current" : index < current ? "done" : "next";
+                const href = slug
+                  ? item.id === "gift"
+                    ? guestEventPath(slug)
+                    : guestEventPath(slug, item.id)
+                  : "";
+                const face = (
+                  <>
+                    <span className={styles.stepMark} aria-hidden="true">
+                      {state === "done" ? <StepCheck size={12} /> : index + 1}
+                    </span>
+                    <span className={styles.stepLabel}>{item.label}</span>
+                  </>
+                );
+                return (
+                  <li
+                    key={item.id}
+                    className={styles.stepSlot}
+                    data-step={state}
+                    aria-current={state === "current" ? "step" : undefined}
+                    aria-label={`שלב ${index + 1} מתוך 4`}
+                  >
+                    {index > 0 ? <span className={styles.stepLine} aria-hidden="true" /> : null}
+                    {state === "done" && href ? (
+                      <Link href={href} className={styles.stepLink}>
+                        {face}
+                      </Link>
+                    ) : (
+                      <span className={styles.stepFace}>{face}</span>
+                    )}
+                  </li>
+                );
+              })}
+            </ol>
+          )}
           <h1 className={styles.flowTitle}>{title}</h1>
           {lede ? <p className={styles.flowLede}>{lede}</p> : null}
           {notice ? <p className={styles.pay}>{notice}</p> : null}
         </div>
+        {step !== "thanks" && step !== "payment" && mark ? (
+          <div className={styles.compactRow}>{renderChoice(true, false)}</div>
+        ) : null}
         <div className={styles.flowBody}>{children}</div>
+        </div>
+        {step !== "thanks" ? (
+          <aside
+            className={styles.flowAside}
+            data-pay-hero={step === "payment" ? "" : undefined}
+          >
+            <div aria-busy={mark ? undefined : true}>{renderChoice(step !== "payment", true)}</div>
+          </aside>
+        ) : null}
       </div>
     </>
   );

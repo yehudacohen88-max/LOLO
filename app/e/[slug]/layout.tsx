@@ -15,5 +15,7 @@ const heebo = Heebo({
 });
 
 export default function GuestFlowLayout({ children }: { children: ReactNode }) {
-  return <div className={`${styles.root} ${heebo.variable}`}>{children}</div>;
+  return (
+    <div className={`${styles.root} ${heebo.variable} guest-shell`}>{children}</div>
+  );
 }

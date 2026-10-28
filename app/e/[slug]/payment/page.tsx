@@ -10,8 +10,7 @@ export default function GuestPaymentPage() {
   return (
     <FlowPage
       step="payment"
-      title="תשלום"
-      lede="גרסת בטא — תשלומים מדומים בלבד"
+      title="כמעט סיימנו"
     >
       <GuestPaymentSummary />
     </FlowPage>

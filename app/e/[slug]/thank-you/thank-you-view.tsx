@@ -12,15 +12,13 @@ import { fromRouteParam } from "@/lib/events/slug";
 import {
   formatGiftAmount,
   loadContributions,
-  loadGuestDetails,
   saveContributions,
   type GuestContribution,
 } from "@/lib/guest-draft";
 import { clearGuestOrderRef, loadGuestOrderRef } from "@/lib/orders/guest-ref";
 import { thankYouAfterLoad } from "@/lib/orders/thank-you-ref";
 import type { StoredOrder } from "@/lib/orders/types";
-import { BETA_CLARITY } from "@/app/design/beta-notice";
-import { EmptyCover, GiftReveal } from "../flagship-ui";
+import { GiftFallback } from "../flagship-ui";
 import { giftProgressCopy, participationLine } from "../progress-copy";
 import styles from "../flagship.module.css";
 
@@ -85,14 +83,11 @@ function statusText(read: OrderRead) {
 export default function ThankYouView() {
   const slug = fromRouteParam(useParams<{ slug: string }>().slug);
   const [eventName, setEventName] = useState("");
-  const [guestName, setGuestName] = useState("");
   const [heroGift, setHeroGift] = useState("");
   const [contributions, setContributions] = useState<GuestContribution[]>([]);
-  const [contributionAmount, setContributionAmount] = useState(0);
   const [feeAmount, setFeeAmount] = useState(0);
   const [chargedAmount, setChargedAmount] = useState(0);
   const [orderRead, setOrderRead] = useState<OrderRead>({ phase: "loading" });
-  const [coverImage, setCoverImage] = useState("");
   const [giftImage, setGiftImage] = useState("");
   const [together, setTogether] = useState("");
   const [shareNote, setShareNote] = useState("");
@@ -112,7 +107,6 @@ export default function ThankYouView() {
 
       const local = loadContributions(slug);
       setHeroGift(local[0]?.giftName ?? "");
-      setGuestName(loadGuestDetails(slug).name);
 
       const [stored, read] = await Promise.all([
         getEventBySlug(slug),
@@ -135,7 +129,6 @@ export default function ThankYouView() {
       const order = read.phase === "ready" ? read.order : null;
       if (order && decision.replaceDisplay) {
         setEventName(stored?.title ?? "");
-        setGuestName(order.guestName || loadGuestDetails(slug).name);
         setContributions(
           order.items.map((item) => ({
             giftId: item.giftId,
@@ -143,11 +136,11 @@ export default function ThankYouView() {
             amount: item.amount,
           })),
         );
-        const contribution = order.contributionAmount ?? order.totalAmount;
         const fee = order.feeAmount ?? 0;
-        setContributionAmount(contribution);
+        const contribution = order.contributionAmount ?? 0;
+        const charged = order.chargedAmount ?? order.totalAmount ?? contribution + fee;
         setFeeAmount(fee);
-        setChargedAmount(order.chargedAmount ?? contribution + fee);
+        setChargedAmount(Number.isFinite(charged) ? charged : 0);
         setOrderRead(read);
       } else if (read.phase === "error" && !decision.confirmedPaid) {
         setOrderRead({ phase: "error" });
@@ -172,7 +165,6 @@ export default function ThankYouView() {
         [...gifts].sort((a, b) => a.priority - b.priority)[0];
       if (!cancelled && stored) {
         setEventName((current) => current || stored.title);
-        setCoverImage(stored.coverImage || "");
         setGiftImage(pictured?.imageUrl || "");
         setHeroGift((current) => current || pictured?.title || "");
       }
@@ -243,7 +235,10 @@ export default function ThankYouView() {
   const showReceiptAmounts = orderRead.phase === "ready";
   const giftLabel = contributions[0]?.giftName || heroGift || eventName || "המתנה";
   const shareText = eventName ? `בואו לחגוג: ${eventName}` : "בואו לחגוג ב-LOLO";
-  const letter = (eventName || giftLabel).trim().charAt(0) || "";
+  const progressLine = together
+    .split(" · ")
+    .filter((part) => !part.includes("%"))
+    .join(" · ");
 
   async function shareEvent() {
     const payload = { title: eventName || "LOLO", text: shareText, url: eventUrl() };
@@ -270,67 +265,64 @@ export default function ThankYouView() {
   }
 
   return (
-    <div className={styles.thanksLayout}>
-      <div className={`${styles.thanksHero} ${styles.festive}`}>
-        <svg className={styles.thanksBow} viewBox="0 0 72 28" aria-hidden="true">
-          <path d="M36 14 C26 2 6 2 8 11 C10 18 26 18 36 14Z" fill="#E87563" />
-          <path d="M36 14 C46 2 66 2 64 11 C62 18 46 18 36 14Z" fill="#E87563" />
-          <circle cx="36" cy="14" r="4.2" fill="#C7A36A" />
-        </svg>
-        <div className={styles.thanksCelebrant}>
-          {coverImage ? (
-            <img src={coverImage} alt="" width={160} height={200} />
-          ) : (
-            <EmptyCover monogram={letter} compact />
-          )}
-          <div>
-            <p className={styles.thanksKicker}>חוגגים יחד</p>
-            <p className={styles.thanksName}>{eventName || "המתנה המשותפת"}</p>
-          </div>
-        </div>
-        <GiftReveal
-          label={giftLabel}
-          caption={guestName ? `מאת ${guestName}` : undefined}
-          image={giftImage}
-          cover=""
-          funding={together}
-          untie={Boolean(paid)}
-        />
-      </div>
+    <div className={styles.thanksLayout} data-reveal="">
       <div className={styles.thanksMain}>
         <div className={`${styles.card} ${styles.thanksReceipt}`}>
-          <p className={styles.notice}>תשלום הדגמה בלבד — לא מתבצע חיוב אמיתי</p>
-          <p className={styles.quietLine}>{BETA_CLARITY}</p>
-          <p className={styles.orderStatus} data-order-status="" role="status">
-            {statusText(orderRead)}
+          {giftImage ? (
+            <img
+              className={styles.thanksThumb}
+              src={giftImage}
+              alt=""
+              width={72}
+              height={72}
+              data-gift-photo=""
+            />
+          ) : (
+            <GiftFallback compact />
+          )}
+          <p className={styles.revealCard} data-reveal-card="">
+            {giftLabel}
           </p>
           {showReceiptAmounts ? (
-            <>
-              {contributions.map((item) => (
-                <p key={item.giftId} className={styles.lineRow}>
-                  <span>{item.giftName}</span>
-                  <b>{formatGiftAmount(item.amount)}</b>
-                </p>
-              ))}
-              <p className={styles.lineRow}>
-                <span>השתתפות במתנה</span>
-                <b>{formatGiftAmount(contributionAmount)}</b>
-              </p>
-              <p className={styles.lineRow}>
-                <span>{feeAmount > 0 ? "עמלת שירות" : "ללא עמלת שירות"}</span>
-                {feeAmount > 0 ? <b>{formatGiftAmount(feeAmount)}</b> : null}
-              </p>
-              <p className={styles.totalLine}>
-                <span>{paid ? "סכום בהדגמה" : "סה״כ"}</span>
-                <span>{formatGiftAmount(chargedAmount)}</span>
-              </p>
-              {order?.paymentReference ? (
-                <p className={styles.quietLine} dir="ltr">
-                  {order.paymentReference}
-                </p>
-              ) : null}
-            </>
+            <p className={styles.thanksAmount}>{formatGiftAmount(chargedAmount)}</p>
           ) : null}
+          {orderRead.phase === "loading" ? (
+            <div className={styles.skeleton} aria-busy="true">
+              <span className={styles.srOnly} data-order-status="" role="status">
+                {statusText(orderRead)}
+              </span>
+            </div>
+          ) : (
+            <p className={styles.orderStatus} data-order-status="" role="status">
+              {statusText(orderRead)}
+            </p>
+          )}
+          {eventName ? <p className={styles.quietLine}>{eventName}</p> : null}
+          <p className={styles.notice}>תשלום הדגמה בלבד — לא מתבצע חיוב אמיתי</p>
+          <details className={styles.demoDetails}>
+            <summary className={styles.quietLine}>פרטי הדגמה</summary>
+            {showReceiptAmounts ? (
+              <>
+                {contributions.map((item) => (
+                  <p key={item.giftId} className={styles.lineRow}>
+                    <span>{item.giftName}</span>
+                    <b>{formatGiftAmount(item.amount)}</b>
+                  </p>
+                ))}
+                <p className={styles.lineRow}>
+                  <span>{feeAmount > 0 ? "עמלת שירות" : "ללא עמלת שירות"}</span>
+                  {feeAmount > 0 ? <b>{formatGiftAmount(feeAmount)}</b> : null}
+                </p>
+              </>
+            ) : null}
+            {progressLine ? <p className={styles.quietLine}>{progressLine}</p> : null}
+            {order?.paymentReference ? (
+              <p className={styles.quietLine} dir="ltr">
+                {order.paymentReference}
+              </p>
+            ) : null}
+            <p className={styles.quietLine}>בשלב זה לא מונפק שובר אמיתי.</p>
+          </details>
           {paid ? (
             <p className={styles.quietLine}>ההשתתפות נוספה למתנה. תודה שחגגתם יחד.</p>
           ) : null}
@@ -344,14 +336,7 @@ export default function ThankYouView() {
         <div className={styles.shareRow}>
           <button
             type="button"
-            className={failed ? styles.ghost : styles.cta}
-            onClick={() => void shareEvent()}
-          >
-            שיתוף האירוע
-          </button>
-          <button
-            type="button"
-            className={styles.ghost}
+            className={styles.cta}
             onClick={() => {
               window.open(
                 `https://wa.me/?text=${encodeURIComponent(`${shareText} ${eventUrl()}`)}`,
@@ -360,26 +345,33 @@ export default function ThankYouView() {
               );
             }}
           >
-            וואטסאפ
+            שיתוף בוואטסאפ
+          </button>
+          <button
+            type="button"
+            className={styles.ghost}
+            onClick={() => void shareEvent()}
+          >
+            שיתוף בדרך אחרת
           </button>
           <button type="button" className={styles.ghost} onClick={() => void copyLink()}>
             העתקת קישור
           </button>
+          {failed ? (
+            <Link href={guestEventPath(slug, "payment")} className={styles.ghost}>
+              חזרה לתשלום
+            </Link>
+          ) : (
+            <Link href={guestEventPath(slug)} className={styles.ghost}>
+              חזרה לאירוע
+            </Link>
+          )}
         </div>
         {shareNote === "copied" ? (
           <p className={styles.quietLine} role="status">
             הקישור הועתק
           </p>
         ) : null}
-        {failed ? (
-          <Link href={guestEventPath(slug, "payment")} className={styles.cta}>
-            חזרה לתשלום
-          </Link>
-        ) : (
-          <Link href={guestEventPath(slug)} className={styles.ghost}>
-            חזרה לאירוע
-          </Link>
-        )}
       </div>
     </div>
   );

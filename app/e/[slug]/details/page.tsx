@@ -10,9 +10,8 @@ export default function GuestDetailsPage() {
   return (
     <FlowPage
       step="details"
-      title="עוד רגע מסיימים"
-      lede="נשמח לדעת ממי המתנה."
-      notice="תשלום הדגמה — לא מתבצע חיוב אמיתי"
+      title="למי נגיד תודה?"
+      lede="השם והפרטים נשמרים אצל המארח, כדי שידע ממי המתנה."
     >
       <GuestDetailsForm />
     </FlowPage>

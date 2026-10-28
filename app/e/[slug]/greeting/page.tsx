@@ -10,9 +10,8 @@ export default function GuestGreetingPage() {
   return (
     <FlowPage
       step="greeting"
-      title="משאירים ברכה"
+      title="מוסיפים ברכה אישית"
       lede="כמה מילים חמות. אפשר גם להמשיך בלי."
-      notice="תשלום הדגמה — לא מתבצע חיוב אמיתי"
     >
       <GuestGreetingForm />
     </FlowPage>

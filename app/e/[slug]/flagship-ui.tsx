@@ -13,11 +13,31 @@ function useSvgId(prefix: string) {
   return `${prefix}${useId().replace(/:/g, "")}`;
 }
 
+export function EventMark() {
+  return (
+    <span className={styles.eventMark} aria-hidden="true">
+      <SatinBow className={styles.eventMarkBow} />
+    </span>
+  );
+}
+
 export function Wordmark() {
   return (
     <Link href="/" className={styles.wordmark}>
       <LoloMark />
     </Link>
+  );
+}
+
+export function GiftFallback({ compact = false }: { compact?: boolean }) {
+  return (
+    <div
+      className={`${styles.giftFallback} ${compact ? styles.giftFallbackCompact : ""}`}
+      data-gift-fallback=""
+      aria-hidden="true"
+    >
+      <GiftIcon />
+    </div>
   );
 }
 
@@ -178,7 +198,6 @@ export function CornerRibbon({
 export function Portrait({
   src,
   alt,
-  monogram,
   hostName,
   nameOnChip = true,
   objectPosition = "center 28%",
@@ -209,20 +228,10 @@ export function Portrait({
           onError={() => setBroken(true)}
         />
       ) : (
-        <div className={styles.fallback} aria-hidden="true">
-          <span className={styles.fallbackRibbon} />
-          <SatinBow className={styles.fallbackBow} mark />
-          <span className={styles.monogram} data-empty-letter="">
-            {monogram}
-          </span>
-        </div>
+        <GiftFallback />
       )}
-      <CornerRibbon />
       {hostName && nameOnChip ? (
         <p className={styles.host}>
-          <span className={styles.avatar} aria-hidden="true">
-            {hostName.trim().charAt(0)}
-          </span>
           <span>{`הזמנה מאת ${hostName}`}</span>
         </p>
       ) : null}
@@ -234,7 +243,6 @@ export function GiftScene({
   src,
   alt,
   primary = false,
-  untie = false,
 }: {
   src: string;
   alt: string;
@@ -263,16 +271,8 @@ export function GiftScene({
           />
         </div>
       ) : (
-        <div className={styles.sceneFallback} aria-hidden="true">
-          <div className={styles.parcel} data-parcel="">
-            <span className={styles.parcelV} />
-            <span className={styles.parcelH} />
-            <SatinBow className={styles.sceneBow} />
-          </div>
-          <span className={styles.sceneShadow} />
-        </div>
+        <GiftFallback />
       )}
-      <CornerRibbon still={!untie} small={!untie} untie={untie} center={untie} />
     </div>
   );
 }
@@ -285,7 +285,7 @@ export function WishThumb({ src }: { src: string }) {
       {showPhoto ? (
         <img src={src} alt="" decoding="async" onError={() => setBroken(true)} />
       ) : (
-        <SatinBow className={styles.wishBow} />
+        <GiftIcon />
       )}
     </span>
   );
@@ -372,7 +372,6 @@ export function GiftReveal({
   funding?: string;
   untie?: boolean;
 }) {
-  const letter = (caption || label || "ל").trim().charAt(0) || "ל";
   return (
     <div className={styles.revealStage} data-reveal="">
       <GiftScene src={image || ""} alt={label || "המתנה"} untie={untie} />
@@ -386,9 +385,7 @@ export function GiftReveal({
             height={90}
           />
         ) : (
-          <span className={styles.revealMark} aria-hidden="true">
-            {letter}
-          </span>
+          <GiftFallback compact />
         )}
         <div className={styles.revealCopy}>
           <p className={styles.revealCard} data-reveal-card="">
