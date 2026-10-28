@@ -1,72 +1,52 @@
 # Guest final UX
 
-One visual language for the live guest flow. Business rules, payments, the beta gate, and the host UI are unchanged.
+The live guest flow (`/e/[slug]` through thank-you) uses one warm system: Heebo, deep green, cream, white cards, and coral only for progress and the current step. Order math, demo payment, the beta gate, host screens, admin, and `/i` links are unchanged.
 
 ## Audit
 
-The five screens already shared `flagship.module.css`, but the result still read as a decorated preview:
+The five screens already shared `flagship.module.css`, but they still read as separate drafts:
 
-- Gift selection stacked a wide cover, a gold-ring venue sheet, a gift scene, a second gift card, and a long beta paragraph. Empty events used a giant letter and a repeated gift-box drawing as if they were the product.
-- Greeting and details were office forms. The greeting title did not say what to do, the textarea was 240px, and the demo sentence was repeated from the event page.
-- Payment put a large reveal above the summary, then the exact demo sentence, then the longer beta paragraph, then a disabled-looking confirm button while the quote loaded.
-- Thank-you repeated the gift scene, the demo banner, the beta paragraph, and a technical reference in the main column.
-- Desktop layouts capped columns and left empty cream. Mobile type and cards were inconsistent from screen to screen.
-- Shared cause: one CSS module with gold rings, gradients, and per-screen scene rules, plus copy that was not the same voice.
-
-Direction kept: Heebo, deep green `#172F2B`, cream `#F7F4EF`, coral only on progress and a small festive mark, white cards, 20px radii, one soft shadow. Gold frames and background gradients are removed. The old blue/red MVP is not restored.
+- Gift selection stacked a wide cover, a venue sheet, a product scene with its own shadow, and a second progress block. An empty photo was a giant letter.
+- Greeting and details were long forms. On a phone the event cover, a second thumbnail, and several title lines pushed the first field far down the page.
+- Payment put the heading and the summary in different grid rows, so the side card opened a large gap above the summary. On a wide screen the side column also lost its card.
+- Thank-you repeated the step row, and the success mark sat on top of the product thumbnail.
+- The step row itself was a set of oversized dots, dark checks on dark circles, underlined labels, and arrow characters.
 
 ## Design system
 
-`app/e/[slug]/guest-system.module.css` is composed only by the guest `.root`. Host screens do not import it.
+`app/e/[slug]/guest-system.module.css` is composed only by the guest shell. Host screens do not import it.
 
 | Token | Value | Use |
 | --- | --- | --- |
 | `--gx-ink` | `#172F2B` | Text and primary buttons |
 | `--gx-muted` | `#3E524C` | Secondary text |
-| `--gx-cream` | `#F7F4EF` | Page background |
-| `--gx-coral` | `#E07A6A` | Progress and a small accent |
+| `--gx-cream` | `#F7F4EF` | Page background, full viewport |
+| `--gx-coral` | `#E07A6A` | Progress, current step, success mark |
 | `--gx-line` | `rgba(23, 47, 43, 0.12)` | Card edge |
 | `--gx-radius` | `20px` | Cards |
-| `--gx-shadow` | soft, low | Cards only |
+| `--gx-shadow` | `0 12px 28px -22px rgba(23, 47, 43, 0.55)` | Cards only |
 | `--gx-max` | `1080px` | Desktop content |
 | `--gx-form` | `640px` | Form column |
 
-Type is Heebo at 400, 500, and 700. Headings stay on the existing `.flowTitle` scale. Amount chips and the primary button stay at least 44px, the primary button 64px. Errors are green and bold beside the field. `prefers-reduced-motion` turns animation off.
+Type is Heebo at 400, 500, and 700. Amount chips and the primary button stay at least 44px; the primary button is 64px tall. Errors are green and bold beside the field. `prefers-reduced-motion` turns animation off.
+
+Shared pieces:
+
+- **Step row.** One horizontal line, RTL, first step on the right. Each step is a 20px circle and a 13–14px label. Completed: dark green circle, white check, label not underlined until hover or focus, and a link back to the saved step. Current: coral circle, white number, bold label, `aria-current="step"`. Future: 1.5px outline, muted number and label. Connectors are 20px lines; under 360px they hide so the row stays on one line. Each item is labeled `שלב X מתוך 4`. Thank-you does not show the row.
+- **Continuity.** From 1024px up, greeting and details keep a side card: centered 16:9 cover, gift thumb, event title, and `נאספו … מתוך …`. Below 1024px that card is a single row under the heading: a 56px rounded gift thumb (the event photo when the gift has no image), the title on one line with an ellipsis, and `מכונת אספרסו פרימיום · 350 ₪`.
+- **Cards.** White, 20px radius, the shared shadow. A product image sits inside its card. The gift-page summary is plain rows inside the sticky card, with the join button and the demo line under those rows.
 
 ## Screens
 
-1. Gift. Real cover when the host uploaded one. An empty cover is a short mark, not a hero letter. Amounts, progress, and the join button stay. The short demo line remains once. The long beta paragraph is not repeated here.
-2. Greeting. Title «מוסיפים ברכה אישית». Suggestions still fill the textarea and stay editable. The field is shorter. «בלי ברכה» continues without text. A missing gift still cannot continue.
-3. Details. Title «למי נגיד תודה?». Name, phone, and email stay required. The confirmation checkbox exists and starts unchecked until a draft was saved. Errors use `aria-invalid` and `aria-describedby`. Phone is `type="tel"`.
-4. Payment. Title «כמעט סיימנו». The exact sentence «תשלום הדגמה בלבד — לא מתבצע חיוב אמיתי» is the disclosure. Quote, start, and confirm are unchanged.
-5. Thank-you. Title «איזה כיף, השתתפת במתנה!». Status still comes from the server, including «שולם בהדגמה». WhatsApp is the main share. The payment reference sits under «פרטי הדגמה».
-
-The step row is «מתנה ← ברכה ← פרטים ← תשלום». Each step is a 20px circle and a label on one line. Completed steps are links back to saved drafts, with a white check and no underline until hover. Thank-you is the success state and does not show the row.
-
-## Fifth pass
-
-The step row is one compact line: 20px circles, 13–14px labels, short connectors, hidden under 360px so the row stays on one line at 320. Completed circles are dark green with a white check. The current step is coral. Future steps are an outline. Thank-you drops the row. Its success check is a 48px circle above the heading, and the 72px product thumbnail sits inside the card. The payment side column is a white card again: thumbnail, gift, event, «מאת {host}», the greeting, and «נאספו … מתוך …». Greeting and details covers use a centered 16:9 crop. The main gift is one white card, and the percent sits on the same line as «מתוך».
-
-## Tests
-
-- `npx tsc --noEmit`: passed
-- `npx eslint` on the touched guest files: passed
-- `npx next build`: passed
-- Final `npx playwright test e2e`: 56 passed, 0 failed
-
-The final run was green on the first attempt after the last layout change. An earlier run in this pass was also 56 passed.
+1. **Gift.** Real cover when the host uploaded one, centered and capped on desktop. An empty cover is a short mark, not a letter. The main gift is one white card: image, name, progress, percent inline after `מתוך`, and the amount picker. Extra gifts stay compact. The sticky summary lists the choice as plain rows. The short demo line remains once.
+2. **Greeting.** Title `מוסיפים ברכה אישית`. Suggestions still fill the textarea and stay editable. The field is shorter. `בלי ברכה` continues without text. A missing gift still cannot continue. Desktop side card stays; phones use the compact row.
+3. **Details.** Title `למי נגיד תודה?`. Name, phone, and email stay required. The confirmation checkbox starts checked, matching the saved default. Errors use `aria-invalid` and `aria-describedby`. Phone is `type="tel"`. Below 1024px the compact row already shows the gift and amount, so that line is not repeated above the fields. Desktop still shows it.
+4. **Payment.** Title `כמעט סיימנו`. The main column is one stack: step row, heading, summary, confirm, and the failure link. The side card is its own column, aligned to the top: 72px thumbnail, gift, event, `מאת {host}`, the greeting, and `נאספו … מתוך …`. The disclosure is exactly `תשלום הדגמה בלבד — לא מתבצע חיוב אמיתי`.
+5. **Thank-you.** Title `איזה כיף, השתתפת במתנה!`. A 48px coral check sits above the heading. The 72px thumbnail sits in the card. Status still comes from the server, including `שולם בהדגמה`. WhatsApp is the main share. The payment reference sits under `פרטי הדגמה`.
 
 ## Confirmation checkbox
 
-The control is «אני רוצה לקבל אישור על המתנה». It is optional. It is not a terms consent. On main, a new guest starts with it checked: `emptyDetails.wantReceipt` is `true`, and a saved draft treats a missing value as checked (`wantReceipt !== false`). Submit stores it as `wantsConfirmation` on the pending order. This pass keeps that default. An earlier draft of this branch had turned it off for unsaved guests; that would have changed what a guest stores if they never touch the box, so it was put back.
-
-## Second pass
-
-Corner ribbons no longer sit on the event photo or the gift image. A missing photo is a cream tile with a small gift icon. Payment and thank-you show «תשלום הדגמה בלבד — לא מתבצע חיוב אמיתי» once; the long beta paragraph is a short line inside «עוד על ההדגמה». Thank-you is a centered card, about 560px wide inside a 960px column. The gift page at desktop is a header plus a gift column and a sticky summary. The venue card sits under the cover, and the cover uses `object-position: center top` unless the host set a focal point.
-
-## Fourth pass
-
-The guest shell and the page behind it are cream for the full viewport. The step row sits above the heading in the main column, with a coral dot on the current step, a check on completed steps, and muted future steps. The desktop cover is centered (`50% 50%`) and capped at 300px. Thank-you shows one amount and one disclosure. Payment lists each gift once, then the fee line and the total. The side card on greeting and details puts the title and «נאספו … מתוך …» under the image.
+The control is `אני רוצה לקבל אישור על המתנה`. It is optional. It is not a terms consent. A new guest starts with it checked: `emptyDetails.wantReceipt` is `true`, and a saved draft treats a missing value as checked. Submit stores it as `wantsConfirmation` on the pending order.
 
 ## Tests
 
@@ -75,19 +55,25 @@ The guest shell and the page behind it are cream for the full viewport. The step
 - `npx next build`: passed
 - Final `npx playwright test e2e`: 56 passed, 0 failed
 
-One run in this pass was 54 passed / 2 failed. The demo thank-you keeps «כבר 18 חברים הצטרפו» inside «פרטי הדגמה», so the test opens that disclosure before asserting it.
+The final run is the one after the payment-column and compact-row change (`be3379b`).
 
-## Third pass
+## Files
 
-The cover default is `50% 35%` unless the host set a focal point. On desktop the hero is capped at 360px and the venue card sits beside the title. A gift with no photo is at most 160px on the main card and an 88px square on extra cards. The duplicate progress line under the join button is gone. Payment and thank-you use a light notice. Thank-you is one 560px column, and its screenshot is the paid demo state.
+- `app/e/[slug]/guest-system.module.css` — tokens
+- `app/e/[slug]/flagship.module.css` — guest layout
+- `app/e/[slug]/flagship-ui.tsx` — cover, gift scene, empty photo
+- `app/e/[slug]/flow-page.tsx` — step row, compact row, column split
+- `app/e/[slug]/guest-event-view.tsx` — gift card and summary
+- `app/e/[slug]/greeting/greeting-form.tsx`, `greeting/page.tsx`
+- `app/e/[slug]/details/guest-details-form.tsx`, `details/page.tsx`
+- `app/e/[slug]/payment/payment-summary.tsx`, `payment/page.tsx`
+- `app/e/[slug]/thank-you/thank-you-view.tsx`, `thank-you/page.tsx`
+- `app/e/[slug]/continuity.ts`, `layout.tsx`
+- `e2e/guest-premium-layout.spec.ts`, `e2e/flagship-flow.spec.ts`, `e2e/flagship-guest.spec.ts`, `e2e/empty-cover.ts`
 
-Guest screens no longer paint gradient blobs behind the product photo. The create-event empty cover still uses its own ribbon background, because that screen is not the guest flow.
+## Follow-ups that are not this UI
 
-## Tests
-
-- `npx tsc --noEmit`: passed
-- `npx eslint` on the touched guest files: passed
-- `npx next build`: passed
-- Final `npx playwright test e2e`: 56 passed, 0 failed
-
-One run in this pass was 55 passed / 1 failed. The thank-you screenshot assertion used `getByText("350")`, which matched three amount lines. It now uses the first match. The paid status was already on screen.
+- Demo checkout still does not charge a card. A live provider is a separate change.
+- A host focal point still overrides the centered cover crop. The default stays `50% 50%`.
+- Beta access, host and admin screens, personal invite links, and contribution math stay on their own tracks.
+- A pass on a physical phone is still worth doing after this preview. The Playwright shots cover 320, 390, 768, and 1440.
