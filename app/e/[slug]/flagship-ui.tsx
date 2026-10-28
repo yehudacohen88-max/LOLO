@@ -16,7 +16,7 @@ function useSvgId(prefix: string) {
 export function EventMark() {
   return (
     <span className={styles.eventMark} aria-hidden="true">
-      <SatinBow className={styles.eventMarkBow} mark />
+      <SatinBow className={styles.eventMarkBow} />
     </span>
   );
 }

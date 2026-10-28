@@ -2765,7 +2765,7 @@
   text-underline-offset: 3px;
 }
 
-@media (max-width: 359px) {
+@media (max-width: 374px) {
   .stepLine {
     display: none;
   }
@@ -2978,7 +2978,9 @@
 }
 
 .prompt {
+  box-sizing: border-box;
   width: 100%;
+  max-width: 100%;
   height: 100%;
   text-align: center;
 }
