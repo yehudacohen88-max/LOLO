@@ -2785,6 +2785,30 @@
 .feature .scene {
   height: 200px;
   border-radius: 0;
+  background: #fff;
+}
+
+.feature {
+  box-shadow:
+    0 0 0 1px rgba(23, 47, 43, 0.12),
+    var(--gx-shadow, 0 12px 28px -22px rgba(23, 47, 43, 0.55));
+}
+
+.flowThanks .flowAside {
+  display: none;
+}
+
+@media (max-width: 1023px) {
+  .flow.flowForm,
+  .flow.flowPay {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .flow.flowForm .flowHead,
+  .flow.flowPay .flowHead {
+    order: -1;
+  }
 }
 
 .extra .scene {
