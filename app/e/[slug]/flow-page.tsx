@@ -5,7 +5,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { createContext, useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
+import { useEffect, useSyncExternalStore, type ReactNode } from "react";
 import { getEventBySlug, guestEventPath } from "@/lib/events";
 import { formatGiftAmount, getContributionsTotal, loadContributions } from "@/lib/guest-draft";
 import {
@@ -36,7 +36,17 @@ const steps = [
 type StepId = (typeof steps)[number]["id"] | "thanks";
 type StepState = "done" | "current" | "next";
 
-export const GuestPaySlotContext = createContext<HTMLElement | null>(null);
+type ChoiceItem = { name: string; amount: number };
+
+function readChoice(slug: string) {
+  const chosen = loadContributions(slug);
+  return {
+    items: chosen
+      .filter((item) => item.amount > 0)
+      .map((item) => ({ name: item.giftName, amount: item.amount })),
+    total: getContributionsTotal(chosen),
+  };
+}
 
 function StepCheck({ size }: { size: number }) {
   return (
@@ -132,23 +142,44 @@ export function FlowPage({
   }, [slug]);
 
   const current = step === "thanks" ? steps.length : steps.findIndex((item) => item.id === step);
-  const [paySlot, setPaySlot] = useState<HTMLDivElement | null>(null);
-  const choiceLine = useSyncExternalStore(
+  const choice = useSyncExternalStore(
     () => () => {},
-    () => {
-      if (!slug || step === "thanks") {
-        return "";
-      }
-      const chosen = loadContributions(slug);
-      const total = getContributionsTotal(chosen);
-      return chosen.length > 0 && total > 0
-        ? `${chosen.map((item) => item.giftName).join(" · ")} · ${formatGiftAmount(total)}`
-        : "";
-    },
+    () => (slug && step !== "thanks" ? JSON.stringify(readChoice(slug)) : ""),
     () => "",
   );
+  const parsed = choice ? (JSON.parse(choice) as { items: ChoiceItem[]; total: number }) : { items: [], total: 0 };
 
   const compactSrc = mark?.giftImage || mark?.cover || "";
+  function renderThumb() {
+    if (mark?.giftImage) {
+      return (
+        <img className={styles.choiceThumb} src={mark.giftImage} alt="" width={72} height={72} data-gift-photo="" />
+      );
+    }
+    if (compactSrc) {
+      return <img className={styles.choiceThumb} src={compactSrc} alt="" width={72} height={72} />;
+    }
+    return <GiftFallback compact />;
+  }
+  function renderLines() {
+    return (
+      <>
+        {parsed.items.map((item) => (
+          <p key={`${item.name}-${item.amount}`} className={styles.choiceLine}>
+            <span data-reveal-card="">{item.name}</span>
+            <b>{formatGiftAmount(item.amount)}</b>
+          </p>
+        ))}
+        {parsed.total > 0 ? (
+          <p className={styles.choiceTotal}>
+            <span>סה״כ</span>
+            <b>{formatGiftAmount(parsed.total)}</b>
+          </p>
+        ) : null}
+        {mark?.progress ? <p className={styles.choiceProgress}>{mark.progress}</p> : null}
+      </>
+    );
+  }
 
   return (
     <>
@@ -171,7 +202,6 @@ export function FlowPage({
           .filter(Boolean)
           .join(" ")}
       >
-        <GuestPaySlotContext.Provider value={paySlot}>
         <div className={styles.flowMain}>
         <div className={`${styles.flowHead} ${styles.flowIn}`}>
           {step === "thanks" ? (
@@ -222,38 +252,22 @@ export function FlowPage({
         </div>
         {step !== "thanks" && mark ? (
           <div className={styles.compactRow}>
-            {compactSrc ? (
-              <img
-                className={
-                  mark.giftImage ? styles.compactThumb : `${styles.compactThumb} ${styles.compactCover}`
-                }
-                src={compactSrc}
-                alt=""
-                width={56}
-                height={56}
-              />
-            ) : (
-              <GiftFallback compact />
-            )}
+            {renderThumb()}
             <div className={styles.compactCopy}>
+              {renderLines()}
               <p className={styles.compactTitle}>{displayTitle(mark.title)}</p>
-              {choiceLine ? <p className={styles.compactMeta}>{choiceLine}</p> : null}
             </div>
           </div>
         ) : null}
         <div className={styles.flowBody}>{children}</div>
         </div>
         {step !== "thanks" ? (
-          <aside className={styles.flowAside}>
-            <div className={styles.continuity} aria-busy={mark ? undefined : true}>
-              {mark?.cover ? (
-                <img className={styles.thumb} src={mark.cover} alt="" width={224} height={280} />
-              ) : (
-                <GiftFallback compact />
-              )}
-              {mark?.giftImage ? (
-                <img className={styles.thumbGift} src={mark.giftImage} alt="" width={128} height={128} />
-              ) : null}
+          <aside
+            className={styles.flowAside}
+            data-pay-hero={step === "payment" ? "" : undefined}
+          >
+            <div className={styles.choiceCard} aria-busy={mark ? undefined : true}>
+              {renderThumb()}
               <div className={styles.continuityCopy}>
                 {mark ? (
                   <p className={styles.continuityTitle} data-continuity-title="">
@@ -265,14 +279,11 @@ export function FlowPage({
                     <span />
                   </div>
                 )}
-                {mark?.giftName ? <p className={styles.continuityMeta}>{mark.giftName}</p> : null}
-                {mark?.progress ? <p className={styles.continuityMeta}>{mark.progress}</p> : null}
+                {renderLines()}
               </div>
             </div>
           </aside>
         ) : null}
-        {step === "payment" ? <div className={styles.paySlot} ref={setPaySlot} /> : null}
-        </GuestPaySlotContext.Provider>
       </div>
     </>
   );

@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 import { guestEventPath } from "@/lib/events";
 import { fromRouteParam } from "@/lib/events/slug";
 import {
-  formatGiftAmount,
   getContributionsTotal,
   isValidEmail,
   isValidPhone,
@@ -23,7 +22,6 @@ export default function GuestDetailsForm() {
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [wantReceipt, setWantReceipt] = useState(true);
-  const [amountLine, setAmountLine] = useState("");
   const [errors, setErrors] = useState<{
     name?: string;
     phone?: string;
@@ -74,13 +72,6 @@ export default function GuestDetailsForm() {
       setPhone(phone);
       setEmail(details.email);
       setWantReceipt(details.wantReceipt);
-      const chosen = loadContributions(slug);
-      const total = getContributionsTotal(chosen);
-      setAmountLine(
-        chosen.length > 0
-          ? `${chosen.map((item) => item.giftName).join(" · ")} · ${formatGiftAmount(total)}`
-          : "",
-      );
       setReady(true);
     })();
 
@@ -154,7 +145,6 @@ export default function GuestDetailsForm() {
         }
       }}
     >
-      {amountLine ? <p className={`${styles.quietLine} ${styles.detailsChoice}`}>{amountLine}</p> : null}
       <label className={styles.stack}>
         <span>שם מלא</span>
         <input

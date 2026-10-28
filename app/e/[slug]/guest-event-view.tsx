@@ -357,9 +357,6 @@ export default function GuestEventView() {
 
     return (
       <div>
-        <p className={styles.chosen}>
-          {contribution ? formatGiftAmount(contribution.amount) : "בחרו סכום"}
-        </p>
         {showSuggested ? (
           <div className={styles.amounts}>
             {suggestedAmounts.map((amount) => {
@@ -402,11 +399,10 @@ export default function GuestEventView() {
 
         {allowCustom && customOpen ? (
           <label className={styles.custom}>
-            <span>הזינו סכום</span>
+            <span className={styles.srOnly}>הזינו סכום</span>
             <span className={styles.field}>
               <input
-                type="number"
-                min={1}
+                type="text"
                 inputMode="numeric"
                 dir="ltr"
                 aria-invalid={Boolean(customErrors[gift.id])}
@@ -506,6 +502,7 @@ export default function GuestEventView() {
 
         {copy.raisedText ? (
           <div className={styles.nums}>
+            <span className={styles.collectedLabel}>נאספו</span>
             <span className={styles.got}>
               <CountAmount value={progress.raisedAmount} />
             </span>
@@ -631,7 +628,7 @@ export default function GuestEventView() {
           {!event.coverImage && !message && event.hostName.trim() ? (
             <p className={styles.hostLine}>הזמנה מאת {event.hostName.trim()}</p>
           ) : null}
-          {primary ? (
+          {primary && hostGifts.length >= 3 ? (
             <button
               type="button"
               className={styles.wish}

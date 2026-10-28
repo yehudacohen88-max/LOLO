@@ -172,6 +172,12 @@ for (const viewport of widths) {
           clip: { x: 0, y: 0, width: 320, height: 300 },
         });
       }
+      if (viewport.name === "768" && name === "event") {
+        await page.screenshot({
+          path: path.join(artifactDir, "01-gift-768.png"),
+          fullPage: true,
+        });
+      }
       if (viewport.name === "390" || viewport.name === "1440") {
         await page.screenshot({
           path: path.join(artifactDir, `guest-live-${name}-${viewport.name}.png`),
@@ -361,7 +367,7 @@ test("filled guest screens at 390 and 1440", async ({ page }) => {
     await page.getByLabel("שם מלא").fill("יעל כהן");
     await page.getByLabel("מספר טלפון").fill("0501234567");
     await page.getByLabel("אימייל").fill("yael@example.com");
-    if (viewport.name === "390" || viewport.name === "1440") {
+    if (viewport.name === "390" || viewport.name === "768" || viewport.name === "1440") {
       await page.screenshot({
         path: path.join(artifactDir, `03-details-${viewport.name}.png`),
         fullPage: true,

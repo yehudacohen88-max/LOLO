@@ -175,24 +175,6 @@ export default function GuestGreetingForm() {
         router.push(guestEventPath(slug, "details"));
       }}
     >
-      <section className={styles.card}>
-        <h2>המתנה שלכם</h2>
-        {contributions.length === 0 ? (
-          <p className={styles.quietLine}>עדיין לא נבחרה מתנה.</p>
-        ) : (
-          contributions.map((item) => (
-            <p key={item.giftId} className={styles.lineRow}>
-              <span>{item.giftName}</span>
-              <b>{formatGiftAmount(item.amount)}</b>
-            </p>
-          ))
-        )}
-        <p className={styles.totalLine}>
-          <span>סה״כ</span>
-          <span>{formatGiftAmount(total)}</span>
-        </p>
-      </section>
-
       <div className={styles.prompts} aria-label="הצעות לברכה">
         {greetingPrompts.map((prompt) => (
           <button
