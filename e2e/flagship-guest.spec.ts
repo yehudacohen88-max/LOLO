@@ -92,7 +92,7 @@ test("guest page keeps contribution flow and hides an empty invitation", async (
   await page.goto("/e/flagship-fixture");
   await expect(page.getByRole("heading", { name: /חוגגים 40 לדנה/ })).toBeVisible();
   await expect(page.locator("h1 span")).toHaveText("40");
-  await expect(page.locator("h1 span")).toHaveCSS("color", "rgb(23, 47, 43)");
+  await expect(page.locator("h1 span")).toHaveCSS("color", "rgb(255, 184, 77)");
   await expect(page.getByText("השנה החלטנו להפתיע את דנה")).toBeVisible();
   await expect(page.getByText("הזמנה מאת נועה לוי")).toHaveCount(0);
   await expect(page.getByText("הזמנה", { exact: true })).toHaveCount(0);
