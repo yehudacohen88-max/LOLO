@@ -213,7 +213,10 @@ export function Portrait({
   const showPhoto = Boolean(src) && !broken;
 
   return (
-    <div className={`${styles.portrait} ${showPhoto ? "" : styles.portraitEmpty}`}>
+    <div
+      className={`${styles.portrait} ${showPhoto ? "" : styles.portraitEmpty}`}
+      data-cele="portrait"
+    >
       {showPhoto ? (
         <img
           src={src}
@@ -255,12 +258,13 @@ export function GiftScene({
   return (
     <div
       className={`${styles.scene} ${showPhoto ? "" : styles.sceneEmpty}`}
+      data-cele="scene"
       data-gift-scene={primary ? "" : undefined}
     >
       <div className={styles.sceneLight} aria-hidden="true" />
       <div className={styles.sceneEdge} aria-hidden="true" />
       {showPhoto ? (
-        <div className={styles.sceneStage}>
+        <div className={styles.sceneStage} data-cele="stage">
           <img
             src={src}
             alt={alt}
@@ -342,8 +346,8 @@ export function ProgressRibbon({
       aria-label="התקדמות המתנה"
       style={{ ["--fs-p" as string]: String(ratio) }}
     >
-      <div className={styles.track} />
-      <div className={styles.fill} />
+      <div className={styles.track} data-cele="track" />
+      <div className={styles.fill} data-cele="fill" />
       <svg className={styles.goal} viewBox="0 0 40 30" aria-hidden="true">
         <path
           d="M20 15 C13 3 2 3 3 10 C4 17 13 17 20 15Z M20 15 C27 3 38 3 37 10 C36 17 27 17 20 15Z"
@@ -401,11 +405,11 @@ export function GiftReveal({
 
 export function Frame({ children }: { children: ReactNode }) {
   return (
-    <>
-      <header className={styles.header}>
+    <div data-celebration="">
+      <header className={styles.header} data-cele="header">
         <Wordmark />
       </header>
       {children}
-    </>
+    </div>
   );
 }

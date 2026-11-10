@@ -103,7 +103,7 @@ test("guest page keeps contribution flow and hides an empty invitation", async (
   const join = page.getByRole("button", { name: "מצטרפים למתנה" });
   await expect(join).toBeEnabled();
   const ctaColor = await join.evaluate((element) => getComputedStyle(element).backgroundColor);
-  expect(ctaColor).toBe("rgb(23, 47, 43)");
+  expect(ctaColor).toBe("rgb(255, 184, 77)");
   await join.click();
   await expect(page.locator("#join-amount-hint")).toHaveText("בחרו סכום כדי להצטרף");
   await expect(page).toHaveURL(/\/e\/flagship-fixture$/);
@@ -215,11 +215,13 @@ for (const viewport of widths) {
           };
         });
         if (viewport.name === "1440") {
-          expect(crop.ratio).toBeGreaterThan(2);
-          expect(crop.height).toBeLessThanOrEqual(380);
+          expect(crop.ratio).toBeGreaterThan(1.15);
+          expect(crop.ratio).toBeLessThan(1.55);
+          expect(crop.height).toBeGreaterThan(320);
         } else {
-          expect(crop.ratio).toBeGreaterThan(1.5);
-          expect(crop.ratio).toBeLessThan(1.7);
+          expect(crop.ratio).toBeGreaterThan(1.15);
+          expect(crop.ratio).toBeLessThan(1.55);
+          expect(crop.height).toBeGreaterThan(180);
         }
         expect(crop.position).toMatch(/50%/);
       }

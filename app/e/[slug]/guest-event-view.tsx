@@ -18,11 +18,11 @@ import {
   saveContributions,
   type GuestContribution,
 } from "@/lib/guest-draft";
+import { CelebrationConfetti, FestiveStage, GiftMedallion } from "./celebration-art";
+import { giftMotif, occasionMotif } from "./celebration-look";
 import {
   CountAmount,
-  EventMark,
   Frame,
-  GiftFallback,
   GiftIcon,
   GiftScene,
   LockIcon,
@@ -34,6 +34,7 @@ import { continuityFromEvent, writeContinuity, type ContinuityFunding } from "./
 import { displayTitle } from "./display-title";
 import { giftProgressCopy } from "./progress-copy";
 import styles from "./flagship.module.css";
+import "./celebration.css";
 
 const DEFAULT_AMOUNTS = [150, 250, 350, 500];
 
@@ -358,7 +359,7 @@ export default function GuestEventView() {
     return (
       <div>
         {showSuggested ? (
-          <div className={styles.amounts}>
+          <div className={styles.amounts} data-cele="amounts">
             {suggestedAmounts.map((amount) => {
               const amountSelected = contribution?.amount === amount;
               return (
@@ -366,6 +367,8 @@ export default function GuestEventView() {
                   key={amount}
                   type="button"
                   aria-pressed={amountSelected}
+                  data-cele="amount"
+                  data-selected={amountSelected ? "true" : "false"}
                   onClick={() => selectSuggested(gift, amount)}
                   className={`${styles.amount} ${amountSelected ? styles.amountOn : ""}`}
                 >
@@ -378,6 +381,8 @@ export default function GuestEventView() {
               <button
                 type="button"
                 aria-pressed={customOpen && customIsSelected}
+                data-cele="amount"
+                data-selected={customOpen && (customIsSelected || !contribution) ? "true" : "false"}
                 onClick={() =>
                   setOpenCustom((current) => ({
                     ...current,
@@ -400,7 +405,7 @@ export default function GuestEventView() {
         {allowCustom && customOpen ? (
           <label className={styles.custom}>
             <span className={styles.srOnly}>הזינו סכום</span>
-            <span className={styles.field}>
+            <span className={styles.field} data-cele="field">
               <input
                 type="text"
                 inputMode="numeric"
@@ -503,7 +508,7 @@ export default function GuestEventView() {
         {copy.raisedText ? (
           <div className={styles.nums}>
             <span className={styles.collectedLabel}>נאספו</span>
-            <span className={styles.got}>
+            <span className={styles.got} data-cele="raised">
               <CountAmount value={progress.raisedAmount} />
             </span>
             <span className={styles.amountMeta}>
@@ -511,7 +516,9 @@ export default function GuestEventView() {
                 <span className={styles.of}>מתוך {copy.targetText}</span>
               ) : null}
               {copy.percentText && copy.reached !== "over" ? (
-                <span className={styles.pct}>{copy.percentText}</span>
+                <span className={styles.pct} data-cele="pct">
+                  {copy.percentText}
+                </span>
               ) : null}
             </span>
           </div>
@@ -520,7 +527,9 @@ export default function GuestEventView() {
             <span className={styles.amountMeta}>
               <span className={styles.of}>יעד {copy.targetText}</span>
               {copy.percentText && copy.reached !== "over" ? (
-                <span className={styles.pct}>{copy.percentText}</span>
+                <span className={styles.pct} data-cele="pct">
+                  {copy.percentText}
+                </span>
               ) : null}
             </span>
           </p>
@@ -587,6 +596,67 @@ export default function GuestEventView() {
   ].filter(Boolean);
   const message = event.message.trim();
   const quoted = /^[״"“«]/.test(message);
+  const occasion = occasionMotif(event.eventType);
+  const heroNode = event.coverImage ? (
+    <div className={styles.hero} data-cele="hero">
+      <Portrait
+        src={event.coverImage}
+        alt={event.title ? `תמונה לאירוע ${event.title}` : "תמונת האירוע"}
+        monogram=""
+        hostName={event.hostName.trim()}
+        nameOnChip={!message}
+        objectPosition={coverObjectPosition(event)}
+      />
+    </div>
+  ) : (
+    <FestiveStage occasion={occasion} />
+  );
+  const copyNode = (
+    <div className={`${styles.copy} ${styles.rise}`} data-cele="copy">
+      {kicker.length > 0 ? (
+        <p className={styles.kicker} data-cele="kicker">
+          {kicker.map((part, index) => (
+            <span key={`${part}-${index}`} style={{ display: "contents" }}>
+              {index > 0 ? (
+                <span className={styles.dot} data-cele="dot" aria-hidden="true" />
+              ) : null}
+              <span>{part}</span>
+            </span>
+          ))}
+        </p>
+      ) : null}
+      <h1 className={styles.title} data-cele="title">
+        <TitleText title={event.title || "האירוע"} />
+      </h1>
+      <p className={styles.sub} data-cele="sub">
+        מתנה מכל החברים
+      </p>
+      {!event.coverImage && !message && event.hostName.trim() ? (
+        <p className={styles.hostLine} data-cele="hostchip">
+          הזמנה מאת {event.hostName.trim()}
+        </p>
+      ) : null}
+      {primary && hostGifts.length >= 3 ? (
+        <button
+          type="button"
+          className={styles.wish}
+          onClick={() => {
+            const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+            document.getElementById(`gift-${primary.id}`)?.scrollIntoView({
+              behavior: reduce ? "auto" : "smooth",
+              block: "start",
+            });
+          }}
+        >
+          <WishThumb src={primary.imageUrl} />
+          <span className={styles.wishCopy}>
+            <span className={styles.wishLabel}>המשאלה</span>
+            <span className={styles.wishName}>{primary.name}</span>
+          </span>
+        </button>
+      ) : null}
+    </div>
+  );
   return (
     <Frame>
       {event.slug === DEMO_EVENT_SLUG ? (
@@ -595,64 +665,18 @@ export default function GuestEventView() {
           <p className={styles.demoCredit}>{DEMO_IMAGE_CREDIT}</p>
         </div>
       ) : null}
-      <div className={`${styles.spread} ${event.coverImage ? "" : styles.spreadBare}`}>
-        {event.coverImage ? (
-          <div className={styles.hero}>
-            <Portrait
-              src={event.coverImage}
-              alt={event.title ? `תמונה לאירוע ${event.title}` : "תמונת האירוע"}
-              monogram=""
-              hostName={event.hostName.trim()}
-              nameOnChip={!message}
-              objectPosition={coverObjectPosition(event)}
-            />
-          </div>
-        ) : null}
-
-        <div className={`${styles.copy} ${styles.rise}`}>
-          {event.coverImage ? null : <EventMark />}
-          {kicker.length > 0 ? (
-            <p className={styles.kicker}>
-              {kicker.map((part, index) => (
-                <span key={`${part}-${index}`} style={{ display: "contents" }}>
-                  {index > 0 ? <span className={styles.dot} aria-hidden="true" /> : null}
-                  <span>{part}</span>
-                </span>
-              ))}
-            </p>
-          ) : null}
-          <h1 className={styles.title}>
-            <TitleText title={event.title || "האירוע"} />
-          </h1>
-          <p className={styles.sub}>מתנה מכל החברים</p>
-          {!event.coverImage && !message && event.hostName.trim() ? (
-            <p className={styles.hostLine}>הזמנה מאת {event.hostName.trim()}</p>
-          ) : null}
-          {primary && hostGifts.length >= 3 ? (
-            <button
-              type="button"
-              className={styles.wish}
-              onClick={() => {
-                const reduce = window.matchMedia(
-                  "(prefers-reduced-motion: reduce)",
-                ).matches;
-                document.getElementById(`gift-${primary.id}`)?.scrollIntoView({
-                  behavior: reduce ? "auto" : "smooth",
-                  block: "start",
-                });
-              }}
-            >
-              <WishThumb src={primary.imageUrl} />
-              <span className={styles.wishCopy}>
-                <span className={styles.wishLabel}>המשאלה</span>
-                <span className={styles.wishName}>{primary.name}</span>
-              </span>
-            </button>
-          ) : null}
+      <div
+        className={`${styles.spread} ${event.coverImage ? "" : styles.spreadBare}`}
+        data-cele="spread"
+      >
+        <div data-cele="mast" data-occasion={occasion}>
+          <CelebrationConfetti />
+          {heroNode}
+          {copyNode}
         </div>
 
         {venueName || address ? (
-          <section className={styles.venue} data-venue="">
+          <section className={styles.venue} data-venue="" data-cele="venue">
             <p className={styles.venueKicker}>איפה חוגגים</p>
             {venueName ? <p className={styles.venueName}>{venueName}</p> : null}
             {address ? <p className={styles.venueAddress}>{address}</p> : null}
@@ -677,18 +701,25 @@ export default function GuestEventView() {
           </section>
         ) : null}
 
-        <div className={styles.story}>
+        <div className={styles.story} data-cele="story">
         {primary ? (
           <section
             className={`${styles.feature} ${primary.imageUrl ? "" : styles.noPhoto} ${styles.rise} ${styles.d2}`}
             id={`gift-${primary.id}`}
             data-gift-scene=""
+            data-cele="feature"
           >
-            {primary.imageUrl ? <GiftScene src={primary.imageUrl} alt={primary.name} primary /> : null}
-            <div className={primary.imageUrl ? styles.gmeta : styles.noPhotoTitle}>
-              {primary.imageUrl ? null : <GiftFallback compact />}
+            {primary.imageUrl ? (
+              <GiftScene src={primary.imageUrl} alt={primary.name} primary />
+            ) : (
+              <GiftMedallion motif={giftMotif(primary.name, 0)} />
+            )}
+            <div
+              className={primary.imageUrl ? styles.gmeta : styles.noPhotoTitle}
+              data-cele="meta"
+            >
               <div>
-                <p className={styles.label}>המשאלה</p>
+                <p className={styles.label} data-cele="label">המשאלה</p>
                 <h2 className={styles.giftName}>{displayTitle(primary.name)}</h2>
                 {primary.imageUrl ? (
                   <>
@@ -716,7 +747,7 @@ export default function GuestEventView() {
                 ) : null}
               </div>
             )}
-            <div className={styles.giftPicker}>
+            <div className={styles.giftPicker} data-cele="picker">
               {renderProgress(primary, true)}
               {renderAmounts(primary)}
             </div>
@@ -727,6 +758,7 @@ export default function GuestEventView() {
           <blockquote
             id="host-invitation"
             className={`${styles.note} ${styles.rise} ${styles.d1}`}
+            data-cele="note"
           >
             <p className={styles.noteKicker}>
               {event.hostName.trim()
@@ -738,7 +770,7 @@ export default function GuestEventView() {
         ) : null}
         </div>
 
-        <aside className={styles.panel}>
+        <aside className={styles.panel} data-cele="panel">
           {primary ? null : <p className={styles.quiet}>עדיין אין מתנות באירוע.</p>}
 
           <section className={styles.summary}>
@@ -758,7 +790,9 @@ export default function GuestEventView() {
             <p className={styles.total}>סה״כ: {formatGiftAmount(total)}</p>
           </section>
 
-          <p className={styles.ease}>בוחרים סכום, כותבים ברכה — וזהו.</p>
+          <p className={styles.ease} data-cele="ease">
+            בוחרים סכום, כותבים ברכה — וזהו.
+          </p>
 
           <div className={styles.join} data-join="">
             {amountHint ? (
@@ -793,12 +827,13 @@ export default function GuestEventView() {
                 router.push(guestEventPath(storageSlug(), "greeting"));
               }}
               className={styles.cta}
+              data-cele="cta"
               aria-describedby={amountHint ? "join-amount-hint" : undefined}
             >
               מצטרפים למתנה
               <GiftIcon />
             </button>
-            <p className={styles.pay}>
+            <p className={styles.pay} data-cele="pay">
               <LockIcon />
               תשלום הדגמה — לא מתבצע חיוב אמיתי
             </p>
@@ -806,20 +841,27 @@ export default function GuestEventView() {
         </aside>
 
         {others.length > 0 ? (
-          <section className={styles.more} aria-labelledby="more-gifts">
-            <h2 id="more-gifts" className={styles.moreTitle}>
+          <section className={styles.more} aria-labelledby="more-gifts" data-cele="more">
+            <h2 id="more-gifts" className={styles.moreTitle} data-cele="more-title">
               עוד מתנות
             </h2>
-            <div className={styles.moreGrid}>
-              {others.map((gift) => (
+            <div className={styles.moreGrid} data-cele="more-grid">
+              {others.map((gift, index) => (
                 <article
                   key={gift.id}
                   className={`${styles.extra} ${gift.imageUrl ? "" : styles.noPhoto}`}
                   id={`gift-${gift.id}`}
+                  data-cele="extra"
                 >
-                  {gift.imageUrl ? <GiftScene src={gift.imageUrl} alt={gift.name} /> : null}
-                  <div className={gift.imageUrl ? styles.gmeta : styles.noPhotoTitle}>
-                    {gift.imageUrl ? null : <GiftFallback compact />}
+                  {gift.imageUrl ? (
+                    <GiftScene src={gift.imageUrl} alt={gift.name} />
+                  ) : (
+                    <GiftMedallion motif={giftMotif(gift.name, index + 1)} />
+                  )}
+                  <div
+                    className={gift.imageUrl ? styles.gmeta : styles.noPhotoTitle}
+                    data-cele="meta"
+                  >
                     <div>
                       <h3 className={styles.giftName}>{displayTitle(gift.name)}</h3>
                       {gift.imageUrl ? (
@@ -856,7 +898,7 @@ export default function GuestEventView() {
           </section>
         ) : null}
 
-        <footer className={styles.footer}>
+        <footer className={styles.footer} data-cele="footer">
           <span>ביחד, מגשימים למישהו משאלה</span>
           <span>lolo · מתנות משותפות</span>
         </footer>
