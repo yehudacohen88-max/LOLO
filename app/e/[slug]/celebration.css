@@ -26,6 +26,7 @@ body:has([data-look="elegant"]) {
 }
 
 .guest-shell:has([data-look="elegant"]) {
+  position: relative;
   background-color: #fff3e4;
   background-image:
     radial-gradient(880px 420px at 100% -10%, rgba(248, 175, 195, 0.62), transparent 60%),
@@ -778,7 +779,7 @@ html[dir="rtl"] [data-look="elegant"] [data-cele="footer"] {
 
   .guest-shell:has([data-look="elegant"])::before {
     content: "";
-    position: fixed;
+    position: absolute;
     inset: 14px;
     z-index: 4;
     border: 1px solid rgba(23, 47, 43, 0.22);
@@ -788,7 +789,7 @@ html[dir="rtl"] [data-look="elegant"] [data-cele="footer"] {
 
   .guest-shell:has([data-look="elegant"])::after {
     content: "";
-    position: fixed;
+    position: absolute;
     inset: 20px;
     z-index: 4;
     border: 1px solid rgba(248, 175, 195, 0.95);

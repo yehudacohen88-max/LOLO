@@ -125,7 +125,11 @@ const browser = await chromium.launch();
 const context = await browser.newContext({ reducedMotion: "reduce" });
 const page = await context.newPage();
 
+const onlyLook = process.env.CAPTURE_LOOK;
 for (const [prefix, look, withImages, width] of shots) {
+  if (onlyLook && look !== onlyLook) {
+    continue;
+  }
   await page.setViewportSize({ width, height: width === 390 ? 844 : 900 });
   await installRoutes(page, withImages);
   const slug = withImages ? "celebration-with-images" : "celebration-no-images";
