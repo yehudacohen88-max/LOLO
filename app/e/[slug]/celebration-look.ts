@@ -1,6 +1,4 @@
-/** Presentation-only. Stage A themes for the main guest event page. */
-
-export type CelebrationLook = "bold" | "elegant";
+/** Presentation-only motifs for the guest event page. */
 
 export type OccasionMotif =
   | "birthday"
@@ -21,16 +19,6 @@ export type GiftMotif =
   | "balloons";
 
 export type ArtKind = OccasionMotif | GiftMotif;
-
-export function parseCelebrationLook(
-  value: string | string[] | undefined | null,
-): CelebrationLook | null {
-  const raw = Array.isArray(value) ? value[0] : value;
-  if (raw === "bold" || raw === "elegant") {
-    return raw;
-  }
-  return null;
-}
 
 export function occasionMotif(eventType: string): OccasionMotif {
   const type = eventType.trim();

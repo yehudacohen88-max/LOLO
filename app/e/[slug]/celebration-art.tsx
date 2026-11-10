@@ -1,10 +1,5 @@
 import type { CSSProperties } from "react";
-import type {
-  ArtKind,
-  CelebrationLook,
-  GiftMotif,
-  OccasionMotif,
-} from "./celebration-look";
+import type { ArtKind, GiftMotif, OccasionMotif } from "./celebration-look";
 
 const INK = "#172F2B";
 const CORAL = "#FF6B57";
@@ -299,11 +294,10 @@ function Book() {
   );
 }
 
-export function CelebrationConfetti({ look }: { look: CelebrationLook }) {
-  const bits = look === "bold" ? BITS : BITS.filter((_, index) => index % 2 === 0);
+export function CelebrationConfetti() {
   return (
     <div data-cele="confetti" aria-hidden="true">
-      {bits.map((bit, index) => (
+      {BITS.map((bit, index) => (
         <span
           key={`${bit.x}-${index}`}
           data-cele="bit"
@@ -325,29 +319,17 @@ export function CelebrationConfetti({ look }: { look: CelebrationLook }) {
   );
 }
 
-export function FestiveStage({
-  occasion,
-  look,
-}: {
-  occasion: OccasionMotif;
-  look: CelebrationLook;
-}) {
+export function FestiveStage({ occasion }: { occasion: OccasionMotif }) {
   return (
-    <div data-cele="festive" data-occasion={occasion} data-tone={look} aria-hidden="true">
+    <div data-cele="festive" data-occasion={occasion} aria-hidden="true">
       <Motif kind={occasion} />
     </div>
   );
 }
 
-export function GiftMedallion({
-  motif,
-  look,
-}: {
-  motif: GiftMotif;
-  look: CelebrationLook;
-}) {
+export function GiftMedallion({ motif }: { motif: GiftMotif }) {
   return (
-    <div data-cele="medallion" data-motif={motif} data-tone={look} aria-hidden="true">
+    <div data-cele="medallion" data-motif={motif} data-gift-fallback="" aria-hidden="true">
       <Motif kind={motif} />
     </div>
   );

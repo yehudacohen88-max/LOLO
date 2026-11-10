@@ -7,7 +7,6 @@ import Link from "next/link";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import LoloMark from "@/app/design/lolo-mark";
 import { formatGiftAmount } from "@/lib/guest-draft";
-import type { CelebrationLook } from "./celebration-look";
 import styles from "./flagship.module.css";
 
 function useSvgId(prefix: string) {
@@ -404,23 +403,13 @@ export function GiftReveal({
   );
 }
 
-export function Frame({
-  children,
-  look = null,
-}: {
-  children: ReactNode;
-  look?: CelebrationLook | null;
-}) {
-  const inner = (
-    <>
+export function Frame({ children }: { children: ReactNode }) {
+  return (
+    <div data-celebration="">
       <header className={styles.header} data-cele="header">
         <Wordmark />
       </header>
       {children}
-    </>
+    </div>
   );
-  if (!look) {
-    return inner;
-  }
-  return <div data-look={look}>{inner}</div>;
 }

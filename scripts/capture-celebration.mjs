@@ -111,29 +111,28 @@ async function installRoutes(page, withImages) {
 }
 
 const shots = [
-  ["A-bold", "bold", true, 390],
-  ["A-bold", "bold", true, 1440],
-  ["A-bold", "bold", false, 390],
-  ["A-bold", "bold", false, 1440],
-  ["B-elegant", "elegant", true, 390],
-  ["B-elegant", "elegant", true, 1440],
-  ["B-elegant", "elegant", false, 390],
-  ["B-elegant", "elegant", false, 1440],
+  ["event", true, 320, false],
+  ["event", true, 390, true],
+  ["event", true, 768, true],
+  ["event", true, 1024, false],
+  ["event", true, 1440, true],
+  ["event", false, 320, false],
+  ["event", false, 390, true],
+  ["event", false, 768, true],
+  ["event", false, 1024, false],
+  ["event", false, 1440, true],
 ];
 
 const browser = await chromium.launch();
 const context = await browser.newContext({ reducedMotion: "reduce" });
 const page = await context.newPage();
 
-const onlyLook = process.env.CAPTURE_LOOK;
-for (const [prefix, look, withImages, width] of shots) {
-  if (onlyLook && look !== onlyLook) {
-    continue;
-  }
-  await page.setViewportSize({ width, height: width === 390 ? 844 : 900 });
+for (const [prefix, withImages, width, save] of shots) {
+  const height = width <= 390 ? 844 : width === 768 ? 1024 : 900;
+  await page.setViewportSize({ width, height });
   await installRoutes(page, withImages);
   const slug = withImages ? "celebration-with-images" : "celebration-no-images";
-  await page.goto(`${baseURL}/e/${slug}?look=${look}`, { waitUntil: "networkidle" });
+  await page.goto(`${baseURL}/e/${slug}`, { waitUntil: "networkidle" });
   await page.evaluate(async () => {
     await document.fonts.ready;
   });
@@ -151,7 +150,27 @@ for (const [prefix, look, withImages, width] of shots) {
       track: trackBox ? { x: Math.round(trackBox.x), w: Math.round(trackBox.width) } : null,
     };
   });
-  console.log(prefix, withImages, width, JSON.stringify(metrics));
+  const small = await page.locator("[data-celebration] a, [data-celebration] button, [data-celebration] input, [data-celebration] textarea").evaluateAll((nodes) =>
+    nodes
+      .map((node) => {
+        const rect = node.getBoundingClientRect();
+        if (rect.width === 0 || rect.height === 0) return null;
+        if (rect.width >= 44 && rect.height >= 44) return null;
+        return `${node.tagName} ${(node.textContent || "").trim().slice(0, 24)} ${Math.round(rect.width)}x${Math.round(rect.height)}`;
+      })
+      .filter(Boolean),
+  );
+  console.log(prefix, withImages ? "images" : "none", width, JSON.stringify(metrics), small.join(" | ") || "targets-ok");
+  if (metrics.overflow > 1) {
+    throw new Error(`overflow ${metrics.overflow} at ${width}`);
+  }
+  if (small.length) {
+    throw new Error(`small targets at ${width}: ${small.join(" | ")}`);
+  }
+  if (!save) {
+    await page.unroute("**/*");
+    continue;
+  }
   const name = `${prefix}_${withImages ? "with-images" : "no-images"}_${width}.png`;
   await page.screenshot({
     path: path.join(artifactDir, name),

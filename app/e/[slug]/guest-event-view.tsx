@@ -19,16 +19,10 @@ import {
   type GuestContribution,
 } from "@/lib/guest-draft";
 import { CelebrationConfetti, FestiveStage, GiftMedallion } from "./celebration-art";
-import {
-  giftMotif,
-  occasionMotif,
-  type CelebrationLook,
-} from "./celebration-look";
+import { giftMotif, occasionMotif } from "./celebration-look";
 import {
   CountAmount,
-  EventMark,
   Frame,
-  GiftFallback,
   GiftIcon,
   GiftScene,
   LockIcon,
@@ -144,11 +138,7 @@ function CheckIcon() {
   );
 }
 
-export default function GuestEventView({
-  look = null,
-}: {
-  look?: CelebrationLook | null;
-}) {
+export default function GuestEventView() {
   const router = useRouter();
   const slug = fromRouteParam(useParams<{ slug: string }>().slug);
   const [event, setEvent] = useState<StoredEvent | null>(null);
@@ -572,7 +562,7 @@ export default function GuestEventView({
 
   if (missing) {
     return (
-      <Frame look={look}>
+      <Frame>
         <div className={styles.status}>
           <h1>האירוע לא נמצא</h1>
           <p>הקישור לא מוביל לאירוע פעיל. בקשו מהמארח קישור חדש, או חזרו לדף הבית.</p>
@@ -586,7 +576,7 @@ export default function GuestEventView({
 
   if (!event) {
     return (
-      <Frame look={look}>
+      <Frame>
         <p className={styles.status} role="status">
           טוענים את האירוע...
         </p>
@@ -618,12 +608,11 @@ export default function GuestEventView({
         objectPosition={coverObjectPosition(event)}
       />
     </div>
-  ) : look ? (
-    <FestiveStage occasion={occasion} look={look} />
-  ) : null;
+  ) : (
+    <FestiveStage occasion={occasion} />
+  );
   const copyNode = (
     <div className={`${styles.copy} ${styles.rise}`} data-cele="copy">
-      {event.coverImage || look ? null : <EventMark />}
       {kicker.length > 0 ? (
         <p className={styles.kicker} data-cele="kicker">
           {kicker.map((part, index) => (
@@ -642,11 +631,10 @@ export default function GuestEventView({
       <p className={styles.sub} data-cele="sub">
         מתנה מכל החברים
       </p>
-      {look && event.hostName.trim() ? (
-        <p data-cele="hostchip">הזמנה מאת {event.hostName.trim()}</p>
-      ) : null}
-      {!look && !event.coverImage && !message && event.hostName.trim() ? (
-        <p className={styles.hostLine}>הזמנה מאת {event.hostName.trim()}</p>
+      {!event.coverImage && !message && event.hostName.trim() ? (
+        <p className={styles.hostLine} data-cele="hostchip">
+          הזמנה מאת {event.hostName.trim()}
+        </p>
       ) : null}
       {primary && hostGifts.length >= 3 ? (
         <button
@@ -670,7 +658,7 @@ export default function GuestEventView({
     </div>
   );
   return (
-    <Frame look={look}>
+    <Frame>
       {event.slug === DEMO_EVENT_SLUG ? (
         <div className={styles.demoNote}>
           <p className={styles.demoBadge}>{DEMO_SAMPLE_BADGE}</p>
@@ -681,18 +669,11 @@ export default function GuestEventView({
         className={`${styles.spread} ${event.coverImage ? "" : styles.spreadBare}`}
         data-cele="spread"
       >
-        {look ? (
-          <div data-cele="mast" data-occasion={occasion}>
-            <CelebrationConfetti look={look} />
-            {heroNode}
-            {copyNode}
-          </div>
-        ) : (
-          <>
-            {heroNode}
-            {copyNode}
-          </>
-        )}
+        <div data-cele="mast" data-occasion={occasion}>
+          <CelebrationConfetti />
+          {heroNode}
+          {copyNode}
+        </div>
 
         {venueName || address ? (
           <section className={styles.venue} data-venue="" data-cele="venue">
@@ -730,14 +711,13 @@ export default function GuestEventView({
           >
             {primary.imageUrl ? (
               <GiftScene src={primary.imageUrl} alt={primary.name} primary />
-            ) : look ? (
-              <GiftMedallion motif={giftMotif(primary.name, 0)} look={look} />
-            ) : null}
+            ) : (
+              <GiftMedallion motif={giftMotif(primary.name, 0)} />
+            )}
             <div
               className={primary.imageUrl ? styles.gmeta : styles.noPhotoTitle}
               data-cele="meta"
             >
-              {primary.imageUrl || look ? null : <GiftFallback compact />}
               <div>
                 <p className={styles.label} data-cele="label">המשאלה</p>
                 <h2 className={styles.giftName}>{displayTitle(primary.name)}</h2>
@@ -875,14 +855,13 @@ export default function GuestEventView({
                 >
                   {gift.imageUrl ? (
                     <GiftScene src={gift.imageUrl} alt={gift.name} />
-                  ) : look ? (
-                    <GiftMedallion motif={giftMotif(gift.name, index + 1)} look={look} />
-                  ) : null}
+                  ) : (
+                    <GiftMedallion motif={giftMotif(gift.name, index + 1)} />
+                  )}
                   <div
                     className={gift.imageUrl ? styles.gmeta : styles.noPhotoTitle}
                     data-cele="meta"
                   >
-                    {gift.imageUrl || look ? null : <GiftFallback compact />}
                     <div>
                       <h3 className={styles.giftName}>{displayTitle(gift.name)}</h3>
                       {gift.imageUrl ? (
