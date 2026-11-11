@@ -79,7 +79,7 @@ const birthday: StoredEvent = {
       "סוף שבוע לשניים.",
       3200,
       0,
-      libraryBySlug("suitcase-flowers", "card").file,
+      libraryBySlug("tropical-beach", "card").file,
     ),
     gift(
       birthdayId,

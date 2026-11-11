@@ -314,6 +314,14 @@ test("showcase renders real event scenes without API writes", async ({ page }) =
             "src",
             /candle-layer-cake-hero\.webp$/,
           );
+          await expect(page.locator("[data-cele='wish'] img")).toHaveAttribute(
+            "src",
+            /tropical-beach-card\.webp$/,
+          );
+          await expect(page.locator("[data-cele='feature'] [data-gift-photo]")).toHaveAttribute(
+            "src",
+            /tropical-beach-card\.webp$/,
+          );
         }
         if (scene === "plain") {
           await expect(page.locator("[data-portrait]")).toHaveAttribute(
@@ -335,6 +343,24 @@ test("showcase renders real event scenes without API writes", async ({ page }) =
             path: path.join(artifactDir, `pr-a-showcase-birthday-fold-${width}.png`),
             fullPage: false,
           });
+          const feature = page.locator("[data-cele='feature']");
+          const more = page.locator("[data-cele='more']");
+          await feature.evaluate((element) => element.scrollIntoView({ block: "start" }));
+          const featureBox = await feature.boundingBox();
+          const moreBox = await more.boundingBox();
+          const viewport = page.viewportSize();
+          if (featureBox && moreBox && viewport) {
+            const x = Math.max(0, Math.min(featureBox.x, moreBox.x));
+            const y = Math.max(0, Math.min(featureBox.y, moreBox.y));
+            const right = Math.min(viewport.width, Math.max(featureBox.x + featureBox.width, moreBox.x + moreBox.width));
+            const bottom = Math.min(viewport.height, Math.max(featureBox.y + featureBox.height, moreBox.y + moreBox.height));
+            if (right - x > 40 && bottom - y > 40) {
+              await page.screenshot({
+                path: path.join(artifactDir, `pr-a-showcase-birthday-gifts-${width}.png`),
+                clip: { x, y, width: right - x, height: bottom - y },
+              });
+            }
+          }
         }
       }
     }
