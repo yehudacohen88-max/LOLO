@@ -178,7 +178,7 @@ for (const viewport of [
     await page.setViewportSize({ width: viewport.width, height: viewport.height });
     await page.goto("/e/flagship-fixture");
     await expect(page.getByText("הזמנה אישית מאת נועה לוי")).toBeVisible();
-    await expect(page.getByText("הזמנה מאת נועה לוי")).toHaveCount(0);
+    await expect(page.getByText("הזמנה מאת נועה לוי")).toBeVisible();
     await expect(page.getByText("הזמנה", { exact: true })).toHaveCount(0);
     await page.getByRole("button", { name: /350/ }).click();
     await page.getByRole("button", { name: "מצטרפים למתנה" }).click();
@@ -248,7 +248,8 @@ for (const viewport of [
     await installFlow(page, false);
     await page.setViewportSize({ width: viewport.width, height: viewport.height });
     await page.goto("/e/flagship-fixture");
-    await expectGiftFallback(page);
+    await expect(page.locator("[data-portrait][data-image-source='library']")).toBeVisible();
+    await expect(page.locator("[data-gift-photo][data-image-source='library']").first()).toBeVisible();
     await page.getByRole("button", { name: /350/ }).click();
     await page.getByRole("button", { name: "מצטרפים למתנה" }).click();
     await expect(page.locator("[data-continuity-title]")).toHaveText("חוגגים 40 לדנה");

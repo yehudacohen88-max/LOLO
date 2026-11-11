@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { formatEventTime } from "@/lib/event-draft";
 import { getEventBySlug, guestEventPath, type StoredEvent } from "@/lib/events";
+import { giftPhotoFit, resolveEventCover, resolveGiftImage } from "@/lib/image-library";
 import {
   DEMO_EVENT_SLUG,
   DEMO_IMAGE_CREDIT,
@@ -52,6 +53,63 @@ type DisplayGift = {
   imageUrl: string;
   storeName: string;
 };
+
+export type CelebrationPreview = {
+  event: StoredEvent;
+  funding: Record<string, GiftFundingView>;
+};
+
+function giftVisual(gift: DisplayGift) {
+  return resolveGiftImage({
+    hostImageUrl: gift.imageUrl,
+    title: gift.name,
+    description: gift.description,
+  });
+}
+
+function giftHasPhoto(gift: DisplayGift) {
+  return giftVisual(gift).kind !== "illustration";
+}
+
+function GiftFigure({
+  gift,
+  primary = false,
+  index,
+}: {
+  gift: DisplayGift;
+  primary?: boolean;
+  index: number;
+}) {
+  const visual = giftVisual(gift);
+  if (visual.kind === "illustration") {
+    return <GiftMedallion motif={giftMotif(gift.name, index)} />;
+  }
+  return (
+    <GiftScene
+      src={visual.src}
+      avifSrc={visual.avif}
+      alt={visual.alt}
+      primary={primary}
+      fit={giftPhotoFit(visual.src)}
+      illustrative={visual.illustrative}
+      sourceKind={visual.kind}
+    />
+  );
+}
+
+function giftsFromEvent(stored: StoredEvent): DisplayGift[] {
+  return [...stored.gifts]
+    .filter((gift) => gift.active !== false)
+    .sort((a, b) => a.priority - b.priority)
+    .map((gift) => ({
+      id: gift.id,
+      name: gift.title,
+      description: gift.description,
+      price: gift.targetAmount,
+      imageUrl: gift.imageUrl,
+      storeName: gift.storeName,
+    }));
+}
 
 function parseAmount(value: string) {
   const amount = Number(value.replace(/[^\d.]/g, ""));
@@ -138,21 +196,34 @@ function CheckIcon() {
   );
 }
 
-export default function GuestEventView() {
+export default function GuestEventView({
+  preview,
+  onPreviewJoin,
+}: {
+  preview?: CelebrationPreview;
+  onPreviewJoin?: () => void;
+}) {
   const router = useRouter();
   const slug = fromRouteParam(useParams<{ slug: string }>().slug);
-  const [event, setEvent] = useState<StoredEvent | null>(null);
+  const [event, setEvent] = useState<StoredEvent | null>(preview?.event ?? null);
   const [missing, setMissing] = useState(false);
-  const [hostGifts, setHostGifts] = useState<DisplayGift[]>([]);
+  const [hostGifts, setHostGifts] = useState<DisplayGift[]>(
+    preview ? giftsFromEvent(preview.event) : [],
+  );
   const [contributions, setContributions] = useState<GuestContribution[]>([]);
   const [customDrafts, setCustomDrafts] = useState<Record<string, string>>({});
   const [openCustom, setOpenCustom] = useState<Record<string, boolean>>({});
   const [customErrors, setCustomErrors] = useState<Record<string, string>>({});
-  const [funding, setFunding] = useState<Record<string, GiftFundingView> | null>(null);
+  const [funding, setFunding] = useState<Record<string, GiftFundingView> | null>(
+    preview?.funding ?? null,
+  );
   const [fundingNote, setFundingNote] = useState("");
   const [amountHint, setAmountHint] = useState(false);
 
   useEffect(() => {
+    if (preview) {
+      return;
+    }
     let cancelled = false;
 
     void (async () => {
@@ -177,17 +248,7 @@ export default function GuestEventView() {
 
       const eventSlug = stored.slug;
 
-      const available = [...stored.gifts]
-        .filter((gift) => gift.active !== false)
-        .sort((a, b) => a.priority - b.priority)
-        .map((gift) => ({
-          id: gift.id,
-          name: gift.title,
-          description: gift.description,
-          price: gift.targetAmount,
-          imageUrl: gift.imageUrl,
-          storeName: gift.storeName,
-        }));
+      const available = giftsFromEvent(stored);
 
       setMissing(false);
       setEvent(stored);
@@ -204,10 +265,10 @@ export default function GuestEventView() {
     return () => {
       cancelled = true;
     };
-  }, [slug]);
+  }, [slug, preview]);
 
   useEffect(() => {
-    if (!slug) {
+    if (preview || !slug) {
       return;
     }
 
@@ -265,10 +326,10 @@ export default function GuestEventView() {
     return () => {
       cancelled = true;
     };
-  }, [slug]);
+  }, [slug, preview]);
 
   useEffect(() => {
-    if (!event) {
+    if (preview || !event) {
       return;
     }
     const rows: ContinuityFunding[] | null = funding
@@ -285,7 +346,7 @@ export default function GuestEventView() {
     if (slug && slug !== key) {
       writeContinuity(slug, mark);
     }
-  }, [event, funding, contributions, slug]);
+  }, [preview, event, funding, contributions, slug]);
 
   const suggestedAmounts = useMemo(() => {
     if (!event) {
@@ -312,7 +373,9 @@ export default function GuestEventView() {
         ...current.filter((item) => item.giftId !== gift.id),
         { giftId: gift.id, giftName: gift.name, amount },
       ];
-      saveContributions(storageSlug(), next);
+      if (!preview) {
+        saveContributions(storageSlug(), next);
+      }
       return next;
     });
   }
@@ -320,7 +383,9 @@ export default function GuestEventView() {
   function removeContribution(giftId: string) {
     setContributions((current) => {
       const next = current.filter((item) => item.giftId !== giftId);
-      saveContributions(storageSlug(), next);
+      if (!preview) {
+        saveContributions(storageSlug(), next);
+      }
       return next;
     });
     setOpenCustom((current) => ({ ...current, [giftId]: false }));
@@ -597,20 +662,32 @@ export default function GuestEventView() {
   const message = event.message.trim();
   const quoted = /^[״"“«]/.test(message);
   const occasion = occasionMotif(event.eventType);
-  const heroNode = event.coverImage ? (
-    <div className={styles.hero} data-cele="hero">
-      <Portrait
-        src={event.coverImage}
-        alt={event.title ? `תמונה לאירוע ${event.title}` : "תמונת האירוע"}
-        monogram=""
-        hostName={event.hostName.trim()}
-        nameOnChip={!message}
-        objectPosition={coverObjectPosition(event)}
-      />
-    </div>
-  ) : (
-    <FestiveStage occasion={occasion} />
-  );
+  const cover = resolveEventCover({
+    hostImageUrl: event.coverImage,
+    eventType: event.eventType,
+    title: event.title,
+    alt: event.title ? `תמונה לאירוע ${event.title}` : "תמונת האירוע",
+  });
+  const groupLine = "מתנה מכל החברים";
+  const showGroupLine = !(event.title || "").includes(groupLine);
+  const primaryVisual = primary ? giftVisual(primary) : null;
+  const heroNode =
+    cover.kind === "illustration" ? (
+      <FestiveStage occasion={occasion} />
+    ) : (
+      <div className={styles.hero} data-cele="hero">
+        <Portrait
+          src={cover.src}
+          avifSrc={cover.avif}
+          alt={cover.alt}
+          monogram=""
+          hostName={event.hostName.trim()}
+          nameOnChip={false}
+          objectPosition={coverObjectPosition(event)}
+          sourceKind={cover.kind}
+        />
+      </div>
+    );
   const copyNode = (
     <div className={`${styles.copy} ${styles.rise}`} data-cele="copy">
       {kicker.length > 0 ? (
@@ -628,10 +705,12 @@ export default function GuestEventView() {
       <h1 className={styles.title} data-cele="title">
         <TitleText title={event.title || "האירוע"} />
       </h1>
-      <p className={styles.sub} data-cele="sub">
-        מתנה מכל החברים
-      </p>
-      {!event.coverImage && !message && event.hostName.trim() ? (
+      {showGroupLine ? (
+        <p className={styles.sub} data-cele="sub">
+          {groupLine}
+        </p>
+      ) : null}
+      {event.hostName.trim() ? (
         <p className={styles.hostLine} data-cele="hostchip">
           הזמנה מאת {event.hostName.trim()}
         </p>
@@ -640,6 +719,7 @@ export default function GuestEventView() {
         <button
           type="button"
           className={styles.wish}
+          data-cele="wish"
           onClick={() => {
             const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
             document.getElementById(`gift-${primary.id}`)?.scrollIntoView({
@@ -648,7 +728,7 @@ export default function GuestEventView() {
             });
           }}
         >
-          <WishThumb src={primary.imageUrl} />
+          <WishThumb src={primaryVisual?.kind === "illustration" ? "" : primaryVisual?.src || ""} />
           <span className={styles.wishCopy}>
             <span className={styles.wishLabel}>המשאלה</span>
             <span className={styles.wishName}>{primary.name}</span>
@@ -660,13 +740,13 @@ export default function GuestEventView() {
   return (
     <Frame>
       {event.slug === DEMO_EVENT_SLUG ? (
-        <div className={styles.demoNote}>
-          <p className={styles.demoBadge}>{DEMO_SAMPLE_BADGE}</p>
-          <p className={styles.demoCredit}>{DEMO_IMAGE_CREDIT}</p>
+        <div className={styles.demoNote} data-cele="demo">
+          <p className={styles.demoBadge} data-cele="demo-badge">{DEMO_SAMPLE_BADGE}</p>
+          <p className={styles.demoCredit} data-cele="demo-credit">{DEMO_IMAGE_CREDIT}</p>
         </div>
       ) : null}
       <div
-        className={`${styles.spread} ${event.coverImage ? "" : styles.spreadBare}`}
+        className={`${styles.spread} ${cover.kind === "illustration" ? styles.spreadBare : ""}`}
         data-cele="spread"
       >
         <div data-cele="mast" data-occasion={occasion}>
@@ -704,24 +784,20 @@ export default function GuestEventView() {
         <div className={styles.story} data-cele="story">
         {primary ? (
           <section
-            className={`${styles.feature} ${primary.imageUrl ? "" : styles.noPhoto} ${styles.rise} ${styles.d2}`}
+            className={`${styles.feature} lo-card ${giftHasPhoto(primary) ? "" : styles.noPhoto} ${styles.rise} ${styles.d2}`}
             id={`gift-${primary.id}`}
             data-gift-scene=""
             data-cele="feature"
           >
-            {primary.imageUrl ? (
-              <GiftScene src={primary.imageUrl} alt={primary.name} primary />
-            ) : (
-              <GiftMedallion motif={giftMotif(primary.name, 0)} />
-            )}
+            <GiftFigure gift={primary} primary index={0} />
             <div
-              className={primary.imageUrl ? styles.gmeta : styles.noPhotoTitle}
+              className={giftHasPhoto(primary) ? styles.gmeta : styles.noPhotoTitle}
               data-cele="meta"
             >
               <div>
                 <p className={styles.label} data-cele="label">המשאלה</p>
                 <h2 className={styles.giftName}>{displayTitle(primary.name)}</h2>
-                {primary.imageUrl ? (
+                {giftHasPhoto(primary) ? (
                   <>
                     {primary.description ? <p className={styles.muted}>{primary.description}</p> : null}
                     {primary.storeName ? <p className={styles.muted}>חנות: {primary.storeName}</p> : null}
@@ -735,7 +811,7 @@ export default function GuestEventView() {
                 ) : null}
               </div>
             </div>
-            {primary.imageUrl ? null : (
+            {giftHasPhoto(primary) ? null : (
               <div className={styles.giftCopy}>
                 {primary.description ? <p className={styles.muted}>{primary.description}</p> : null}
                 {primary.storeName ? <p className={styles.muted}>חנות: {primary.storeName}</p> : null}
@@ -807,6 +883,10 @@ export default function GuestEventView() {
                   setAmountHint(true);
                   return;
                 }
+                if (preview) {
+                  onPreviewJoin?.();
+                  return;
+                }
                 saveContributions(storageSlug(), contributions);
                 if (event) {
                   const rows: ContinuityFunding[] | null = funding
@@ -826,7 +906,7 @@ export default function GuestEventView() {
                 }
                 router.push(guestEventPath(storageSlug(), "greeting"));
               }}
-              className={styles.cta}
+              className={`${styles.cta} lo-btn`}
               data-cele="cta"
               aria-describedby={amountHint ? "join-amount-hint" : undefined}
             >
@@ -849,22 +929,18 @@ export default function GuestEventView() {
               {others.map((gift, index) => (
                 <article
                   key={gift.id}
-                  className={`${styles.extra} ${gift.imageUrl ? "" : styles.noPhoto}`}
+                  className={`${styles.extra} lo-card ${giftHasPhoto(gift) ? "" : styles.noPhoto}`}
                   id={`gift-${gift.id}`}
                   data-cele="extra"
                 >
-                  {gift.imageUrl ? (
-                    <GiftScene src={gift.imageUrl} alt={gift.name} />
-                  ) : (
-                    <GiftMedallion motif={giftMotif(gift.name, index + 1)} />
-                  )}
+                  <GiftFigure gift={gift} index={index + 1} />
                   <div
-                    className={gift.imageUrl ? styles.gmeta : styles.noPhotoTitle}
+                    className={giftHasPhoto(gift) ? styles.gmeta : styles.noPhotoTitle}
                     data-cele="meta"
                   >
                     <div>
                       <h3 className={styles.giftName}>{displayTitle(gift.name)}</h3>
-                      {gift.imageUrl ? (
+                      {giftHasPhoto(gift) ? (
                         <>
                           {gift.description ? <p className={styles.muted}>{gift.description}</p> : null}
                           {gift.storeName ? <p className={styles.muted}>חנות: {gift.storeName}</p> : null}
@@ -878,7 +954,7 @@ export default function GuestEventView() {
                       ) : null}
                     </div>
                   </div>
-                  {gift.imageUrl ? null : (
+                  {giftHasPhoto(gift) ? null : (
                     <div className={styles.giftCopy}>
                       {gift.description ? <p className={styles.muted}>{gift.description}</p> : null}
                       {gift.storeName ? <p className={styles.muted}>חנות: {gift.storeName}</p> : null}

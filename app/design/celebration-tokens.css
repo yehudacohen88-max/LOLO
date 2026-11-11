@@ -1,0 +1,112 @@
+/*
+  LOLO Celebration tokens. The Bold event page is the source of truth.
+  Other screens do not reference these classes yet (guest flow, home, host, admin).
+  Stage and ink share #172f2b. Heebo stays the display face so the approved
+  event page does not pick up a second type family.
+*/
+
+:root {
+  --lo-stage: #172f2b;
+  --lo-stage-2: #21443d;
+  --lo-ink: #172f2b;
+  --lo-muted: #3e524c;
+  --lo-cream: #fff3e4;
+  --lo-coral: #ff6b57;
+  --lo-yellow: #ffb84d;
+  --lo-yellow-press: #f0a52e;
+  --lo-pink: #f8afc3;
+  --lo-danger: #9a3d4e;
+  --lo-success: #172f2b;
+  --lo-card: #fff3e4;
+  --lo-line: rgba(23, 47, 43, 0.12);
+  --lo-stage-line: rgba(255, 243, 228, 0.12);
+  --lo-focus-ring: #ffb84d;
+  --lo-font-display: var(--font-heebo), "Heebo", "Arial Hebrew", Arial, sans-serif;
+  --lo-font-body: var(--font-heebo), "Heebo", "Arial Hebrew", Arial, sans-serif;
+  --lo-type-display: clamp(2.05rem, 4.8vw, 4.35rem);
+  --lo-type-section: clamp(1.35rem, 2.4vw, 1.7rem);
+  --lo-type-body: 1.125rem;
+  --lo-type-cta: 1.25rem;
+  --lo-space-2: 8px;
+  --lo-space-3: 12px;
+  --lo-space-4: 16px;
+  --lo-space-5: 24px;
+  --lo-space-6: 32px;
+  --lo-radius-input: 12px;
+  --lo-radius-chip: 16px;
+  --lo-radius-media: 22px;
+  --lo-radius-card: 28px;
+  --lo-radius-pill: 999px;
+  --lo-shadow-card: 0 16px 30px -24px rgba(0, 0, 0, 0.55);
+  --lo-shadow-panel: 0 18px 36px -26px rgba(0, 0, 0, 0.65);
+  --lo-shadow-cta: 0 12px 24px -16px rgba(255, 184, 77, 0.9);
+}
+
+.lo-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 64px;
+  padding: 0 22px;
+  border: 0;
+  border-radius: var(--lo-radius-pill);
+  background: var(--lo-yellow);
+  color: var(--lo-ink);
+  font-weight: 700;
+  font-size: var(--lo-type-cta);
+  line-height: 1.2;
+}
+
+.lo-btn:active {
+  background: var(--lo-yellow-press);
+}
+
+.lo-card {
+  background: var(--lo-card);
+  color: var(--lo-ink);
+  border-radius: var(--lo-radius-card);
+}
+
+.lo-showcase-bar {
+  display: grid;
+  gap: var(--lo-space-3);
+  width: min(1280px, calc(100% - 24px));
+  margin: 12px auto 0;
+  padding: 14px 16px;
+  border-radius: var(--lo-radius-card);
+  background: var(--lo-stage-2);
+  color: var(--lo-cream);
+}
+
+.lo-showcase-bar p {
+  margin: 0;
+  color: var(--lo-cream);
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.lo-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--lo-space-2);
+}
+
+.lo-chip {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 8px 16px;
+  border: 1px solid rgba(255, 243, 228, 0.45);
+  border-radius: var(--lo-radius-pill);
+  background: transparent;
+  color: var(--lo-cream);
+  font: inherit;
+  font-weight: 700;
+}
+
+.lo-chip[aria-pressed="true"] {
+  border-color: var(--lo-yellow);
+  background: var(--lo-yellow);
+  color: var(--lo-ink);
+}

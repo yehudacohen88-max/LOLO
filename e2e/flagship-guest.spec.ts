@@ -1,7 +1,6 @@
 import { mkdirSync } from "node:fs";
 import path from "node:path";
 import { expect, test, type Page } from "@playwright/test";
-import { expectGiftFallback } from "./empty-cover";
 
 const artifactDir = process.env.FLAGSHIP_ARTIFACT_DIR || "/opt/cursor/artifacts";
 // Mockup photos for this test only. They are not the guest page's default images.
@@ -94,7 +93,7 @@ test("guest page keeps contribution flow and hides an empty invitation", async (
   await expect(page.locator("h1 span")).toHaveText("40");
   await expect(page.locator("h1 span")).toHaveCSS("color", "rgb(255, 184, 77)");
   await expect(page.getByText("השנה החלטנו להפתיע את דנה")).toBeVisible();
-  await expect(page.getByText("הזמנה מאת נועה לוי")).toHaveCount(0);
+  await expect(page.getByText("הזמנה מאת נועה לוי")).toBeVisible();
   await expect(page.getByText("הזמנה", { exact: true })).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "כבר 23 חברים הצטרפו" })).toBeVisible();
   await expect(page.getByText("93.75%")).toBeVisible();
@@ -200,9 +199,12 @@ for (const viewport of widths) {
       await expect(page.getByText("תשלום הדגמה — לא מתבצע חיוב אמיתי")).toBeVisible();
       if (withImages) {
         await expect(page.locator("img[alt='תמונה לאירוע חוגגים 40 לדנה']")).toBeVisible();
+        await expect(page.locator("[data-portrait]")).toHaveAttribute("data-image-source", "host");
       } else {
         await expect(page.locator("img[alt='תמונה לאירוע חוגגים 40 לדנה']")).toHaveCount(0);
-        await expectGiftFallback(page);
+        await expect(page.locator("[data-portrait]")).toHaveAttribute("data-image-source", "library");
+        await expect(page.locator("[data-portrait]")).toHaveAttribute("src", /\/images\/library\//);
+        await expect(page.locator("[data-illustrative-label]").first()).toBeVisible();
       }
       await settle(page);
       if (withImages) {
