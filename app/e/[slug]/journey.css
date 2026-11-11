@@ -1,0 +1,598 @@
+/*
+  Guest journey after gift selection. Scoped to [data-journey] so the Bold
+  event page keeps its own rules. Stage, type, and color come from
+  app/design/celebration-tokens.css.
+*/
+
+html:has([data-journey]),
+body:has([data-journey]) {
+  background: var(--lo-stage);
+}
+
+.guest-shell:has([data-journey]) {
+  background-color: var(--lo-ink);
+  background-image:
+    radial-gradient(920px 460px at 0% -8%, rgba(255, 107, 87, 0.34), transparent 62%),
+    radial-gradient(760px 420px at 100% 0%, rgba(248, 175, 195, 0.2), transparent 58%),
+    radial-gradient(860px 520px at 78% 110%, rgba(255, 184, 77, 0.16), transparent 54%),
+    radial-gradient(circle, rgba(255, 243, 228, 0.16) 1.15px, transparent 1.35px);
+  background-size: auto, auto, auto, 22px 22px;
+  color: var(--lo-cream);
+}
+
+.guest-shell:has([data-journey]) :focus-visible {
+  outline: 3px solid var(--lo-yellow);
+  outline-offset: 3px;
+  box-shadow: none;
+}
+
+.guest-shell:has([data-journey]) [data-journey-cta]:focus-visible,
+.guest-shell:has([data-journey]) [data-journey-panel] [data-journey-cta]:focus-visible,
+.guest-shell:has([data-journey]) [data-journey-thanks-main] [data-journey-cta]:focus-visible {
+  outline: 3px solid var(--lo-ink);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 4px var(--lo-cream);
+}
+
+.guest-shell:has([data-journey]) [data-journey] header {
+  width: min(1120px, calc(100% - 32px));
+  color: var(--lo-cream);
+}
+
+.guest-shell:has([data-journey]) [data-journey] header a {
+  color: var(--lo-cream);
+}
+
+.guest-shell:has([data-journey]) [data-journey-demo-note] p {
+  color: var(--lo-cream);
+}
+
+.guest-shell:has([data-journey]) [data-journey-flow] {
+  width: min(1120px, calc(100% - 32px));
+  margin-inline: auto;
+  padding: 4px 0 48px;
+}
+
+.guest-shell:has([data-journey]) [data-journey] [data-journey-title] {
+  margin: 10px 0 0;
+  color: var(--lo-cream);
+  font-size: clamp(1.85rem, 4.8vw, 2.75rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  text-wrap: balance;
+  overflow-wrap: break-word;
+  white-space: normal;
+}
+
+.guest-shell:has([data-journey]) [data-journey-step="greeting"] [data-journey-title]::after,
+.guest-shell:has([data-journey]) [data-journey-step="thanks"] [data-journey-title]::after {
+  content: "";
+  display: block;
+  width: 76px;
+  height: 7px;
+  margin-top: 12px;
+  border-radius: var(--lo-radius-pill);
+  background: linear-gradient(90deg, var(--lo-coral), var(--lo-yellow));
+}
+
+.guest-shell:has([data-journey]) [data-journey-step="thanks"] [data-journey-title]::after {
+  margin-inline: auto;
+}
+
+.guest-shell:has([data-journey]) [data-journey] [data-journey-lede],
+.guest-shell:has([data-journey]) [data-journey] [data-journey-host] {
+  margin: 8px 0 0;
+  max-width: 40rem;
+  color: var(--lo-cream);
+  font-size: 1.05rem;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.guest-shell:has([data-journey]) [data-journey-steps] {
+  margin-bottom: 4px;
+}
+
+.guest-shell:has([data-journey]) [data-journey-steps] [data-journey-line] {
+  background: rgba(255, 243, 228, 0.4);
+}
+
+.guest-shell:has([data-journey]) [data-journey-steps] [data-journey-label] {
+  color: var(--lo-cream);
+  font-weight: 600;
+}
+
+.guest-shell:has([data-journey]) [data-journey-steps] [data-step="current"] [data-journey-mark] {
+  border: 0;
+  background: var(--lo-yellow);
+  color: var(--lo-ink);
+}
+
+.guest-shell:has([data-journey]) [data-journey-steps] [data-step="current"] [data-journey-label] {
+  color: var(--lo-yellow);
+  font-weight: 700;
+}
+
+.guest-shell:has([data-journey]) [data-journey-steps] [data-step="done"] [data-journey-mark] {
+  background: var(--lo-cream);
+  color: var(--lo-ink);
+}
+
+.guest-shell:has([data-journey]) [data-journey-steps] [data-step="next"] [data-journey-mark] {
+  border: 1.5px solid var(--lo-cream);
+  background: transparent;
+  color: var(--lo-cream);
+}
+
+.guest-shell:has([data-journey]) [data-journey-steps] a:hover [data-journey-label],
+.guest-shell:has([data-journey]) [data-journey-steps] a:focus-visible [data-journey-label] {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.guest-shell:has([data-journey]) [data-journey-hero] {
+  margin: 14px 0 0;
+}
+
+.guest-shell:has([data-journey]) [data-journey-frame] {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  max-height: 210px;
+  border: 4px solid var(--lo-cream);
+  border-radius: 20px;
+  outline: 3px solid var(--lo-coral);
+  outline-offset: 0;
+  background: var(--lo-stage-2);
+  box-shadow: 0 8px 0 var(--lo-yellow);
+}
+
+.guest-shell:has([data-journey]) [data-journey-frame] picture,
+.guest-shell:has([data-journey]) [data-journey-frame] img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 35%;
+}
+
+.guest-shell:has([data-journey]) [data-journey-frame][data-fit="contain"] {
+  background:
+    radial-gradient(circle at 50% 80%, rgba(255, 184, 77, 0.45), transparent 58%),
+    var(--lo-cream);
+}
+
+.guest-shell:has([data-journey]) [data-journey-frame][data-fit="contain"] img {
+  object-fit: contain;
+  object-position: center;
+}
+
+.guest-shell:has([data-journey]) [data-journey-frame] [data-illustrative-label] {
+  position: absolute;
+  z-index: 2;
+  inset-inline-start: 10px;
+  bottom: 10px;
+  max-width: calc(100% - 20px);
+  padding: 4px 10px;
+  border-radius: var(--lo-radius-pill);
+  background: var(--lo-yellow);
+  color: var(--lo-ink);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.guest-shell:has([data-journey]) [data-journey-choice] {
+  border-radius: 28px;
+  background: var(--lo-cream);
+  color: var(--lo-ink);
+  box-shadow: var(--lo-shadow-card);
+}
+
+.guest-shell:has([data-journey]) [data-journey-step="greeting"] [data-journey-choice] {
+  border-top: 4px solid var(--lo-coral);
+}
+
+.guest-shell:has([data-journey]) [data-journey-choice] [data-illustrative-label] {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  max-width: 100%;
+  min-height: 28px;
+  margin-top: 6px;
+  padding: 2px 10px;
+  border-radius: var(--lo-radius-pill);
+  background: var(--lo-yellow);
+  color: var(--lo-ink);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.guest-shell:has([data-journey]) [data-journey-thumb] {
+  display: block;
+  flex: none;
+  width: 72px;
+  height: 72px;
+  overflow: hidden;
+  border-radius: 16px;
+  background: #fff;
+}
+
+.guest-shell:has([data-journey]) [data-journey-thumb] img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 16px;
+  background: #fff;
+}
+
+.guest-shell:has([data-journey]) [data-journey-thumb][data-fit="contain"] img {
+  object-fit: contain;
+  padding: 6px;
+}
+
+.guest-shell:has([data-journey]) [data-journey-panel] {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 0;
+  padding: 20px 16px 18px;
+  border: 1px solid rgba(23, 47, 43, 0.08);
+  border-radius: 28px;
+  background: #fffdfb;
+  color: var(--lo-ink);
+  box-shadow: var(--lo-shadow-card);
+}
+
+.guest-shell:has([data-journey]) [data-journey-step="details"] [data-journey-panel],
+.guest-shell:has([data-journey]) [data-journey-step="payment"] [data-journey-panel] {
+  background: #fff;
+}
+
+.guest-shell:has([data-journey]) [data-journey-panel] h2,
+.guest-shell:has([data-journey]) [data-journey-panel] p,
+.guest-shell:has([data-journey]) [data-journey-panel] label,
+.guest-shell:has([data-journey]) [data-journey-panel] span {
+  color: var(--lo-ink);
+}
+
+.guest-shell:has([data-journey]) [data-journey-panel] h2 {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+
+.guest-shell:has([data-journey]) [data-journey-panel] input:not([type="checkbox"]),
+.guest-shell:has([data-journey]) [data-journey-panel] textarea {
+  width: 100%;
+  min-height: 48px;
+  border: 1.5px solid rgba(23, 47, 43, 0.2);
+  border-radius: var(--lo-radius-input);
+  background: #fff;
+  color: var(--lo-ink);
+  font: inherit;
+  font-size: 1.05rem;
+  padding: 12px 14px;
+}
+
+.guest-shell:has([data-journey]) [data-journey-panel] textarea {
+  min-height: 140px;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.guest-shell:has([data-journey]) [data-journey-panel] input::placeholder,
+.guest-shell:has([data-journey]) [data-journey-panel] textarea::placeholder {
+  color: var(--lo-muted);
+}
+
+.guest-shell:has([data-journey]) [data-journey-panel] input:focus-visible,
+.guest-shell:has([data-journey]) [data-journey-panel] textarea:focus-visible {
+  border-color: var(--lo-ink);
+  outline: 3px solid var(--lo-yellow);
+  outline-offset: 2px;
+}
+
+.guest-shell:has([data-journey]) [data-journey-panel] label:has(input[type="checkbox"]) {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  font-weight: 700;
+}
+
+.guest-shell:has([data-journey]) [data-journey-panel] input[type="checkbox"] {
+  width: 24px;
+  height: 24px;
+  accent-color: var(--lo-ink);
+}
+
+.guest-shell:has([data-journey]) [data-journey-panel] button[aria-pressed] {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 14px;
+  border: 1.5px solid rgba(23, 47, 43, 0.16);
+  border-radius: 16px;
+  background: #fff;
+  color: var(--lo-ink);
+  font: inherit;
+  font-weight: 700;
+  line-height: 1.35;
+  text-align: center;
+}
+
+.guest-shell:has([data-journey]) [data-journey-panel] button[aria-pressed="true"] {
+  border-color: var(--lo-yellow);
+  background: var(--lo-yellow);
+  color: var(--lo-ink);
+}
+
+.guest-shell:has([data-journey]) [data-journey-panel] [data-journey-error] {
+  margin: 0;
+  color: var(--lo-danger);
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.guest-shell:has([data-journey]) [data-journey-panel] [data-journey-reassure] {
+  margin: 0;
+  color: var(--lo-muted);
+  font-size: 0.98rem;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.guest-shell:has([data-journey]) [data-journey-demo] {
+  display: block;
+  margin: 0;
+  padding: 14px 16px;
+  border: 2px solid var(--lo-ink);
+  border-radius: 16px;
+  background: var(--lo-yellow);
+  color: var(--lo-ink);
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.45;
+  text-align: start;
+  white-space: normal;
+}
+
+.guest-shell:has([data-journey]) [data-journey-cta],
+.guest-shell:has([data-journey]) [data-journey-panel] [data-journey-cta],
+.guest-shell:has([data-journey]) [data-journey-thanks-main] [data-journey-cta] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 64px;
+  padding: 8px 22px;
+  border: 0;
+  border-radius: var(--lo-radius-pill);
+  background: var(--lo-yellow);
+  color: var(--lo-ink);
+  font: inherit;
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+  text-decoration: none;
+  box-shadow: var(--lo-shadow-cta);
+  cursor: pointer;
+}
+
+.guest-shell:has([data-journey]) [data-journey-panel] [data-journey-cta]:active,
+.guest-shell:has([data-journey]) [data-journey-thanks-main] [data-journey-cta]:active {
+  background: var(--lo-yellow-press);
+}
+
+.guest-shell:has([data-journey]) [data-journey-panel] [data-journey-cta]:disabled,
+.guest-shell:has([data-journey]) [data-journey-thanks-main] [data-journey-cta]:disabled {
+  background: #ead7b4;
+  color: var(--lo-ink);
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.guest-shell:has([data-journey]) [data-journey-panel] [data-journey-quiet] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-width: 44px;
+  min-height: 48px;
+  padding: 8px 16px;
+  border: 1.5px solid rgba(23, 47, 43, 0.2);
+  border-radius: var(--lo-radius-pill);
+  background: transparent;
+  color: var(--lo-ink);
+  font: inherit;
+  font-weight: 700;
+  line-height: 1.3;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.guest-shell:has([data-journey]) [data-journey-thanks] [data-journey-stage-quiet] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1 1 140px;
+  min-width: 44px;
+  min-height: 48px;
+  padding: 8px 16px;
+  border: 1.5px solid rgba(255, 243, 228, 0.7);
+  border-radius: var(--lo-radius-pill);
+  background: transparent;
+  color: var(--lo-cream);
+  font: inherit;
+  font-weight: 700;
+  line-height: 1.3;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.guest-shell:has([data-journey]) [data-journey-panel] summary {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--lo-ink);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.guest-shell:has([data-journey]) [data-journey] [data-journey-success] {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 8px;
+  border-radius: var(--lo-radius-pill);
+  background: var(--lo-yellow);
+  color: var(--lo-ink);
+}
+
+.guest-shell:has([data-journey]) [data-journey-step="thanks"] [data-journey-lede] {
+  text-align: center;
+  margin-inline: auto;
+}
+
+.guest-shell:has([data-journey]) [data-journey-amount] {
+  margin: 0;
+  color: var(--lo-ink);
+  font-size: clamp(2rem, 6vw, 2.6rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+.guest-shell:has([data-journey]) [data-journey-status] {
+  margin: 0;
+  color: var(--lo-ink);
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+@media (min-width: 768px) {
+  .guest-shell:has([data-journey]) [data-journey-panel] {
+    padding: 24px 24px 22px;
+  }
+
+  .guest-shell:has([data-journey]) [data-journey-frame] {
+    max-height: 280px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .guest-shell:has([data-journey]) [data-journey-step="thanks"] [data-journey-flow] {
+    display: block;
+    width: min(1040px, calc(100% - 48px));
+  }
+
+  .guest-shell:has([data-journey]) [data-journey-step="greeting"] [data-journey-flow],
+  .guest-shell:has([data-journey]) [data-journey-step="details"] [data-journey-flow],
+  .guest-shell:has([data-journey]) [data-journey-step="payment"] [data-journey-flow] {
+    direction: rtl;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 420px);
+    gap: 28px 40px;
+    align-items: start;
+    width: min(1120px, calc(100% - 64px));
+    padding-bottom: 72px;
+  }
+
+  .guest-shell:has([data-journey]) [data-journey-main] {
+    grid-column: 1;
+    grid-row: 1;
+    min-width: 0;
+  }
+
+  .guest-shell:has([data-journey]) [data-journey-aside] {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    grid-column: 2;
+    grid-row: 1;
+    width: auto;
+    min-width: 0;
+    position: sticky;
+    top: 24px;
+  }
+
+  .guest-shell:has([data-journey]) [data-journey-head] [data-journey-hero] {
+    display: none;
+  }
+
+  .guest-shell:has([data-journey]) [data-journey-aside] [data-journey-frame] {
+    aspect-ratio: 4 / 3;
+    max-height: 380px;
+  }
+
+  .guest-shell:has([data-journey]) [data-journey-step="thanks"] [data-journey-main] {
+    display: grid;
+    direction: rtl;
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 460px);
+    gap: 12px 40px;
+    align-items: start;
+    width: min(1040px, 100%);
+    margin-inline: auto;
+  }
+
+  .guest-shell:has([data-journey]) [data-journey-step="thanks"] [data-journey-head] {
+    grid-column: 1;
+    grid-row: 1;
+    align-items: flex-start;
+    text-align: start;
+  }
+
+  .guest-shell:has([data-journey]) [data-journey-step="thanks"] [data-journey-title]::after {
+    margin-inline: 0;
+  }
+
+  .guest-shell:has([data-journey]) [data-journey-step="thanks"] [data-journey-lede] {
+    text-align: start;
+    margin-inline: 0;
+  }
+
+  .guest-shell:has([data-journey]) [data-journey-step="thanks"] [data-journey-success] {
+    margin-inline: 0;
+  }
+
+  .guest-shell:has([data-journey]) [data-journey-step="thanks"] [data-journey-body],
+  .guest-shell:has([data-journey]) [data-journey-step="thanks"] [data-journey-thanks] {
+    display: contents;
+  }
+
+  .guest-shell:has([data-journey]) [data-journey-step="thanks"] [data-journey-thanks-photo] {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    margin: 0;
+  }
+
+  .guest-shell:has([data-journey]) [data-journey-step="thanks"] [data-journey-thanks-photo] [data-journey-frame] {
+    aspect-ratio: 4 / 3;
+    max-height: 460px;
+  }
+
+  .guest-shell:has([data-journey]) [data-journey-step="thanks"] [data-journey-thanks-main] {
+    grid-column: 1;
+    grid-row: 2;
+    min-width: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .guest-shell:has([data-journey]) [data-journey] *,
+  .guest-shell:has([data-journey]) [data-journey] *::before,
+  .guest-shell:has([data-journey]) [data-journey] *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

@@ -5,7 +5,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useEffect, useSyncExternalStore, type ReactNode } from "react";
+import { useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
 import { getEventBySlug, guestEventPath } from "@/lib/events";
 import { formatGiftAmount, getContributionsTotal, loadContributions } from "@/lib/guest-draft";
 import {
@@ -16,6 +16,13 @@ import {
 } from "@/lib/events/demo";
 import { fromRouteParam } from "@/lib/events/slug";
 import {
+  ILLUSTRATIVE_LABEL,
+  giftPhotoFit,
+  resolveEventCover,
+  resolveGiftImage,
+  type ResolvedImage,
+} from "@/lib/image-library";
+import {
   continuityFromEvent,
   readContinuity,
   subscribeContinuity,
@@ -24,7 +31,9 @@ import {
 } from "./continuity";
 import { displayTitle } from "./display-title";
 import { GiftFallback, Wordmark } from "./flagship-ui";
+import { JourneyFrame } from "./journey-photo";
 import styles from "./flagship.module.css";
+import "./journey.css";
 
 const steps = [
   { id: "gift", label: "מתנה" },
@@ -71,13 +80,43 @@ function StepCheck({ size }: { size: number }) {
       <path
         d="M3.2 8.2 6.4 11.2 12.8 4.6"
         fill="none"
-        stroke="white"
+        stroke="currentColor"
         strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
     </svg>
   );
+}
+
+type JourneyVisual = {
+  cover: ResolvedImage;
+  gift: ResolvedImage;
+  hostName: string;
+};
+
+function journeyVisual(stored: NonNullable<Awaited<ReturnType<typeof getEventBySlug>>>): JourneyVisual {
+  const gifts = [...stored.gifts]
+    .filter((item) => item.active !== false)
+    .sort((a, b) => a.priority - b.priority);
+  const chosen = loadContributions(stored.slug)[0];
+  const gift = (chosen ? gifts.find((item) => item.id === chosen.giftId) : undefined) ?? gifts[0];
+  const giftTitle = gift?.title || chosen?.giftName || "";
+  return {
+    hostName: stored.hostName,
+    cover: resolveEventCover({
+      hostImageUrl: stored.coverImage,
+      eventType: stored.eventType,
+      title: stored.title,
+      alt: stored.title,
+    }),
+    gift: resolveGiftImage({
+      hostImageUrl: gift?.imageUrl || "",
+      title: giftTitle,
+      description: gift?.description || "",
+      alt: giftTitle,
+    }),
+  };
 }
 
 export function FlowPage({
@@ -99,6 +138,8 @@ export function FlowPage({
     () => (slug ? readContinuity(slug) : null),
     () => null,
   );
+  const [visual, setVisual] = useState<{ slug: string; data: JourneyVisual } | null>(null);
+  const scene = visual?.slug === slug ? visual.data : null;
 
   useEffect(() => {
     if (!slug) {
@@ -121,6 +162,7 @@ export function FlowPage({
         fundingLine: known.fundingLine || cached?.fundingLine || "",
       };
       if (!cancelled) {
+        setVisual({ slug, data: journeyVisual(stored) });
         writeContinuity(slug, immediate);
         if (stored.slug && stored.slug !== slug) {
           writeContinuity(stored.slug, immediate);
@@ -166,22 +208,40 @@ export function FlowPage({
   );
   const parsed = choice ? (JSON.parse(choice) as { items: ChoiceItem[]; total: number }) : { items: [], total: 0 };
 
-  const compactSrc = mark?.giftImage || mark?.cover || "";
+  const hero = scene?.cover.src ? scene.cover : scene?.gift.src ? scene.gift : null;
+  const thumb = scene?.gift.src ? scene.gift : scene?.cover.src ? scene.cover : null;
+  const showThumbLabel = Boolean(scene?.gift.illustrative && scene.gift.src);
+
   function renderThumb() {
+    if (thumb && thumb.kind !== "illustration") {
+      return (
+        <span data-journey-thumb="" data-fit={giftPhotoFit(thumb.src)}>
+          <img
+            className={styles.choiceThumb}
+            src={thumb.src}
+            alt=""
+            width={72}
+            height={72}
+            data-gift-photo={scene?.gift.src ? "" : undefined}
+            data-image-source={thumb.kind}
+          />
+        </span>
+      );
+    }
     if (mark?.giftImage) {
       return (
         <img className={styles.choiceThumb} src={mark.giftImage} alt="" width={72} height={72} data-gift-photo="" />
       );
     }
-    if (compactSrc) {
-      return <img className={styles.choiceThumb} src={compactSrc} alt="" width={72} height={72} />;
+    if (mark?.cover) {
+      return <img className={styles.choiceThumb} src={mark.cover} alt="" width={72} height={72} />;
     }
     return <GiftFallback compact />;
   }
   function renderChoice(amounts: boolean, labelled: boolean) {
     const rows = parsed.items.length > 0 ? parsed.items : mark?.giftName ? [{ name: mark.giftName, amount: 0 }] : [];
     return (
-      <div className={styles.choiceCard}>
+      <div className={styles.choiceCard} data-journey-choice="">
         {mark ? (
           <p className={styles.choiceEvent} data-continuity-title={labelled ? "" : undefined}>
             {displayTitle(mark.title)}
@@ -200,6 +260,9 @@ export function FlowPage({
                 <p className={styles.choiceName} data-reveal-card="">
                   {item.name}
                 </p>
+                {index === 0 && showThumbLabel ? (
+                  <span data-illustrative-label="">{ILLUSTRATIVE_LABEL}</span>
+                ) : null}
                 {index === 0 && mark?.progress ? (
                   <MoneyLine text={mark.progress} className={styles.choiceProgress} />
                 ) : null}
@@ -220,13 +283,24 @@ export function FlowPage({
     );
   }
 
+  function renderHero() {
+    if (step !== "greeting" || !hero) {
+      return null;
+    }
+    return (
+      <figure data-journey-hero="">
+        <JourneyFrame image={hero} />
+      </figure>
+    );
+  }
+
   return (
-    <>
+    <div data-journey="" data-journey-step={step}>
       <header className={styles.header}>
         <Wordmark />
       </header>
       {slug === DEMO_EVENT_SLUG ? (
-        <div className={styles.demoNote}>
+        <div className={styles.demoNote} data-journey-demo-note="">
           <p className={styles.demoBadge}>{DEMO_SAMPLE_BADGE}</p>
           <p className={styles.demoCredit}>{DEMO_IMAGE_CREDIT}</p>
         </div>
@@ -240,15 +314,16 @@ export function FlowPage({
         ]
           .filter(Boolean)
           .join(" ")}
+        data-journey-flow=""
       >
-        <div className={styles.flowMain}>
-        <div className={`${styles.flowHead} ${styles.flowIn}`}>
+        <div className={styles.flowMain} data-journey-main="">
+        <div className={`${styles.flowHead} ${styles.flowIn}`} data-journey-head="">
           {step === "thanks" ? (
-            <p className={styles.successMark} aria-hidden="true">
+            <p className={styles.successMark} data-journey-success="" aria-hidden="true">
               <StepCheck size={22} />
             </p>
           ) : (
-            <ol className={styles.stepNav} aria-label="שלבי ההשתתפות">
+            <ol className={styles.stepNav} data-journey-steps="" aria-label="שלבי ההשתתפות">
               {steps.map((item, index) => {
                 const state: StepState = item.id === step ? "current" : index < current ? "done" : "next";
                 const href = slug
@@ -258,10 +333,12 @@ export function FlowPage({
                   : "";
                 const face = (
                   <>
-                    <span className={styles.stepMark} aria-hidden="true">
+                    <span className={styles.stepMark} data-journey-mark="" aria-hidden="true">
                       {state === "done" ? <StepCheck size={12} /> : index + 1}
                     </span>
-                    <span className={styles.stepLabel}>{item.label}</span>
+                    <span className={styles.stepLabel} data-journey-label="">
+                      {item.label}
+                    </span>
                   </>
                 );
                 return (
@@ -272,7 +349,9 @@ export function FlowPage({
                     aria-current={state === "current" ? "step" : undefined}
                     aria-label={`שלב ${index + 1} מתוך 4`}
                   >
-                    {index > 0 ? <span className={styles.stepLine} aria-hidden="true" /> : null}
+                    {index > 0 ? (
+                      <span className={styles.stepLine} data-journey-line="" aria-hidden="true" />
+                    ) : null}
                     {state === "done" && href ? (
                       <Link href={href} className={styles.stepLink}>
                         {face}
@@ -285,24 +364,38 @@ export function FlowPage({
               })}
             </ol>
           )}
-          <h1 className={styles.flowTitle}>{title}</h1>
-          {lede ? <p className={styles.flowLede}>{lede}</p> : null}
+          <h1 className={styles.flowTitle} data-journey-title="">
+            {title}
+          </h1>
+          {lede ? (
+            <p className={styles.flowLede} data-journey-lede="">
+              {lede}
+            </p>
+          ) : null}
+          {step === "greeting" && scene?.hostName ? (
+            <p data-journey-host="">{`מאת ${scene.hostName}`}</p>
+          ) : null}
           {notice ? <p className={styles.pay}>{notice}</p> : null}
+          {renderHero()}
         </div>
         {step !== "thanks" && step !== "payment" && mark ? (
           <div className={styles.compactRow}>{renderChoice(true, false)}</div>
         ) : null}
-        <div className={styles.flowBody}>{children}</div>
+        <div className={styles.flowBody} data-journey-body="">
+          {children}
+        </div>
         </div>
         {step !== "thanks" ? (
           <aside
             className={styles.flowAside}
+            data-journey-aside=""
             data-pay-hero={step === "payment" ? "" : undefined}
           >
+            {renderHero()}
             <div aria-busy={mark ? undefined : true}>{renderChoice(step !== "payment", true)}</div>
           </aside>
         ) : null}
       </div>
-    </>
+    </div>
   );
 }

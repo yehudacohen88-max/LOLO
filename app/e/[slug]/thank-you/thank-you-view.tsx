@@ -1,8 +1,5 @@
 "use client";
 
-/* Host and bundled demo image URLs are not covered by next/image remote patterns. */
-/* eslint-disable @next/next/no-img-element */
-
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -18,7 +15,9 @@ import {
 import { clearGuestOrderRef, loadGuestOrderRef } from "@/lib/orders/guest-ref";
 import { thankYouAfterLoad } from "@/lib/orders/thank-you-ref";
 import type { StoredOrder } from "@/lib/orders/types";
+import { resolveEventCover, resolveGiftImage, type ResolvedImage } from "@/lib/image-library";
 import { GiftFallback } from "../flagship-ui";
+import { JourneyFrame } from "../journey-photo";
 import { giftProgressCopy, participationLine } from "../progress-copy";
 import styles from "../flagship.module.css";
 
@@ -88,7 +87,8 @@ export default function ThankYouView() {
   const [feeAmount, setFeeAmount] = useState(0);
   const [chargedAmount, setChargedAmount] = useState(0);
   const [orderRead, setOrderRead] = useState<OrderRead>({ phase: "loading" });
-  const [giftImage, setGiftImage] = useState("");
+  const [hero, setHero] = useState<ResolvedImage | null>(null);
+  const [heroIsGift, setHeroIsGift] = useState(false);
   const [together, setTogether] = useState("");
   const [shareNote, setShareNote] = useState("");
   const confirmedPaid = useRef(false);
@@ -165,7 +165,21 @@ export default function ThankYouView() {
         [...gifts].sort((a, b) => a.priority - b.priority)[0];
       if (!cancelled && stored) {
         setEventName((current) => current || stored.title);
-        setGiftImage(pictured?.imageUrl || "");
+        const giftVisual = resolveGiftImage({
+          hostImageUrl: pictured?.imageUrl || "",
+          title: pictured?.title || local[0]?.giftName || "",
+          description: pictured?.description || "",
+          alt: pictured?.title || local[0]?.giftName || stored.title,
+        });
+        const coverVisual = resolveEventCover({
+          hostImageUrl: stored.coverImage,
+          eventType: stored.eventType,
+          title: stored.title,
+          alt: stored.title,
+        });
+        const usingGift = Boolean(giftVisual.src);
+        setHeroIsGift(usingGift);
+        setHero(usingGift ? giftVisual : coverVisual.src ? coverVisual : null);
         setHeroGift((current) => current || pictured?.title || "");
       }
 
@@ -265,26 +279,22 @@ export default function ThankYouView() {
   }
 
   return (
-    <div className={styles.thanksLayout} data-reveal="">
-      <div className={styles.thanksMain}>
-        <div className={`${styles.card} ${styles.thanksReceipt}`}>
-          {giftImage ? (
-            <img
-              className={styles.thanksThumb}
-              src={giftImage}
-              alt=""
-              width={72}
-              height={72}
-              data-gift-photo=""
-            />
-          ) : (
-            <GiftFallback compact />
-          )}
+    <div className={styles.thanksLayout} data-journey-thanks="" data-reveal="">
+      {hero ? (
+        <figure data-journey-hero="" data-journey-thanks-photo="">
+          <JourneyFrame image={hero} gift={heroIsGift} />
+        </figure>
+      ) : null}
+      <div className={styles.thanksMain} data-journey-thanks-main="">
+        <div className={`${styles.card} ${styles.thanksReceipt}`} data-journey-panel="">
+          {hero ? null : <GiftFallback compact />}
           <p className={styles.revealCard} data-reveal-card="">
             {giftLabel}
           </p>
           {showReceiptAmounts ? (
-            <p className={styles.thanksAmount}>{formatGiftAmount(chargedAmount)}</p>
+            <p className={styles.thanksAmount} data-journey-amount="">
+              {formatGiftAmount(chargedAmount)}
+            </p>
           ) : null}
           {orderRead.phase === "loading" ? (
             <div className={styles.skeleton} aria-busy="true">
@@ -293,12 +303,14 @@ export default function ThankYouView() {
               </span>
             </div>
           ) : (
-            <p className={styles.orderStatus} data-order-status="" role="status">
+            <p className={styles.orderStatus} data-order-status="" data-journey-status="" role="status">
               {statusText(orderRead)}
             </p>
           )}
           {eventName ? <p className={styles.quietLine}>{eventName}</p> : null}
-          <p className={styles.notice}>תשלום הדגמה בלבד — לא מתבצע חיוב אמיתי</p>
+          <p className={styles.notice} data-journey-demo="">
+            תשלום הדגמה בלבד — לא מתבצע חיוב אמיתי
+          </p>
           <details className={styles.demoDetails}>
             <summary className={styles.quietLine}>פרטי הדגמה</summary>
             {showReceiptAmounts ? (
@@ -337,6 +349,7 @@ export default function ThankYouView() {
           <button
             type="button"
             className={styles.cta}
+            data-journey-cta=""
             onClick={() => {
               window.open(
                 `https://wa.me/?text=${encodeURIComponent(`${shareText} ${eventUrl()}`)}`,
@@ -350,19 +363,20 @@ export default function ThankYouView() {
           <button
             type="button"
             className={styles.ghost}
+            data-journey-stage-quiet=""
             onClick={() => void shareEvent()}
           >
             שיתוף בדרך אחרת
           </button>
-          <button type="button" className={styles.ghost} onClick={() => void copyLink()}>
+          <button type="button" className={styles.ghost} data-journey-stage-quiet="" onClick={() => void copyLink()}>
             העתקת קישור
           </button>
           {failed ? (
-            <Link href={guestEventPath(slug, "payment")} className={styles.ghost}>
+            <Link href={guestEventPath(slug, "payment")} className={styles.ghost} data-journey-stage-quiet="">
               חזרה לתשלום
             </Link>
           ) : (
-            <Link href={guestEventPath(slug)} className={styles.ghost}>
+            <Link href={guestEventPath(slug)} className={styles.ghost} data-journey-stage-quiet="">
               חזרה לאירוע
             </Link>
           )}
