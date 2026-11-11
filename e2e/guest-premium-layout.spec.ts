@@ -405,8 +405,13 @@ test("a gift without a photo uses the neutral fallback", async ({ page }) => {
   });
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/e/flagship-fixture");
-  await expect(page.locator("[data-gift-fallback]").first()).toBeVisible();
+  await expect(page.locator("[data-gift-photo][data-image-source='library']").first()).toBeVisible();
+  await expect(page.locator("[data-illustrative-label]").first()).toHaveText("תמונה להמחשה");
   await expect(page.locator("[data-empty-letter]")).toHaveCount(0);
+  const sources = await page.locator("img").evaluateAll((images) =>
+    images.map((image) => image.getAttribute("src") || ""),
+  );
+  expect(sources.join(" ")).not.toContain("__flagship_fixture");
   await page.screenshot({
     path: path.join(artifactDir, "01-gift-nophoto-390.png"),
     fullPage: true,
@@ -483,7 +488,8 @@ test("a photo-less beta event stays compact and fills progress from the right", 
     await page.goto("/e/flagship-fixture");
     await expect(page.getByRole("heading", { name: /אירוע בדיקה LOLO/ })).toBeVisible();
     await expect(page.locator("[data-empty-letter]")).toHaveCount(0);
-    await expect(page.locator("[data-portrait]")).toHaveCount(0);
+    await expect(page.locator("[data-portrait][data-image-source='library']")).toBeVisible();
+    await expect(page.locator("img[src*='__flagship_fixture']")).toHaveCount(0);
     const title = await page.locator("h1").evaluate((node) => node.textContent || "");
     expect(title).toContain("\u00A0–");
     const bars = await page.locator("[role=progressbar]").evaluateAll((nodes) =>

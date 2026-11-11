@@ -4,7 +4,7 @@
 /* eslint-disable @next/next/no-img-element */
 
 import Link from "next/link";
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ImgHTMLAttributes, type ReactNode } from "react";
 import LoloMark from "@/app/design/lolo-mark";
 import { formatGiftAmount } from "@/lib/guest-draft";
 import styles from "./flagship.module.css";
@@ -195,19 +195,61 @@ export function CornerRibbon({
   );
 }
 
+function CelebrationPhoto({
+  src,
+  avifSrc,
+  alt,
+  className,
+  sourceKind,
+  onError,
+  ...rest
+}: {
+  src: string;
+  avifSrc?: string;
+  alt: string;
+  className?: string;
+  sourceKind?: "host" | "library";
+  onError?: () => void;
+} & Omit<ImgHTMLAttributes<HTMLImageElement>, "src" | "alt" | "onError" | "className">) {
+  const image = (
+    <img
+      src={src}
+      alt={alt}
+      className={className}
+      data-image-source={sourceKind}
+      decoding="async"
+      onError={onError}
+      {...rest}
+    />
+  );
+  if (!avifSrc) {
+    return image;
+  }
+  return (
+    <picture>
+      <source srcSet={avifSrc} type="image/avif" />
+      {image}
+    </picture>
+  );
+}
+
 export function Portrait({
   src,
+  avifSrc = "",
   alt,
   hostName,
   nameOnChip = true,
   objectPosition = "center 28%",
+  sourceKind = "host",
 }: {
   src: string;
+  avifSrc?: string;
   alt: string;
   monogram: string;
   hostName: string;
   nameOnChip?: boolean;
   objectPosition?: string;
+  sourceKind?: "host" | "library";
 }) {
   const [broken, setBroken] = useState(false);
   const showPhoto = Boolean(src) && !broken;
@@ -218,16 +260,17 @@ export function Portrait({
       data-cele="portrait"
     >
       {showPhoto ? (
-        <img
+        <CelebrationPhoto
           src={src}
+          avifSrc={avifSrc}
           alt={alt}
           className={styles.photo}
+          sourceKind={sourceKind}
           data-portrait=""
-          width={800}
-          height={1000}
+          width={1600}
+          height={1200}
           style={{ objectPosition }}
           fetchPriority="high"
-          decoding="async"
           onError={() => setBroken(true)}
         />
       ) : (
@@ -244,13 +287,23 @@ export function Portrait({
 
 export function GiftScene({
   src,
+  avifSrc = "",
   alt,
   primary = false,
+  fit = "cover",
+  illustrative = false,
+  sourceKind = "host",
+  illustrativeLabel = "תמונה להמחשה",
 }: {
   src: string;
+  avifSrc?: string;
   alt: string;
   primary?: boolean;
   untie?: boolean;
+  fit?: "cover" | "contain";
+  illustrative?: boolean;
+  sourceKind?: "host" | "library";
+  illustrativeLabel?: string;
 }) {
   const [broken, setBroken] = useState(false);
   const showPhoto = Boolean(src) && !broken;
@@ -259,24 +312,29 @@ export function GiftScene({
     <div
       className={`${styles.scene} ${showPhoto ? "" : styles.sceneEmpty}`}
       data-cele="scene"
+      data-fit={fit}
       data-gift-scene={primary ? "" : undefined}
     >
       <div className={styles.sceneLight} aria-hidden="true" />
       <div className={styles.sceneEdge} aria-hidden="true" />
       {showPhoto ? (
         <div className={styles.sceneStage} data-cele="stage">
-          <img
+          <CelebrationPhoto
             src={src}
+            avifSrc={avifSrc}
             alt={alt}
             className={styles.sceneImage}
+            sourceKind={sourceKind}
             data-gift-photo=""
-            decoding="async"
             onError={() => setBroken(true)}
           />
         </div>
       ) : (
         <GiftFallback />
       )}
+      {showPhoto && illustrative ? (
+        <span data-illustrative-label="">{illustrativeLabel}</span>
+      ) : null}
     </div>
   );
 }

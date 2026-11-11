@@ -47,7 +47,11 @@ export function giftMotif(title: string, index: number): GiftMotif {
   if (/קפה|אספרסו/.test(title)) {
     return "coffee";
   }
-  if (/חופשה|טיול|טיסה|מלון|זוגית|ים/.test(title)) {
+  /* משחקים ends in ים. That plural ending is not a travel word. */
+  if (/קונסול|משחקים|פלייסטיישן|נינטנדו|אקסבוקס/.test(title)) {
+    return "gift";
+  }
+  if (/חופשה|טיול|טיסה|מלון|מזווד|נופש|סופ["״']ש/.test(title)) {
     return "travel";
   }
   if (/עוגה|מתוק|קינוח/.test(title)) {
