@@ -97,6 +97,19 @@ describe("image library", () => {
     assert.match(cover.src, /\/birthday\//);
   });
 
+  it("uses the floral candle cake as the birthday cover, not the balloon table", () => {
+    for (const title of ["יום הולדת 30 למיכל", "יום הולדת חדש"]) {
+      const cover = resolveEventCover({
+        hostImageUrl: "",
+        eventType: "יום הולדת",
+        title,
+      });
+      assert.match(cover.src, /candle-layer-cake-hero\.webp$/);
+      assert.equal(cover.kind, "library");
+      assert.doesNotMatch(cover.src, /balloon-party/);
+    }
+  });
+
   it("leaves the showcase behind the beta gate", () => {
     assert.equal(isGuestDirectAccess("/showcase", "GET"), false);
     assert.equal(isGuestDirectAccess("/e/demo-event", "GET"), true);

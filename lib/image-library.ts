@@ -221,6 +221,42 @@ export const IMAGE_LIBRARY: readonly LibraryImage[] = [
     altHe: "עוגת שכבות עם פירות על שולחן עץ",
   },
   {
+    id: "candle-layer-cake-hero",
+    slug: "candle-layer-cake",
+    category: "birthday",
+    role: "hero",
+    file: "/images/library/birthday/candle-layer-cake-hero.webp",
+    avif: "/images/library/birthday/candle-layer-cake-hero.avif",
+    width: 1600,
+    height: 1200,
+    bytes: 45332,
+    avifBytes: 42045,
+    sourceUrl: "https://www.pexels.com/photo/33038506/",
+    photographer: "Alexander Mass",
+    license: IMAGE_LICENSE,
+    licenseUrl: IMAGE_LICENSE_URL,
+    attributionRequired: false,
+    altHe: "עוגת שכבות עם נרות ופרחים על מעמד זכוכית",
+  },
+  {
+    id: "candle-layer-cake-card",
+    slug: "candle-layer-cake",
+    category: "birthday",
+    role: "card",
+    file: "/images/library/birthday/candle-layer-cake-card.webp",
+    avif: "/images/library/birthday/candle-layer-cake-card.avif",
+    width: 1100,
+    height: 733,
+    bytes: 26112,
+    avifBytes: 23738,
+    sourceUrl: "https://www.pexels.com/photo/33038506/",
+    photographer: "Alexander Mass",
+    license: IMAGE_LICENSE,
+    licenseUrl: IMAGE_LICENSE_URL,
+    attributionRequired: false,
+    altHe: "עוגת שכבות עם נרות ופרחים על מעמד זכוכית",
+  },
+  {
     id: "ribbon-box-hero",
     slug: "ribbon-box",
     category: "gifts",
@@ -970,7 +1006,18 @@ function hashSeed(seed: string) {
   return hash >>> 0;
 }
 
+/** The birthday cover default. Other birthday photos stay in the library. */
+const BIRTHDAY_COVER_SLUG = "candle-layer-cake";
+
 function pick(category: LibraryCategory, role: LibraryRole, seed: string) {
+  if (category === "birthday" && role === "hero") {
+    const cover = IMAGE_LIBRARY.find(
+      (item) => item.slug === BIRTHDAY_COVER_SLUG && item.role === "hero",
+    );
+    if (cover) {
+      return cover;
+    }
+  }
   const pool = IMAGE_LIBRARY.filter((item) => item.category === category && item.role === role);
   if (pool.length === 0) {
     return null;

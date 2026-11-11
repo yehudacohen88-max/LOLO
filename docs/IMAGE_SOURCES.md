@@ -8,6 +8,7 @@ Free commercial use, no watermark, attribution not required. Photos were downloa
 
 `blue-stack` is credited to Pixabay on its Pexels page and was downloaded from Pexels under the Pexels License.
 `rings-still` is a second crop of the same Pexels photo as `rings-ribbon` (id 32147285), used for anniversary still lifes.
+`candle-layer-cake` (Pexels 33038506, Alexander Mass) is the default birthday cover. The whole cake, candles, and flowers stay in the 4:3 frame. The balloon-party photo stays in the library and is not that default. The other birthday cakes were not used as the default: pink-heart-cake is a small cake in a bright window, fruit-cake has no candles, and candles-match includes a hand on a bright wall.
 
 Hero files are 4:3 and at most 250KB. Card files are 3:2 and at most 120KB. Each subject has a WebP and an AVIF.
 
@@ -23,6 +24,8 @@ Hero files are 4:3 and at most 250KB. Card files are 3:2 and at most 120KB. Each
 | `public/images/library/birthday/pink-heart-cake-card.webp` | birthday | card | 1100×733 | 53760 | 48541 | Beyza | https://www.pexels.com/photo/29282695/ | עוגה ורודה עם לבבות ונרות ליד חלון |
 | `public/images/library/birthday/fruit-cake-hero.webp` | birthday | hero | 1600×1200 | 127346 | 119706 | Dmitry Zvolskiy | https://www.pexels.com/photo/1721932/ | עוגת שכבות עם פירות על שולחן עץ |
 | `public/images/library/birthday/fruit-cake-card.webp` | birthday | card | 1100×733 | 55150 | 48014 | Dmitry Zvolskiy | https://www.pexels.com/photo/1721932/ | עוגת שכבות עם פירות על שולחן עץ |
+| `public/images/library/birthday/candle-layer-cake-hero.webp` | birthday | hero | 1600×1200 | 45332 | 42045 | Alexander Mass | https://www.pexels.com/photo/33038506/ | עוגת שכבות עם נרות ופרחים על מעמד זכוכית |
+| `public/images/library/birthday/candle-layer-cake-card.webp` | birthday | card | 1100×733 | 26112 | 23738 | Alexander Mass | https://www.pexels.com/photo/33038506/ | עוגת שכבות עם נרות ופרחים על מעמד זכוכית |
 | `public/images/library/gifts/ribbon-box-hero.webp` | gifts | hero | 1600×1200 | 107142 | 93392 | Skylar Kang | https://www.pexels.com/photo/6045704/ | קופסת מתנה עם סרט אדום ורוד |
 | `public/images/library/gifts/ribbon-box-card.webp` | gifts | card | 1100×733 | 46108 | 39562 | Skylar Kang | https://www.pexels.com/photo/6045704/ | קופסת מתנה עם סרט אדום ורוד |
 | `public/images/library/gifts/blue-stack-hero.webp` | gifts | hero | 1600×1200 | 103578 | 94966 | Pixabay | https://www.pexels.com/photo/264787/ | ערימת קופסאות מתנה עם סרטי משי |

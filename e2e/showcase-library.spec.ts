@@ -224,7 +224,14 @@ test("an event with no uploads uses library defaults and does not send a console
   await mockEvent(page, "defaults-event", defaultsPayload());
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/e/defaults-event");
-  await expect(page.locator("[data-portrait]")).toHaveAttribute("src", /\/images\/library\/birthday\//);
+  await expect(page.locator("[data-portrait]")).toHaveAttribute(
+    "src",
+    /\/images\/library\/birthday\/candle-layer-cake-hero\.webp$/,
+  );
+  await expect(page.locator("[data-portrait]")).toHaveAttribute(
+    "alt",
+    "עוגת שכבות עם נרות ופרחים על מעמד זכוכית",
+  );
   await expect(page.locator("[data-portrait]")).toHaveAttribute("data-image-source", "library");
   const giftSources = await page.locator("[data-gift-photo]").evaluateAll((images) =>
     images.map((image) => image.getAttribute("src") || ""),
@@ -300,8 +307,20 @@ test("showcase renders real event scenes without API writes", async ({ page }) =
       if (report.small.length) failures.push(`${scene} ${width} targets ${report.small.join("; ")}`);
       if (report.weak.length) failures.push(`${scene} ${width} contrast ${report.weak.join("; ")}`);
 
-        if (width === 390 || width === 1440) {
-          await page.waitForTimeout(1600);
+      if (width === 390 || width === 1440) {
+        await page.waitForTimeout(1600);
+        if (scene === "birthday") {
+          await expect(page.locator("[data-portrait]")).toHaveAttribute(
+            "src",
+            /candle-layer-cake-hero\.webp$/,
+          );
+        }
+        if (scene === "plain") {
+          await expect(page.locator("[data-portrait]")).toHaveAttribute(
+            "src",
+            /candle-layer-cake-hero\.webp$/,
+          );
+        }
         const axe = await new AxeBuilder({ page }).include(".guest-shell").analyze();
         const serious = axe.violations.filter((item) => item.impact === "serious" || item.impact === "critical");
         if (serious.length) {
@@ -311,6 +330,12 @@ test("showcase renders real event scenes without API writes", async ({ page }) =
           path: path.join(artifactDir, `pr-a-showcase-${scene}-${width}.png`),
           fullPage: true,
         });
+        if (scene === "birthday") {
+          await page.screenshot({
+            path: path.join(artifactDir, `pr-a-showcase-birthday-fold-${width}.png`),
+            fullPage: false,
+          });
+        }
       }
     }
   }

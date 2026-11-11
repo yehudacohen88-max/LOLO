@@ -66,7 +66,7 @@ const birthday: StoredEvent = {
   venueName: "הבית של יעל",
   address: "ירמיהו 18, תל אביב",
   message: "מיכל ביקשה השנה מתנה אחת גדולה, מכולנו יחד.",
-  coverImage: libraryBySlug("balloon-party", "hero").file,
+  coverImage: libraryBySlug("candle-layer-cake", "hero").file,
   giftMode: "catalog",
   moneyAmounts: [150, 250, 350, 500],
   allowCustomAmount: true,
