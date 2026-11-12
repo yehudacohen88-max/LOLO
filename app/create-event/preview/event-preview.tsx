@@ -14,10 +14,10 @@ import { holdCreatedAccess } from "@/app/create-event/created-access-memory";
 import { publishHostEvent } from "@/lib/events";
 import { loadDraftGifts, type DraftGift } from "@/lib/draft-gifts";
 import { formatPrice } from "@/lib/gifts";
-import GiftMedia from "@/components/gift-media";
+import ResolvedPhoto from "@/app/design/resolved-photo";
 import { visibleHostStores } from "@/app/design/host-stores";
 import { userFacingMessage } from "@/app/design/user-error";
-import { EmptyCover } from "@/app/e/[slug]/flagship-ui";
+import { resolveEventCover, resolveGiftImage } from "@/lib/image-library";
 import { fetchActiveStoreOptions } from "@/lib/stores/active-stores-client";
 
 type PreviewGift = DraftGift & {
@@ -98,20 +98,20 @@ export default function EventPreview() {
 
   return (
     <div className="mt-8 flex flex-col gap-6">
-      {draft.imageDataUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={draft.imageDataUrl}
-          alt=""
-          className="h-52 w-full rounded-3xl object-cover"
-        />
-      ) : (
-        <div className="flex justify-center">
-          <EmptyCover
-            monogram={(draft.hostName || draft.eventName || "ל").trim().charAt(0) || "ל"}
-          />
-        </div>
-      )}
+      <ResolvedPhoto
+        visual={resolveEventCover({
+          hostImageUrl: draft.imageDataUrl,
+          eventType: draft.eventType,
+          title: draft.eventName,
+          alt: draft.imageDataUrl ? "תמונת האירוע" : undefined,
+        })}
+        backup={resolveEventCover({
+          hostImageUrl: "",
+          eventType: draft.eventType,
+          title: draft.eventName,
+        })}
+        fallback={<div className="flex h-44 items-center justify-center rounded-3xl border border-dashed border-border bg-white text-sm text-muted">תמונת האירוע</div>}
+      />
 
       <div className="text-center">
         {draft.hostName ? (
@@ -223,11 +223,19 @@ export default function EventPreview() {
                 key={gift.id}
                 className="rounded-3xl border border-border bg-white p-4"
               >
-                <GiftMedia
-                  imageUrl={gift.imageUrl}
-                  icon={gift.icon}
-                  alt=""
-                  className="h-44 w-full text-5xl"
+                <ResolvedPhoto
+                  visual={resolveGiftImage({
+                    hostImageUrl: gift.imageUrl,
+                    title: gift.title,
+                    description: gift.description,
+                    alt: gift.title || "המתנה",
+                  })}
+                  ratio="card"
+                  fallback={
+                    <div className="flex h-32 items-center justify-center rounded-3xl bg-brand-soft text-3xl" aria-hidden>
+                      {gift.icon || "🎁"}
+                    </div>
+                  }
                 />
                 <div className="mt-4">
                   <h4 className="text-base font-bold text-foreground" dir="auto">

@@ -83,7 +83,8 @@ test("a chosen cover can be replaced or removed without clearing the other field
   await expect(page.getByText("סרטון קצר לאורחים")).toHaveCount(0);
 
   await page.getByRole("button", { name: "הסרת תמונה" }).click();
-  await expect(page.getByText("עדיין לא נבחרה תמונה")).toBeVisible();
+  await expect(page.locator("[data-image-source='library']").first()).toBeVisible();
+  await expect(page.locator("[data-illustrative-label]")).toHaveCount(0);
   await expect(page.getByLabel("שם המקום / האולם")).toHaveValue("בית שלנו");
   await expect(page.getByLabel("כתובת")).toHaveValue("הזית 73");
   await expect(page.getByLabel("שעת האירוע")).toHaveValue("21:30");

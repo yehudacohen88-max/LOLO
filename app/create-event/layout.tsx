@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import FlagshipFrame from "@/app/design/flagship-frame";
+import styles from "@/app/design/bold-create.module.css";
 
 export default function CreateEventLayout({ children }: { children: ReactNode }) {
-  return <FlagshipFrame>{children}</FlagshipFrame>;
+  return <div className={styles.stage}>{children}</div>;
 }

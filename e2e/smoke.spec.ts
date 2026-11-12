@@ -75,6 +75,6 @@ test("landing uses the LOLO flagship design", async ({ page }) => {
   await expect(page.getByText("lolo", { exact: true }).first()).toBeVisible();
   await expect(page.getByRole("link", { name: "יוצרים אירוע" })).toHaveCSS(
     "background-color",
-    "rgb(23, 47, 43)",
+    "rgb(255, 184, 77)",
   );
 });
