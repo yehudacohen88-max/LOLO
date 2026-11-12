@@ -37,6 +37,10 @@ export type LibraryImage = {
   licenseUrl: string;
   attributionRequired: boolean;
   altHe: string;
+  /** Thank-you frame only. Omitted scene photos cover. Product cutouts set contain. */
+  fit?: "contain" | "cover";
+  /** CSS object-position when the thank-you frame covers this photo. */
+  objectPosition?: string;
 };
 
 export const IMAGE_LIBRARY: readonly LibraryImage[] = [
@@ -369,6 +373,8 @@ export const IMAGE_LIBRARY: readonly LibraryImage[] = [
     slug: "kitchen-machine",
     category: "coffee",
     role: "hero",
+    fit: "cover",
+    objectPosition: "center 62%",
     file: "/images/library/coffee/kitchen-machine-hero.webp",
     avif: "/images/library/coffee/kitchen-machine-hero.avif",
     width: 1600,
@@ -387,6 +393,8 @@ export const IMAGE_LIBRARY: readonly LibraryImage[] = [
     slug: "kitchen-machine",
     category: "coffee",
     role: "card",
+    fit: "cover",
+    objectPosition: "center 62%",
     file: "/images/library/coffee/kitchen-machine-card.webp",
     avif: "/images/library/coffee/kitchen-machine-card.avif",
     width: 1100,
@@ -405,6 +413,8 @@ export const IMAGE_LIBRARY: readonly LibraryImage[] = [
     slug: "red-cups",
     category: "coffee",
     role: "hero",
+    fit: "cover",
+    objectPosition: "center 58%",
     file: "/images/library/coffee/red-cups-hero.webp",
     avif: "/images/library/coffee/red-cups-hero.avif",
     width: 1600,
@@ -423,6 +433,8 @@ export const IMAGE_LIBRARY: readonly LibraryImage[] = [
     slug: "red-cups",
     category: "coffee",
     role: "card",
+    fit: "cover",
+    objectPosition: "center 58%",
     file: "/images/library/coffee/red-cups-card.webp",
     avif: "/images/library/coffee/red-cups-card.avif",
     width: 1100,
@@ -441,6 +453,8 @@ export const IMAGE_LIBRARY: readonly LibraryImage[] = [
     slug: "white-machine",
     category: "coffee",
     role: "hero",
+    fit: "cover",
+    objectPosition: "22% center",
     file: "/images/library/coffee/white-machine-hero.webp",
     avif: "/images/library/coffee/white-machine-hero.avif",
     width: 1600,
@@ -459,6 +473,8 @@ export const IMAGE_LIBRARY: readonly LibraryImage[] = [
     slug: "white-machine",
     category: "coffee",
     role: "card",
+    fit: "cover",
+    objectPosition: "22% center",
     file: "/images/library/coffee/white-machine-card.webp",
     avif: "/images/library/coffee/white-machine-card.avif",
     width: 1100,
