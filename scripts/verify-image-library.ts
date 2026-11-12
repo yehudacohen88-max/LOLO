@@ -88,16 +88,43 @@ describe("image library", () => {
     assert.equal(giftCategory("שרשרת זהב"), "jewelry");
   });
 
-  it("uses a colorful party photo when no event type is chosen", () => {
-    const cover = resolveEventCover({
-      hostImageUrl: "",
-      eventType: "",
-      title: "",
+  it("uses the balloon party cover for blank and unmatched event types", () => {
+    for (const eventType of ["", "   ", "אחר", "ברית מילה", "בריתה", "חלאקה", "חינה", "ברית / בריתה"]) {
+      const cover = resolveEventCover({
+        hostImageUrl: "",
+        eventType,
+        title: "אירוע משפחתי",
+      });
+      assert.equal(cover.kind, "library", eventType);
+      assert.match(cover.src, /balloon-party-hero\.webp$/, eventType);
+      assert.doesNotMatch(cover.src, /candle-glow/);
+      assert.equal(cover.illustrative, false);
+    }
+
+    const host = resolveEventCover({
+      hostImageUrl: "https://cdn.example.com/hosts/other.jpg",
+      eventType: "אחר",
+      title: "אירוע משפחתי",
     });
-    assert.equal(cover.kind, "library");
-    assert.match(cover.src, /balloon-party-hero\.webp$/);
-    assert.doesNotMatch(cover.src, /candle-glow/);
-    assert.equal(cover.illustrative, false);
+    assert.equal(host.kind, "host");
+    assert.equal(host.src, "https://cdn.example.com/hosts/other.jpg");
+
+    assert.match(
+      resolveEventCover({ hostImageUrl: "", eventType: "חתונה", title: "אירוע משפחתי" }).src,
+      /\/wedding\//,
+    );
+    assert.match(
+      resolveEventCover({ hostImageUrl: "", eventType: "בר מצווה", title: "אירוע משפחתי" }).src,
+      /\/mitzvah\//,
+    );
+    assert.match(
+      resolveEventCover({ hostImageUrl: "", eventType: "יום נישואין", title: "אירוע משפחתי" }).src,
+      /\/anniversary\//,
+    );
+    assert.match(
+      resolveEventCover({ hostImageUrl: "", eventType: "אחר", title: "יום הולדת של דנה" }).src,
+      /candle-layer-cake-hero\.webp$/,
+    );
   });
 
   it("picks a cover from the title when the event type is empty", () => {

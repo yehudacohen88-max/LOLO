@@ -1010,8 +1010,9 @@ function hashSeed(seed: string) {
 const BIRTHDAY_COVER_SLUG = "candle-layer-cake";
 
 /**
- * Cover shown before an event type is chosen. The festive candle photo
- * reads as a memorial, so an unset draft uses the colorful party scene.
+ * Cover for a blank or unmatched type (including אחר). The festive candle
+ * photo reads as a memorial. Birthday, wedding, anniversary, and mitzvah
+ * keep their own photos.
  */
 const UNSET_COVER_SLUG = "balloon-party";
 
@@ -1131,7 +1132,7 @@ export function resolveEventCover(input: {
   const eventType = input.eventType ?? "";
   const title = input.title ?? "";
   const category = coverCategory(eventType, title);
-  if (!eventType.trim() && category === "festive") {
+  if (category === "festive") {
     const image = libraryBySlug(UNSET_COVER_SLUG, "hero");
     return {
       kind: "library",

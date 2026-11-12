@@ -17,6 +17,27 @@ function shot(page: Page, name: string) {
 test.describe("final bold screens and host image edit", () => {
   test.describe.configure({ timeout: 120_000 });
 
+  test("type אחר uses the colorful party cover", async ({ page }) => {
+    await page.addInitScript(() => {
+      window.localStorage.setItem(
+        "lolo-event-draft",
+        JSON.stringify({
+          eventType: "אחר",
+          eventName: "אירוע משפחתי",
+          eventDate: "2026-12-01",
+          hostName: "נועה",
+          imageDataUrl: "",
+        }),
+      );
+    });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/create-event/preview");
+    const cover = page.locator("[data-image-source='library']:visible").first();
+    await expect(cover).toHaveAttribute("src", /balloon-party-hero\.webp/);
+    await expect(page.locator("[src*='candle-glow']")).toHaveCount(0);
+    await shot(page, "preview-acher-390");
+  });
+
   test("an unset event uses the colorful party cover", async ({ page }) => {
     await page.goto("/create-event/preview");
     const cover = page.locator("[data-image-source='library']:visible").first();
