@@ -297,6 +297,7 @@ test("order post keeps greeting text and demo payment still confirms", async ({ 
   await page.getByRole("button", { name: "מעבר לתשלום" }).click();
   await expect(page.getByText("תשלום הדגמה בלבד — לא מתבצע חיוב אמיתי")).toBeVisible();
   expect(orderPost?.greetingText).toBe("אוהבים ושמחים לחגוג איתך.");
+  expect(orderPost?.wantsConfirmation).toBe(false);
   expect(orderPost).not.toHaveProperty("imageDataUrl");
   await page.getByRole("button", { name: "אישור תשלום הדגמה" }).click();
   await expect(page.locator("[data-order-status]")).toHaveText("שולם בהדגמה");

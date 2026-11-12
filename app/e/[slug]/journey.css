@@ -169,6 +169,21 @@ body:has([data-journey]) {
   object-position: center;
 }
 
+/* Thank-you gift frame only. Portrait products stay whole; cover crops stay on the other steps. */
+.guest-shell:has([data-journey]) [data-journey-thanks-photo] [data-journey-frame] {
+  aspect-ratio: 4 / 5;
+  max-height: 560px;
+  padding: 12px 16px;
+  background: var(--lo-cream);
+}
+
+.guest-shell:has([data-journey]) [data-journey-thanks-photo] [data-journey-frame] picture,
+.guest-shell:has([data-journey]) [data-journey-thanks-photo] [data-journey-frame] img {
+  object-fit: contain;
+  object-position: center;
+  background: transparent;
+}
+
 .guest-shell:has([data-journey]) [data-journey-frame] [data-illustrative-label] {
   position: absolute;
   z-index: 2;
@@ -577,8 +592,8 @@ body:has([data-journey]) {
   }
 
   .guest-shell:has([data-journey]) [data-journey-step="thanks"] [data-journey-thanks-photo] [data-journey-frame] {
-    aspect-ratio: 4 / 3;
-    max-height: 460px;
+    aspect-ratio: 4 / 5;
+    max-height: 640px;
   }
 
   .guest-shell:has([data-journey]) [data-journey-step="thanks"] [data-journey-thanks-main] {

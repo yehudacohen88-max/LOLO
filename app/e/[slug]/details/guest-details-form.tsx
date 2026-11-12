@@ -21,7 +21,7 @@ export default function GuestDetailsForm() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
-  const [wantReceipt, setWantReceipt] = useState(true);
+  const [wantReceipt, setWantReceipt] = useState(false);
   const [errors, setErrors] = useState<{
     name?: string;
     phone?: string;

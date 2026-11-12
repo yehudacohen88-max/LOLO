@@ -212,10 +212,27 @@ test("bold guest journey keeps contrast, frames, and a visible demo", async ({ p
             failures.push(`${name} ${width} updates consent is pre-checked`);
           }
         }
-        await expect(page.getByRole("checkbox", { name: "אני רוצה לקבל אישור על המתנה" })).toBeVisible();
+        const receipt = page.getByRole("checkbox", { name: "אני רוצה לקבל אישור על המתנה" });
+        await expect(receipt).toBeVisible();
+        await expect(receipt).not.toBeChecked();
       }
       if (name === "greeting" || name === "thanks") {
-        await expect(page.locator("[data-journey-photo][data-image-source='host']:visible").first()).toBeVisible();
+        const photo = page.locator("[data-journey-photo][data-image-source='host']:visible").first();
+        await expect(photo).toBeVisible();
+        await expect.poll(async () => photo.evaluate((image) => (image as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
+      }
+      if (name === "thanks") {
+        const fit = await page.locator("[data-journey-thanks-photo] img").evaluate((image) => ({
+          fit: getComputedStyle(image).objectFit,
+          position: getComputedStyle(image).objectPosition,
+        }));
+        if (fit.fit !== "contain") failures.push(`${name} ${width} object-fit ${fit.fit}`);
+      }
+      if (width === 390 && name === "greeting") {
+        await page.getByRole("link", { name: "מתנה" }).click();
+        await expect(page.getByRole("button", { name: "מצטרפים למתנה" })).toBeVisible();
+        await page.goto(pathName);
+        await expect(page.getByRole("heading", { name: heading, exact: true })).toBeVisible();
       }
 
       if ((width === 390 || width === 1440) && (name === "greeting" || name === "details" || name === "payment" || name === "thanks")) {
@@ -230,11 +247,43 @@ test("bold guest journey keeps contrast, frames, and a visible demo", async ({ p
           path: path.join(artifactDir, `journey-after-${name}-${width}.png`),
           fullPage: true,
         });
+        if (name === "details" || name === "thanks") {
+          await page.screenshot({
+            path: path.join(artifactDir, `journey-final-${name}-${width}.png`),
+            fullPage: true,
+          });
+        }
       }
     }
   }
 
   expect(failures, failures.join("\n")).toEqual([]);
+});
+
+test("gift confirmation starts unchecked and a saved draft is restored", async ({ page }) => {
+  await installReadRoutes(page, true);
+  await page.setViewportSize({ width: 390, height: 844 });
+  const box = page.getByRole("checkbox", { name: "אני רוצה לקבל אישור על המתנה" });
+
+  await page.goto("/e/flagship-fixture/details");
+  await expect(box).toBeVisible();
+  await expect(box).not.toBeChecked();
+
+  await box.check();
+  await expect.poll(async () =>
+    page.evaluate(() => window.localStorage.getItem("lolo-guest-details:flagship-fixture")),
+  ).toContain('"wantReceipt":true');
+  await page.reload();
+  await expect(box).toBeChecked();
+
+  await page.evaluate(() => {
+    const key = "lolo-guest-details:flagship-fixture";
+    const saved = JSON.parse(window.localStorage.getItem(key) || "{}") as { wantReceipt?: boolean };
+    saved.wantReceipt = false;
+    window.localStorage.setItem(key, JSON.stringify(saved));
+  });
+  await page.reload();
+  await expect(box).not.toBeChecked();
 });
 
 test("library photos fill a guest journey when the host did not upload any", async ({ page }) => {

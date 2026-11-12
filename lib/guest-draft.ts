@@ -69,7 +69,7 @@ const emptyDetails: GuestDetails = {
   name: "",
   phone: "",
   email: "",
-  wantReceipt: true,
+  wantReceipt: false,
 };
 
 function parseContributions(raw: unknown): GuestContribution[] {
@@ -222,7 +222,7 @@ export function loadGuestDetails(slug: string): GuestDetails {
     name: typeof parsed.name === "string" ? parsed.name : "",
     phone: typeof parsed.phone === "string" ? parsed.phone : "",
     email: typeof parsed.email === "string" ? parsed.email : "",
-    wantReceipt: parsed.wantReceipt !== false,
+    wantReceipt: parsed.wantReceipt === true,
   };
 }
 
