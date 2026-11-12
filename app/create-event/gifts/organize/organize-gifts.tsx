@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { visibleHostStores } from "@/app/design/host-stores";
-import GiftMedia from "@/components/gift-media";
+import ResolvedPhoto from "@/app/design/resolved-photo";
+import { resolveGiftImage } from "@/lib/image-library";
 import {
   deleteDraftGift,
   loadDraftGifts,
@@ -142,11 +143,20 @@ export default function OrganizeGifts() {
                 className="rounded-3xl border border-border bg-white p-4"
               >
                 <div className="flex items-start gap-3">
-                  <GiftMedia
-                    imageUrl={gift.imageUrl}
-                    icon={gift.icon}
-                    alt=""
-                    className="h-16 w-16 text-2xl"
+                  <ResolvedPhoto
+                    visual={resolveGiftImage({
+                      hostImageUrl: gift.imageUrl,
+                      title: gift.title,
+                      description: gift.description,
+                      alt: gift.title || "המתנה",
+                    })}
+                    ratio="card"
+                    compact
+                    fallback={
+                      <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-soft text-2xl" aria-hidden>
+                        {gift.icon || "🎁"}
+                      </span>
+                    }
                   />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-2">

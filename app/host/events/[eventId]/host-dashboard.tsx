@@ -1,9 +1,11 @@
 import Link from "next/link";
 import LoloMark from "@/app/design/lolo-mark";
 import styles from "@/app/design/host-experience.module.css";
+import ResolvedPhoto from "@/app/design/resolved-photo";
 import FundingProgress from "@/components/funding-progress";
 import GiftMedia from "@/components/gift-media";
 import GiftTimeline from "@/components/gift-timeline";
+import { resolveEventCover, resolveGiftImage } from "@/lib/image-library";
 import type {
   HostDashboardData,
   HostDashboardGift,
@@ -99,6 +101,17 @@ export default function HostDashboard({
   exampleNote,
 }: HostDashboardProps) {
   const readOnly = Boolean(exampleNote);
+  const cover = resolveEventCover({
+    hostImageUrl: data.coverImage,
+    eventType: data.eventType,
+    title: data.title,
+    alt: data.title || "תמונת האירוע",
+  });
+  const libraryCover = resolveEventCover({
+    hostImageUrl: "",
+    eventType: data.eventType,
+    title: data.title,
+  });
   return (
     <main className={styles.board}>
         <header className={styles.boardHead}>
@@ -123,6 +136,18 @@ export default function HostDashboard({
         <div className={styles.stack}>
         <section className="rounded-3xl border border-border bg-white p-5 sm:p-6">
           <h2 className="text-lg font-bold text-foreground">סקירת האירוע</h2>
+          <div className="mt-4">
+            <ResolvedPhoto
+              visual={cover}
+              backup={libraryCover}
+              fallback={<GiftMedia icon="🎉" alt="" className="h-36 w-full text-4xl" />}
+            />
+            {cover.kind === "library" ? (
+              <p className="mt-3 text-sm text-muted">
+                תמונת ברירת מחדל לפי סוג האירוע. תמונה שהועלתה ביצירת האירוע מחליפה אותה.
+              </p>
+            ) : null}
+          </div>
           <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
             <div>
               <dt className="text-muted">שם האירוע</dt>
@@ -212,11 +237,16 @@ export default function HostDashboard({
                     className="rounded-2xl border border-border px-4 py-4"
                   >
                     <div className="flex items-start gap-3">
-                      <GiftMedia
-                        imageUrl={gift.imageUrl}
-                        icon={gift.icon}
-                        alt=""
-                        className="h-16 w-16 text-2xl"
+                      <ResolvedPhoto
+                        visual={resolveGiftImage({
+                          hostImageUrl: gift.imageUrl,
+                          title: gift.title,
+                          description: gift.description,
+                          alt: gift.title || "המתנה",
+                        })}
+                        ratio="card"
+                        compact
+                        fallback={<GiftMedia icon={gift.icon} alt="" className="h-16 w-16 text-2xl" />}
                       />
                       <div className="min-w-0 flex-1">
                         <div className="flex items-start justify-between gap-3">

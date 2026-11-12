@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import CreateFrame from "../../create-frame";
 import GiftCatalog from "./gift-catalog";
 
 export const metadata: Metadata = {
@@ -8,8 +9,12 @@ export const metadata: Metadata = {
 
 export default function GiftCatalogPage() {
   return (
-    <div className="relative mx-auto flex w-full max-w-2xl flex-1 flex-col">
+    <CreateFrame
+      step={2}
+      title="רעיונות להשראה"
+      lede="בחרו רעיון ונמלא עבורכם שם, תיאור וסכום מוצע. אחר כך אפשר לשנות הכל, כולל התמונה."
+    >
       <GiftCatalog />
-    </div>
+    </CreateFrame>
   );
 }

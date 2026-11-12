@@ -48,6 +48,7 @@ export type HostDashboardData = {
   eventDate: string;
   hostName: string;
   slug: string;
+  coverImage: string;
   guestPath: string;
   paidAmount: number;
   pendingAmount: number;
@@ -167,7 +168,7 @@ export async function getHostDashboardData(
   const supabase = getSupabaseServiceClient();
   const { data: event, error: eventError } = await supabase
     .from("events")
-    .select("id, slug, title, host_name, event_type, event_date")
+    .select("id, slug, title, host_name, event_type, event_date, cover_image")
     .eq("id", eventId)
     .maybeSingle();
 
@@ -227,6 +228,7 @@ export async function getHostDashboardData(
     eventDate: String(event.event_date || ""),
     hostName: String(event.host_name || ""),
     slug: String(event.slug || ""),
+    coverImage: String(event.cover_image || ""),
     guestPath: guestEventPath(String(event.slug || "")),
     paidAmount: funding.paidAmount,
     pendingAmount: funding.pendingAmount,
