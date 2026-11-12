@@ -1,11 +1,9 @@
 import Link from "next/link";
 import LoloMark from "@/app/design/lolo-mark";
 import styles from "@/app/design/host-experience.module.css";
-import ResolvedPhoto from "@/app/design/resolved-photo";
 import FundingProgress from "@/components/funding-progress";
-import GiftMedia from "@/components/gift-media";
 import GiftTimeline from "@/components/gift-timeline";
-import { resolveEventCover, resolveGiftImage } from "@/lib/image-library";
+import HostPhotoEditor from "./host-photo-editor";
 import type {
   HostDashboardData,
   HostDashboardGift,
@@ -101,17 +99,6 @@ export default function HostDashboard({
   exampleNote,
 }: HostDashboardProps) {
   const readOnly = Boolean(exampleNote);
-  const cover = resolveEventCover({
-    hostImageUrl: data.coverImage,
-    eventType: data.eventType,
-    title: data.title,
-    alt: data.title || "תמונת האירוע",
-  });
-  const libraryCover = resolveEventCover({
-    hostImageUrl: "",
-    eventType: data.eventType,
-    title: data.title,
-  });
   return (
     <main className={styles.board}>
         <header className={styles.boardHead}>
@@ -137,16 +124,13 @@ export default function HostDashboard({
         <section className="rounded-3xl border border-border bg-white p-5 sm:p-6">
           <h2 className="text-lg font-bold text-foreground">סקירת האירוע</h2>
           <div className="mt-4">
-            <ResolvedPhoto
-              visual={cover}
-              backup={libraryCover}
-              fallback={<GiftMedia icon="🎉" alt="" className="h-36 w-full text-4xl" />}
+            <HostPhotoEditor
+              eventId={data.eventId}
+              initialUrl={data.coverImage}
+              eventType={data.eventType}
+              title={data.title || "האירוע"}
+              previewOnly={readOnly}
             />
-            {cover.kind === "library" ? (
-              <p className="mt-3 text-sm text-muted">
-                תמונת ברירת מחדל לפי סוג האירוע. תמונה שהועלתה ביצירת האירוע מחליפה אותה.
-              </p>
-            ) : null}
           </div>
           <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
             <div>
@@ -236,18 +220,16 @@ export default function HostDashboard({
                     key={gift.id}
                     className="rounded-2xl border border-border px-4 py-4"
                   >
+                    <HostPhotoEditor
+                      eventId={data.eventId}
+                      giftId={gift.id}
+                      initialUrl={gift.imageUrl}
+                      title={gift.title || "מתנה"}
+                      description={gift.description}
+                      compact
+                      previewOnly={readOnly}
+                    />
                     <div className="flex items-start gap-3">
-                      <ResolvedPhoto
-                        visual={resolveGiftImage({
-                          hostImageUrl: gift.imageUrl,
-                          title: gift.title,
-                          description: gift.description,
-                          alt: gift.title || "המתנה",
-                        })}
-                        ratio="card"
-                        compact
-                        fallback={<GiftMedia icon={gift.icon} alt="" className="h-16 w-16 text-2xl" />}
-                      />
                       <div className="min-w-0 flex-1">
                         <div className="flex items-start justify-between gap-3">
                           <p className="font-semibold text-foreground" dir="auto">

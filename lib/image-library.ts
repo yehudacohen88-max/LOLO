@@ -1009,6 +1009,12 @@ function hashSeed(seed: string) {
 /** The birthday cover default. Other birthday photos stay in the library. */
 const BIRTHDAY_COVER_SLUG = "candle-layer-cake";
 
+/**
+ * Cover shown before an event type is chosen. The festive candle photo
+ * reads as a memorial, so an unset draft uses the colorful party scene.
+ */
+const UNSET_COVER_SLUG = "balloon-party";
+
 function pick(category: LibraryCategory, role: LibraryRole, seed: string) {
   if (category === "birthday" && role === "hero") {
     const cover = IMAGE_LIBRARY.find(
@@ -1122,8 +1128,21 @@ export function resolveEventCover(input: {
       category: null,
     };
   }
-  const category = coverCategory(input.eventType ?? "", input.title ?? "");
-  return fromLibrary(category, "hero", `${input.eventType ?? ""}|${input.title ?? ""}`, false);
+  const eventType = input.eventType ?? "";
+  const title = input.title ?? "";
+  const category = coverCategory(eventType, title);
+  if (!eventType.trim() && category === "festive") {
+    const image = libraryBySlug(UNSET_COVER_SLUG, "hero");
+    return {
+      kind: "library",
+      src: image.file,
+      avif: image.avif,
+      alt: image.altHe,
+      illustrative: false,
+      category: image.category,
+    };
+  }
+  return fromLibrary(category, "hero", `${eventType}|${title}`, false);
 }
 
 export function resolveGiftImage(input: {

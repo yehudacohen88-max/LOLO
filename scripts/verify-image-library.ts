@@ -88,6 +88,18 @@ describe("image library", () => {
     assert.equal(giftCategory("שרשרת זהב"), "jewelry");
   });
 
+  it("uses a colorful party photo when no event type is chosen", () => {
+    const cover = resolveEventCover({
+      hostImageUrl: "",
+      eventType: "",
+      title: "",
+    });
+    assert.equal(cover.kind, "library");
+    assert.match(cover.src, /balloon-party-hero\.webp$/);
+    assert.doesNotMatch(cover.src, /candle-glow/);
+    assert.equal(cover.illustrative, false);
+  });
+
   it("picks a cover from the title when the event type is empty", () => {
     const cover = resolveEventCover({
       hostImageUrl: null,
