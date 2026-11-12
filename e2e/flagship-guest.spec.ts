@@ -113,7 +113,8 @@ test("guest page keeps contribution flow and hides an empty invitation", async (
   await expect(page.getByRole("heading", { name: "מוסיפים ברכה אישית" })).toBeVisible();
   await expect(page.locator("[data-continuity-title]")).toHaveText("חוגגים 40 לדנה");
   await expect(page.locator("[data-continuity-letter]")).toHaveCount(0);
-  await expect(page.locator("[data-gift-fallback]:visible").first()).toBeVisible();
+  await expect(page.locator("[data-journey-photo][data-image-source='library']:visible").first()).toBeVisible();
+  await expect(page.locator("[data-illustrative-label]:visible").first()).toHaveText("תמונה להמחשה");
 
   await page.unroute("**/api/events/flagship-fixture");
   await page.route("**/api/events/flagship-fixture", async (route) => {

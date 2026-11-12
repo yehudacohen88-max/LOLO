@@ -147,10 +147,12 @@ export default function GuestPaymentSummary() {
 
   if (contributions.length === 0 || localTotal <= 0) {
     return (
-      <div className={styles.card}>
-        <p className={styles.notice}>תשלום הדגמה בלבד — לא מתבצע חיוב אמיתי</p>
+      <div className={styles.card} data-journey-panel="">
+        <p className={styles.notice} data-journey-demo="">
+          תשלום הדגמה בלבד — לא מתבצע חיוב אמיתי
+        </p>
         <p>עדיין לא נבחרה מתנה.</p>
-        <Link href={guestEventPath(slug)} className={styles.cta}>
+        <Link href={guestEventPath(slug)} className={styles.cta} data-journey-cta="">
           חזרה לבחירת מתנה
         </Link>
       </div>
@@ -158,12 +160,17 @@ export default function GuestPaymentSummary() {
   }
 
   return (
-    <div className={styles.flowBody} aria-busy={phase === "processing"}>
-      <section className={styles.card}>
-        <h2>סיכום התשלום</h2>
+    <div className={styles.flowBody} data-journey-panel="" aria-busy={phase === "processing"}>
+      <section>
+        <h2>סיכום ההדגמה</h2>
         {showDemo && !unavailable ? (
-          <p className={styles.notice}>תשלום הדגמה בלבד — לא מתבצע חיוב אמיתי</p>
+          <p className={styles.notice} data-journey-demo="">
+            תשלום הדגמה בלבד — לא מתבצע חיוב אמיתי
+          </p>
         ) : null}
+        <p data-journey-reassure="">
+          אין במסך הזה שדות לכרטיס אשראי. האישור הוא הדגמה בלבד, בלי חיוב ובלי שמירת פרטי תשלום.
+        </p>
         {contributions.map((item) => (
           <p key={item.giftId} className={styles.lineRow}>
             <span>{item.giftName}</span>
@@ -175,7 +182,7 @@ export default function GuestPaymentSummary() {
           {feeAmount > 0 ? <b>{formatGiftAmount(feeAmount)}</b> : null}
         </p>
         <p className={styles.totalLine}>
-          <span>סה״כ לחיוב</span>
+          <span>סה״כ בהדגמה</span>
           <span>{formatGiftAmount(chargedAmount)}</span>
         </p>
         {!quote && !quoteError ? (
@@ -183,8 +190,16 @@ export default function GuestPaymentSummary() {
         ) : null}
       </section>
 
-      {quoteError ? <p className={styles.fieldError}>{quoteError}</p> : null}
-      {actionError ? <p className={styles.fieldError}>{actionError}</p> : null}
+      {quoteError ? (
+        <p className={styles.fieldError} data-journey-error="" role="alert">
+          {quoteError}
+        </p>
+      ) : null}
+      {actionError ? (
+        <p className={styles.fieldError} data-journey-error="" role="alert">
+          {actionError}
+        </p>
+      ) : null}
 
       {unavailable ? (
         <p className={styles.card}>אמצעי התשלום אינו זמין כרגע.</p>
@@ -204,6 +219,7 @@ export default function GuestPaymentSummary() {
               void pay("success");
             }}
             className={styles.cta}
+            data-journey-cta=""
           >
             אישור תשלום הדגמה
           </button>
@@ -214,6 +230,7 @@ export default function GuestPaymentSummary() {
               void pay("failure");
             }}
             className={styles.ghost}
+            data-journey-quiet=""
           >
             הדמיית תשלום שנכשל
           </button>

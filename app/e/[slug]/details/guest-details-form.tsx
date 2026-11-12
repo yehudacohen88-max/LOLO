@@ -21,7 +21,7 @@ export default function GuestDetailsForm() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
-  const [wantReceipt, setWantReceipt] = useState(true);
+  const [wantReceipt, setWantReceipt] = useState(false);
   const [errors, setErrors] = useState<{
     name?: string;
     phone?: string;
@@ -99,6 +99,7 @@ export default function GuestDetailsForm() {
   return (
     <form
       className={styles.flowBody}
+      data-journey-panel=""
       noValidate
       onSubmit={async (event) => {
         event.preventDefault();
@@ -155,7 +156,7 @@ export default function GuestDetailsForm() {
           aria-describedby={errors.name ? "guest-name-error" : undefined}
         />
         {errors.name ? (
-          <span id="guest-name-error" className={styles.fieldError}>
+          <span id="guest-name-error" className={styles.fieldError} data-journey-error="">
             {errors.name}
           </span>
         ) : null}
@@ -172,7 +173,7 @@ export default function GuestDetailsForm() {
           aria-describedby={errors.phone ? "guest-phone-error" : undefined}
         />
         {errors.phone ? (
-          <span id="guest-phone-error" className={styles.fieldError}>
+          <span id="guest-phone-error" className={styles.fieldError} data-journey-error="">
             {errors.phone}
           </span>
         ) : null}
@@ -189,7 +190,7 @@ export default function GuestDetailsForm() {
           aria-describedby={errors.email ? "guest-email-error" : undefined}
         />
         {errors.email ? (
-          <span id="guest-email-error" className={styles.fieldError}>
+          <span id="guest-email-error" className={styles.fieldError} data-journey-error="">
             {errors.email}
           </span>
         ) : null}
@@ -202,8 +203,15 @@ export default function GuestDetailsForm() {
         />
         <span>אני רוצה לקבל אישור על המתנה</span>
       </label>
-      {saveError ? <p className={styles.fieldError}>{saveError}</p> : null}
-      <button type="submit" disabled={saving} className={styles.cta}>
+      <p data-journey-reassure="">
+        השם, הטלפון והאימייל נשמרים עם ההשתתפות אצל המארח. לא מזינים כאן פרטי אשראי.
+      </p>
+      {saveError ? (
+        <p className={styles.fieldError} data-journey-error="" role="alert">
+          {saveError}
+        </p>
+      ) : null}
+      <button type="submit" disabled={saving} className={styles.cta} data-journey-cta="">
         מעבר לתשלום
       </button>
     </form>

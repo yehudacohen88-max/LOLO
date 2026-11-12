@@ -164,6 +164,7 @@ export default function GuestGreetingForm() {
   return (
     <form
       className={styles.flowBody}
+      data-journey-panel=""
       onSubmit={(event) => {
         event.preventDefault();
         persistGreeting();
@@ -303,17 +304,18 @@ export default function GuestGreetingForm() {
       ) : null}
 
       {continueError ? (
-        <p className={styles.fieldError} role="alert">
+        <p className={styles.fieldError} data-journey-error="" role="alert">
           {continueError}
         </p>
       ) : null}
-      <button type="submit" className={styles.cta}>
+      <button type="submit" className={styles.cta} data-journey-cta="">
         ממשיכים · {formatGiftAmount(total)}
       </button>
       {text.trim() ? null : (
         <button
           type="button"
           className={styles.ghost}
+          data-journey-quiet=""
           onClick={() => {
             saveGuestGreeting(slug, {
               text: "",
@@ -341,6 +343,7 @@ export default function GuestGreetingForm() {
           router.push(guestEventPath(slug));
         }}
         className={styles.ghost}
+        data-journey-quiet=""
       >
         חזרה לבחירת המתנות
       </button>

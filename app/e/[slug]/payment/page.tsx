@@ -11,6 +11,7 @@ export default function GuestPaymentPage() {
     <FlowPage
       step="payment"
       title="כמעט סיימנו"
+      lede="זה מסך הדגמה. לא נאספים פרטי כרטיס ולא מתבצע חיוב."
     >
       <GuestPaymentSummary />
     </FlowPage>

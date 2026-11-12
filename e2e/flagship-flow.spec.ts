@@ -1,8 +1,6 @@
 import path from "node:path";
 import { expect, test, type Page, type Route } from "@playwright/test";
 import { BETA_CLARITY } from "@/app/design/beta-notice";
-import { expectGiftFallback } from "./empty-cover";
-
 const artifactDir = process.env.FLAGSHIP_ARTIFACT_DIR || "/opt/cursor/artifacts";
 const portraitPath = path.join(__dirname, "fixtures/flagship/portrait.jpg");
 const giftPath = path.join(__dirname, "fixtures/flagship/gift.png");
@@ -254,22 +252,24 @@ for (const viewport of [
     await page.getByRole("button", { name: "מצטרפים למתנה" }).click();
     await expect(page.locator("[data-continuity-title]")).toHaveText("חוגגים 40 לדנה");
     await expect(page.locator("[data-continuity-letter]")).toHaveCount(0);
-    await expect(page.locator("[data-gift-fallback]:visible").first()).toBeVisible();
+    await expect(page.locator("[data-journey-photo][data-image-source='library']:visible").first()).toBeVisible();
+    await expect(page.locator("[data-illustrative-label]:visible").first()).toHaveText("תמונה להמחשה");
     await page.getByRole("button", { name: /ממשיכים/ }).click();
     await page.getByLabel("שם מלא").fill("יעל כהן");
     await page.getByLabel("מספר טלפון").fill("0501234567");
     await page.getByLabel("אימייל").fill("yael@example.com");
     await page.getByRole("button", { name: "מעבר לתשלום" }).click();
     if (viewport.name === "1440") {
-      await expect(page.locator("[data-pay-hero] [data-gift-fallback]")).toBeVisible();
-      await expect(page.locator("[data-pay-hero] [data-gift-photo]")).toHaveCount(0);
+      await expect(page.locator("[data-pay-hero] [data-gift-photo][data-image-source='library']")).toBeVisible();
+      await expect(page.locator("[data-pay-hero] [data-illustrative-label]")).toHaveText("תמונה להמחשה");
+      await expect(page.locator("[data-pay-hero] [data-gift-fallback]")).toHaveCount(0);
     }
     await page.getByRole("button", { name: "אישור תשלום הדגמה" }).click();
     await expect(page.getByRole("heading", { name: "איזה כיף, השתתפת במתנה!" })).toBeVisible();
-    await expectGiftFallback(page);
     await expect(page.getByText(BETA_CLARITY)).toHaveCount(0);
-    await expect(page.locator("[data-reveal] [data-gift-fallback]")).toBeVisible();
-    await expect(page.locator("[data-reveal] [data-gift-photo]")).toHaveCount(0);
+    await expect(page.locator("[data-reveal] [data-gift-photo][data-image-source='library']")).toBeVisible();
+    await expect(page.locator("[data-reveal] [data-illustrative-label]")).toHaveText("תמונה להמחשה");
+    await expect(page.locator("[data-reveal] [data-gift-fallback]")).toHaveCount(0);
     await expect(page.getByText("350").first()).toBeVisible();
     await expect(page.locator("[data-order-status]")).toHaveText("שולם בהדגמה");
     await page.screenshot({
