@@ -1,41 +1,70 @@
 import Link from "next/link";
-import { Heebo } from "next/font/google";
 import LoloMark from "@/app/design/lolo-mark";
 import { BETA_CLARITY } from "@/app/design/beta-notice";
+import { ILLUSTRATIVE_LABEL, libraryBySlug, type LibraryImage } from "@/lib/image-library";
 import styles from "./premium-home.module.css";
 
-const heebo = Heebo({
-  subsets: ["hebrew", "latin"],
-  weight: ["400", "500", "700"],
-  variable: "--font-premium-heebo",
-  display: "swap",
-});
+const hero = libraryBySlug("candle-layer-cake", "hero");
+const together = libraryBySlug("ribbon-box", "card");
+const business = libraryBySlug("kitchen-machine", "card");
 
 const steps = [
   {
     number: "1",
     title: "יוצרים אירוע",
-    body: "בוחרים מתנה אחת ואת היעד שלה.",
+    body: "בוחרים מתנה אחת שהחוגג באמת רוצה, ואת בית העסק שבו יממשו אותה.",
+    image: libraryBySlug("candle-layer-cake", "card"),
   },
   {
     number: "2",
-    title: "משתפים את האורחים",
-    body: "כל אורח נכנס מהקישור, בוחר סכום ומשאיר ברכה.",
+    title: "האורחים משתתפים יחד",
+    body: "כל אורח נכנס מהקישור האישי, בוחר סכום ומשאיר ברכה. בלי הרשמה.",
+    image: together,
   },
   {
     number: "3",
-    title: "כולם באותה מתנה",
-    body: "ההשתתפות נאספת למתנה אחת. בבטא התשלום הוא הדגמה, בלי חיוב אמיתי.",
+    title: "שובר לבית העסק",
+    body: "ההשתתפות נאספת למתנה אחת, והחוגג מקבל שובר דיגיטלי. בבטא התשלום הוא הדגמה, בלי חיוב אמיתי.",
+    image: business,
   },
 ];
 
-function Ribbon() {
+const trust = [
+  {
+    title: "קישור אישי",
+    body: "אורחים לא נרשמים לאתר. הם נכנסים רק מהקישור שקיבלו מהמארח.",
+  },
+  {
+    title: "מתנה אחת ברורה",
+    body: "כולם משתתפים באותה מתנה, לא בפיזור של הפתעות למגירה.",
+  },
+  {
+    title: "מה קורה בבטא",
+    body: BETA_CLARITY,
+  },
+];
+
+function StockPhoto({
+  image,
+  framed = false,
+}: {
+  image: LibraryImage;
+  framed?: boolean;
+}) {
   return (
-    <svg className={styles.ribbon} viewBox="0 0 72 28" aria-hidden="true">
-      <path d="M36 14 C26 2 6 2 8 11 C10 18 26 18 36 14Z" fill="#E87563" />
-      <path d="M36 14 C46 2 66 2 64 11 C62 18 46 18 36 14Z" fill="#E87563" />
-      <circle cx="36" cy="14" r="4.2" fill="#C7A36A" />
-    </svg>
+    <figure className={framed ? styles.heroFigure : styles.stepFigure}>
+      <picture>
+        <source srcSet={image.avif} type="image/avif" />
+        <img
+          src={image.file}
+          alt={image.altHe}
+          width={image.width}
+          height={image.height}
+          decoding="async"
+        />
+      </picture>
+      <figcaption data-illustrative-label="">{ILLUSTRATIVE_LABEL}</figcaption>
+    </figure>
   );
 }
 
@@ -45,17 +74,21 @@ export default function PremiumHome({
   showSimulationBanner?: boolean;
 }) {
   return (
-    <div className={`${styles.page} ${heebo.variable}`}>
+    <div className={styles.page} data-bold-home="">
       {showSimulationBanner ? <p className={styles.simLabel}>הדמיה — לא באתר החי</p> : null}
       <main className={styles.main}>
+        <header className={styles.top}>
+          <p className={styles.brand}>
+            <LoloMark />
+          </p>
+        </header>
+
         <section className={styles.hero}>
           <div className={styles.copy}>
-            <p className={styles.brand}>
-              <LoloMark />
-            </p>
+            <p className={styles.kicker}>מתנה אחת, מכולם</p>
             <h1>המתנה שבאמת רציתם, ביחד.</h1>
             <p className={styles.lede}>
-              יוצרים אירוע, משתפים את האורחים, וכולם משתתפים במתנה אחת.
+              האורחים משתתפים יחד במתנה שהחוגג באמת רוצה. החוגג מקבל שובר דיגיטלי לבית עסק שבחר.
             </p>
             <div className={styles.actions}>
               <Link className={styles.primary} href="/create-event?new=1">
@@ -69,57 +102,50 @@ export default function PremiumHome({
               אורחים לא נרשמים לכאן. הם נכנסים מהקישור האישי שקיבלו מהמארח.
             </p>
           </div>
-
-          <figure className={styles.stage}>
-            <div className={styles.phone}>
-              <div className={styles.ear} aria-hidden="true" />
-              <div className={styles.screen}>
-                <div className={styles.phoneBrand} aria-hidden="true">
-                  <LoloMark />
-                </div>
-                <p className={styles.examplePill}>דוגמה</p>
-                <div className={styles.giftCard}>
-                  <p className={styles.phoneKicker}>יום הולדת</p>
-                  <p className={styles.phoneTitle}>אופני עיר</p>
-                  <p className={styles.phoneMeta}>המתנה שבחרתם</p>
-                  <div className={styles.track} aria-hidden="true">
-                    <span />
-                  </div>
-                  <p className={styles.progressLabel}>
-                    <b>72%</b>
-                    <span>מהיעד</span>
-                  </p>
-                  <p className={styles.guestCount}>18 אורחים כבר השתתפו</p>
-                </div>
-              </div>
-            </div>
+          <div className={styles.stage}>
+            <StockPhoto image={hero} framed />
             <div className={styles.voucher}>
-              <Ribbon />
-              <p className={styles.voucherKicker}>להמחשה בלבד</p>
+              <p className={styles.voucherKicker}>מה שהחוגג מקבל</p>
               <p className={styles.voucherTitle}>שובר דיגיטלי</p>
-              <p className={styles.voucherNote}>
-                בבטא לא מונפק שובר אמיתי ולא מתבצע מימוש.
-              </p>
+              <p className={styles.voucherNote}>לבית העסק שנבחר לאירוע. בבטא לא מונפק שובר אמיתי.</p>
             </div>
-            <figcaption>המחשה של דף אירוע. לא אירוע חי, ולא שובר אמיתי.</figcaption>
-          </figure>
+          </div>
         </section>
-
-        <p className={styles.beta}>{BETA_CLARITY}</p>
 
         <section className={styles.steps} aria-label="איך זה עובד">
           <h2>איך זה עובד</h2>
           <ol>
             {steps.map((step) => (
               <li key={step.number}>
-                <span aria-hidden="true">{step.number}</span>
+                <StockPhoto image={step.image} />
                 <div>
+                  <span aria-hidden="true">{step.number}</span>
                   <strong>{step.title}</strong>
                   <p>{step.body}</p>
                 </div>
               </li>
             ))}
           </ol>
+        </section>
+
+        <section className={styles.trust} aria-label="למה לסמוך">
+          <h2>שקט למארח ולאורחים</h2>
+          <ul>
+            {trust.map((item) => (
+              <li key={item.title}>
+                <strong>{item.title}</strong>
+                <p>{item.body}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        <section className={styles.close}>
+          <h2>האירוע נראה מוכן עוד לפני שמעלים תמונה.</h2>
+          <p>תמונת כיסוי ותמונת מתנה נבחרות מהספרייה לפי סוג האירוע. אפשר להחליף אותן בתמונה שלכם, ולחזור לברירת המחדל.</p>
+          <Link className={styles.primary} href="/create-event?new=1">
+            מתחילים ליצור אירוע
+          </Link>
         </section>
       </main>
     </div>

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { BETA_CLARITY } from "@/app/design/beta-notice";
-import styles from "@/app/design/host-experience.module.css";
+import styles from "@/app/design/bold-create.module.css";
 import { peekCreatedAccess } from "@/app/create-event/created-access-memory";
 import { guestEventPath } from "@/lib/events";
 import { normalizeEventSlug } from "@/lib/events/slug";
@@ -90,7 +90,7 @@ export default function SuccessActions() {
   if (!eventSlug) {
     return (
       <div className="mt-10 flex flex-col gap-4">
-        <h1 className={styles.title}>עדיין אין אירוע מוכן</h1>
+        <h1 className={styles.panelTitle}>עדיין אין אירוע מוכן</h1>
         <div className={styles.empty}>
           <p>
             המסך הזה נפתח רק אחרי יצירת אירוע. חזרו ליצירה, ובסיום הקוד יוצג כאן פעם אחת.
@@ -112,8 +112,8 @@ export default function SuccessActions() {
 
   return (
     <div className="mt-8 flex flex-col gap-3">
-      <h1 className={styles.title}>האירוע שלכם מוכן</h1>
-      <p className={styles.lede}>עכשיו נשאר רק להזמין את האורחים.</p>
+      <h1 className={styles.panelTitle}>האירוע שלכם מוכן</h1>
+      <p className={styles.panelLede}>עכשיו נשאר רק להזמין את האורחים.</p>
       <p className={styles.betaNote}>{BETA_CLARITY}</p>
 
       {toast ? (

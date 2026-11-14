@@ -130,6 +130,7 @@ export function saveEventDraft(patch: Partial<EventDraft>) {
 
   try {
     window.localStorage.setItem(EVENT_DRAFT_KEY, JSON.stringify(next));
+    window.dispatchEvent(new Event("lolo-draft"));
   } catch (error) {
     if (error instanceof DraftStorageError) {
       throw error;
@@ -180,6 +181,7 @@ export function resetEventCreationDraft() {
 
   window.localStorage.removeItem(EVENT_DRAFT_KEY);
   clearDraftGifts();
+  window.dispatchEvent(new Event("lolo-draft"));
 }
 
 export function getVideoPreviewUrl() {

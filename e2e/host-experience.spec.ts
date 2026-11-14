@@ -2,7 +2,6 @@ import { mkdirSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 import * as XLSX from "xlsx";
 import { BETA_CLARITY } from "@/app/design/beta-notice";
-import { expectLetterClearOfBow } from "./empty-cover";
 
 const ARTIFACTS = "/opt/cursor/artifacts/host-experience";
 const ACCESS_CODE = "AB12-CD34";
@@ -136,7 +135,7 @@ test.describe("host experience", () => {
           await expect(page.getByText(createStepSentence(url))).toHaveCount(1);
         }
         if (url.includes("/preview")) {
-          await expectLetterClearOfBow(page);
+          await expect(page.locator("[data-image-source='library']:visible").first()).toBeVisible();
         }
         await shot(page, name);
         if (name === "create-preview-1440") {

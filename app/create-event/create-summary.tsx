@@ -1,18 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import styles from "@/app/design/host-experience.module.css";
-import { EmptyCover } from "@/app/e/[slug]/flagship-ui";
+import ResolvedPhoto from "@/app/design/resolved-photo";
+import styles from "@/app/design/bold-create.module.css";
 import { loadDraftGifts } from "@/lib/draft-gifts";
 import { formatEventDate, loadEventDraft, type EventDraft } from "@/lib/event-draft";
-
-const STEPS = [
-  { step: 1, label: "האירוע" },
-  { step: 2, label: "מתנות" },
-  { step: 3, label: "פרטים" },
-  { step: 4, label: "אורחים" },
-  { step: 5, label: "תצוגה" },
-] as const;
+import { resolveEventCover } from "@/lib/image-library";
 
 function giftLabel(draft: EventDraft, giftCount: number) {
   if (draft.giftMode === "money") {
@@ -27,7 +20,7 @@ function giftLabel(draft: EventDraft, giftCount: number) {
   return "עדיין לא נבחרו מתנות";
 }
 
-export default function CreateSummary({ step }: { step: number }) {
+export default function CreateSummary({ compact = false }: { compact?: boolean }) {
   const [draft, setDraft] = useState<EventDraft | null>(null);
   const [giftCount, setGiftCount] = useState(0);
 
@@ -40,61 +33,63 @@ export default function CreateSummary({ step }: { step: number }) {
     window.addEventListener("input", read, true);
     window.addEventListener("change", read, true);
     window.addEventListener("click", read, true);
+    window.addEventListener("lolo-draft", read);
     return () => {
       window.removeEventListener("input", read, true);
       window.removeEventListener("change", read, true);
       window.removeEventListener("click", read, true);
+      window.removeEventListener("lolo-draft", read);
     };
   }, []);
 
   const eventName = draft?.eventName.trim() || "האירוע שלכם";
-  const monogram = (draft?.hostName || draft?.eventName || "ל").trim().charAt(0) || "ל";
   const when = draft?.eventDate ? formatEventDate(draft.eventDate) : "";
+  const cover = resolveEventCover({
+    hostImageUrl: draft?.imageDataUrl,
+    eventType: draft?.eventType,
+    title: draft?.eventName,
+    alt: draft?.imageDataUrl ? "" : undefined,
+  });
+  const libraryCover = resolveEventCover({
+    hostImageUrl: "",
+    eventType: draft?.eventType,
+    title: draft?.eventName,
+  });
 
   return (
-    <aside className={styles.summary} aria-label="סיכום האירוע">
-      <ol className={styles.rail}>
-        {STEPS.map((item) => {
-          const state = item.step === step ? styles.railOn : item.step < step ? styles.railDone : "";
-          return (
-            <li key={item.step} className={state} aria-current={item.step === step ? "step" : undefined}>
-              <span>{item.step}</span>
-              {item.label}
-            </li>
-          );
-        })}
-      </ol>
-      <div className={styles.summaryCard}>
-        <div className={styles.summaryCover}>
-          {draft?.imageDataUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={draft.imageDataUrl} alt="" />
-          ) : (
-            <EmptyCover monogram={monogram} />
-          )}
+    <div className={compact ? styles.compactCard : styles.summaryCard}>
+      <ResolvedPhoto
+        visual={cover}
+        backup={libraryCover}
+        compact={compact}
+        fallback={<div className={styles.photoFallback}>תמונת האירוע</div>}
+      />
+      <div className={compact ? styles.compactCopy : undefined}>
+      <p className={styles.summaryTitle} dir="auto">
+        {eventName}
+      </p>
+      {compact ? <p className={styles.compactMeta}>{draft?.eventType || "עדיין לא נבחר סוג"}</p> : null}
+      {compact ? null : (
+      <dl>
+        <div>
+          <dt>סוג</dt>
+          <dd dir="auto">{draft?.eventType || "עדיין לא נבחר"}</dd>
         </div>
-        <p className={styles.summaryTitle} dir="auto">
-          {eventName}
-        </p>
-        <dl>
-          <div>
-            <dt>סוג</dt>
-            <dd dir="auto">{draft?.eventType || "עדיין לא נבחר"}</dd>
-          </div>
-          <div>
-            <dt>מתי</dt>
-            <dd>{when || "עדיין לא נבחר תאריך"}</dd>
-          </div>
-          <div>
-            <dt>מארח</dt>
-            <dd dir="auto">{draft?.hostName.trim() || "עדיין לא הוזן"}</dd>
-          </div>
-          <div>
-            <dt>מתנות</dt>
-            <dd>{draft ? giftLabel(draft, giftCount) : "עדיין לא נבחרו מתנות"}</dd>
-          </div>
-        </dl>
+        <div>
+          <dt>מתי</dt>
+          <dd>{when || "עדיין לא נבחר תאריך"}</dd>
+        </div>
+        <div>
+          <dt>מארח</dt>
+          <dd dir="auto">{draft?.hostName.trim() || "עדיין לא הוזן"}</dd>
+        </div>
+        <div>
+          <dt>מתנות</dt>
+          <dd>{draft ? giftLabel(draft, giftCount) : "עדיין לא נבחרו מתנות"}</dd>
+        </div>
+      </dl>
+      )}
       </div>
-    </aside>
+    </div>
   );
 }

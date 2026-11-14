@@ -16,6 +16,7 @@
     "verify:guest-progress": "node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/register-test-hooks.mjs --test scripts/verify-guest-progress.ts",
     "verify:guest-access": "node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/register-test-hooks.mjs --test scripts/verify-guest-access.ts",
     "verify:images": "node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/register-test-hooks.mjs --test scripts/verify-image-library.ts",
+    "verify:host-images": "node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/register-test-hooks.mjs --test scripts/verify-host-images.ts",
     "test:e2e": "npm run build && playwright test"
   },
   "dependencies": {

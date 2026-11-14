@@ -23,6 +23,7 @@ export function exampleDashboardData(): HostDashboardData {
     eventDate: "2026-11-12",
     hostName: "נועה",
     slug: "event-example",
+    coverImage: "",
     guestPath: "/e/event-example",
     paidAmount: 1800,
     pendingAmount: 350,

@@ -39,3 +39,20 @@ export function isOwnGiftImageUrl(value: string) {
   const prefix = `/storage/v1/object/public/${GIFT_IMAGE_BUCKET}/`;
   return url.pathname.startsWith(prefix) && url.pathname.length > prefix.length;
 }
+
+/** Path shape written by POST /api/uploads/images: covers|gifts/<uuid>.<jpg|png|webp>. */
+const UPLOAD_OBJECT =
+  /^(covers|gifts)\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(jpg|png|webp)$/i;
+
+export function isHostUploadImageUrl(value: string) {
+  if (!isOwnGiftImageUrl(value)) {
+    return false;
+  }
+  const rest = new URL(value).pathname.slice(
+    `/storage/v1/object/public/${GIFT_IMAGE_BUCKET}/`.length,
+  );
+  if (rest.includes("%") || rest.includes("\\") || rest.includes("..")) {
+    return false;
+  }
+  return UPLOAD_OBJECT.test(rest);
+}

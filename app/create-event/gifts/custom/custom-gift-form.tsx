@@ -4,14 +4,15 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import ImageFormatHint from "@/app/design/image-format-hint";
+import ResolvedPhoto from "@/app/design/resolved-photo";
 import UploadActions from "@/app/design/upload-actions";
 import { describeImageUploadError, type UploadFailure } from "@/app/design/upload-error";
 import { userFacingMessage } from "@/app/design/user-error";
 import { visibleHostStores } from "@/app/design/host-stores";
-import GiftMedia from "@/components/gift-media";
 import { findDraftGift, upsertDraftGift, type DraftGiftSource } from "@/lib/draft-gifts";
 import { saveEventDraft } from "@/lib/event-draft";
 import { formatPrice, getGiftById } from "@/lib/gifts";
+import { resolveGiftImage } from "@/lib/image-library";
 import { uploadImageFile } from "@/lib/images/upload-client";
 import {
   fetchActiveStoreOptions,
@@ -289,11 +290,24 @@ export default function CustomGiftForm() {
     <form onSubmit={handleSubmit} className="mt-10 flex flex-col gap-6">
       <section className="flex flex-col gap-3">
         <h2 className="text-base font-bold text-foreground">תמונה</h2>
-        <GiftMedia
-          imageUrl={imageUrl}
-          icon={icon}
-          alt={title ? `תמונת ${title}` : "תצוגה מקדימה של המתנה"}
-          className="h-48 w-full text-5xl"
+        <ResolvedPhoto
+          visual={resolveGiftImage({
+            hostImageUrl: imageUrl,
+            title: title || "מתנה",
+            description,
+            alt: title ? `תמונת ${title}` : "המתנה",
+          })}
+          backup={resolveGiftImage({
+            hostImageUrl: "",
+            title: title || "מתנה",
+            description,
+          })}
+          ratio="card"
+          fallback={
+            <div className="flex h-44 items-center justify-center rounded-3xl border border-dashed border-border bg-white text-sm text-muted">
+              {icon || "🎁"}
+            </div>
+          }
         />
         <UploadActions
           hasImage={Boolean(imageUrl)}
@@ -309,6 +323,7 @@ export default function CustomGiftForm() {
           ref={imageInputRef}
           type="file"
           accept="image/*"
+          aria-label="העלאת תמונת מתנה"
           className="sr-only"
           disabled={uploading}
           onChange={(event) => {
@@ -320,8 +335,8 @@ export default function CustomGiftForm() {
         <ImageFormatHint
           lead={
             imageUrl
-              ? "אפשר להחליף את התמונה."
-              : "מומלץ להוסיף תמונה. אפשר גם להמשיך בלי, ואז תופיע מסגרת עם סמל מתנה."
+              ? "התמונה שלכם מוצגת. הסרת התמונה מחזירה את ברירת המחדל."
+              : "מוצגת תמונת ברירת מחדל לפי המתנה, עם הסימון תמונה להמחשה. אפשר להחליף אותה."
           }
         />
       </section>

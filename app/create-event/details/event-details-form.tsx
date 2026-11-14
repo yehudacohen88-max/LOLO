@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import ImageFormatHint from "@/app/design/image-format-hint";
+import ResolvedPhoto from "@/app/design/resolved-photo";
 import UploadActions from "@/app/design/upload-actions";
 import { describeImageUploadError, type UploadFailure } from "@/app/design/upload-error";
 import { userFacingMessage } from "@/app/design/user-error";
@@ -12,6 +13,7 @@ import {
   saveEventDraft,
   setVideoPreviewUrl,
 } from "@/lib/event-draft";
+import { resolveEventCover } from "@/lib/image-library";
 import { uploadImageFile } from "@/lib/images/upload-client";
 import { EVENT_FIELD_ERRORS, EVENT_FIELD_LIMITS } from "@/lib/events/text-limits";
 import { useIsClient } from "@/lib/use-is-client";
@@ -42,6 +44,8 @@ export default function EventDetailsForm() {
   const router = useRouter();
   const isClient = useIsClient();
   const [ready, setReady] = useState(false);
+  const [eventType, setEventType] = useState("");
+  const [eventName, setEventName] = useState("");
   const [eventDate, setEventDate] = useState("");
   const [imageDataUrl, setImageDataUrl] = useState("");
   const [imagePreview, setImagePreview] = useState("");
@@ -63,6 +67,8 @@ export default function EventDetailsForm() {
 
   if (isClient && !ready) {
     const draft = loadEventDraft();
+    setEventType(draft.eventType);
+    setEventName(draft.eventName);
     setEventDate(draft.eventDate);
     setImageDataUrl(draft.imageDataUrl);
     setImagePreview(draft.imageDataUrl);
@@ -258,26 +264,30 @@ export default function EventDetailsForm() {
     return null;
   }
 
-  const displayImage = imagePreview || imageDataUrl;
+  const hostCover = imagePreview || imageDataUrl;
+  const cover = resolveEventCover({
+    hostImageUrl: hostCover,
+    eventType,
+    title: eventName,
+    alt: hostCover ? "תצוגה מקדימה של תמונת האירוע" : undefined,
+  });
+  const libraryCover = resolveEventCover({
+    hostImageUrl: "",
+    eventType,
+    title: eventName,
+  });
 
   return (
-    <form onSubmit={handleSubmit} className="mt-10 flex flex-col gap-8">
+    <form onSubmit={handleSubmit} className="mt-2 flex flex-col gap-8">
       <section className="flex flex-col gap-3">
         <h2 className="text-base font-bold text-foreground">תמונה לאירוע</h2>
-        {displayImage ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={displayImage}
-            alt="תצוגה מקדימה של תמונת האירוע"
-            className="h-44 w-full rounded-3xl object-cover"
-          />
-        ) : (
-          <div className="flex h-44 items-center justify-center rounded-3xl border border-dashed border-border bg-white text-sm text-muted">
-            עדיין לא נבחרה תמונה
-          </div>
-        )}
+        <ResolvedPhoto
+          visual={cover}
+          backup={libraryCover}
+          fallback={<div className="flex h-44 items-center justify-center rounded-3xl border border-dashed border-border bg-white text-sm text-muted">עדיין לא נבחרה תמונה</div>}
+        />
         <UploadActions
-          hasImage={Boolean(displayImage)}
+          hasImage={Boolean(hostCover)}
           uploading={imageUploading}
           error={imageError?.message ?? null}
           retryable={imageError?.retryable ?? false}
@@ -290,6 +300,7 @@ export default function EventDetailsForm() {
           ref={coverInputRef}
           type="file"
           accept="image/*"
+          aria-label="העלאת תמונת כיסוי"
           className="sr-only"
           disabled={imageUploading}
           onChange={(event) => {
@@ -298,7 +309,13 @@ export default function EventDetailsForm() {
             void handleImage(file);
           }}
         />
-        <ImageFormatHint lead="התמונה תופיע בעמוד האירוע ובהזמנה." />
+        <ImageFormatHint
+          lead={
+            hostCover
+              ? "התמונה שלכם מוצגת לאורחים. הסרת התמונה מחזירה את ברירת המחדל."
+              : "מוצגת תמונת ברירת מחדל לפי סוג האירוע. אפשר להחליף אותה."
+          }
+        />
       </section>
 
       <label className="flex flex-col gap-2">
