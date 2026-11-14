@@ -138,7 +138,7 @@ export default function HostPhotoEditor({
   }
 
   return (
-    <div className={`${styles.photo} flex flex-col gap-3`}>
+    <div className={`${styles.photo} ${giftId ? styles.photoGift : ""} flex flex-col gap-3`}>
       <ResolvedPhoto
         visual={visual}
         backup={backup}

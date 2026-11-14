@@ -72,6 +72,19 @@ function paymentClass(status: HostPaymentStatus) {
   return styles.pending;
 }
 
+function overallTarget(gifts: HostDashboardGift[]) {
+  let target = 0;
+  let raised = 0;
+  for (const gift of gifts) {
+    if (gift.targetAmount && gift.targetAmount > 0) {
+      target += gift.targetAmount;
+      raised += gift.paidAmount;
+    }
+  }
+  const percent = target > 0 ? Math.round((raised / target) * 100) : null;
+  return { target, raised, percent };
+}
+
 function redemptionStage(vouchers: HostDashboardGift["vouchers"]) {
   const active = vouchers.filter(
     (voucher) => voucher.status !== "CANCELLED" && voucher.status !== "EXPIRED",
@@ -102,10 +115,12 @@ export default function HostDashboard({
 }: HostDashboardProps) {
   const sample = Boolean(exampleNote);
   const locked = sample && !actionsEnabled;
+  const progress = overallTarget(data.gifts);
+  const progressWidth = progress.percent == null ? 0 : Math.min(100, Math.max(0, progress.percent));
 
   return (
     <main className={styles.board} data-host-dashboard="">
-      <div className={`${styles.mast} ${styles.wide}`} data-host-shot="top">
+      <div className={styles.mast} data-host-shot="top">
         <header>
           <Link href="/" className={styles.wordmark}>
             <LoloMark />
@@ -127,14 +142,51 @@ export default function HostDashboard({
               {locked ? <p className={styles.exampleHint}>בדוגמה זו הפעולות מושבתות</p> : null}
             </>
           ) : null}
-          <nav className={styles.nav} aria-label="ניווט בניהול">
-            <a href="#host-overview">סקירה</a>
-            <a href="#host-finance">כספים</a>
-            <a href="#host-gifts">מתנות</a>
-            <a href="#host-orders">הזמנות</a>
-            <a href="#host-guests">מוזמנים</a>
-          </nav>
         </header>
+
+        <section className={styles.card} id="host-summary" data-host-shot="summary">
+          <h2>סיכום</h2>
+          <div className={styles.summary}>
+            <div className={styles.stat}>
+              <p>נאסף</p>
+              <strong>{formatMoney(data.paidAmount)}</strong>
+            </div>
+            <div className={styles.stat}>
+              <p>הזמנות ששולמו</p>
+              <strong>{data.paidOrderCount.toLocaleString("he-IL")}</strong>
+            </div>
+            <div className={`${styles.stat} ${styles.statPending}`}>
+              <p>ממתין לתשלום</p>
+              <strong>{formatMoney(data.pendingAmount)}</strong>
+            </div>
+            <div className={`${styles.stat} ${styles.statPending}`}>
+              <p>התקדמות ליעדים</p>
+              <strong>{progress.percent == null ? "—" : `${progress.percent.toLocaleString("he-IL")}%`}</strong>
+            </div>
+          </div>
+          {progress.percent == null ? (
+            <p className={styles.help}>אין יעד כולל למתנות באירוע.</p>
+          ) : (
+            <>
+              <p className={styles.help}>
+                {formatMoney(progress.raised)} מתוך {formatMoney(progress.target)}
+                {progress.percent > 100 ? " · היעד הושג ואף יותר" : ""}
+              </p>
+              <div className={styles.summaryBar} aria-hidden>
+                <span style={{ width: `${progressWidth}%` }} />
+              </div>
+            </>
+          )}
+        </section>
+
+        <nav className={styles.nav} aria-label="ניווט בניהול">
+          <a href="#host-summary">סיכום</a>
+          <a href="#host-overview">סקירה</a>
+          <a href="#host-gifts">מתנות</a>
+          <a href="#host-orders">הזמנות</a>
+          <a href="#host-finance">כספים</a>
+          <a href="#host-guests">מוזמנים</a>
+        </nav>
 
         <section className={styles.card} id="host-overview" data-host-shot="overview">
           <h2>סקירת האירוע</h2>
@@ -167,7 +219,11 @@ export default function HostDashboard({
               </dl>
               <div>
                 <p className={styles.help}>קישור האורחים</p>
-                <CopyGuestLink guestUrl={guestUrl} disabled={locked} />
+                <CopyGuestLink
+                  guestUrl={guestUrl}
+                  eventTitle={data.title}
+                  disabled={locked}
+                />
               </div>
             </div>
           </div>
@@ -175,33 +231,71 @@ export default function HostDashboard({
       </div>
 
       <div className={styles.layout}>
-        <section className={styles.card} id="host-finance" data-host-shot="finance">
-          <h2>סקירה כספית</h2>
-          <p className={styles.help}>
-            הסכום ששולם הוא השתתפות שאושרה למתנות. עמלת שירות אינה נספרת ליעד.
-            אפשר להנפיק שובר על הסכום ששולם גם לפני שהיעד הושלם, ותשלום שמגיע אחר כך נשאר פנוי לשובר נוסף.
-            מימוש בחנות אינו התחשבנות מול LOLO.
-          </p>
-          <div className={styles.stats}>
-            <div className={styles.stat}>
-              <p>סכום ששולם בהצלחה</p>
-              <strong>{formatMoney(data.paidAmount)}</strong>
-              <p>
-                {data.paidOrderCount === 0
-                  ? "אין הזמנות ששולמו עדיין"
-                  : `${data.paidOrderCount} הזמנות ששולמו`}
-              </p>
+        <section className={`${styles.card} ${styles.wide}`} id="host-gifts" data-host-shot="gifts">
+          <h2>התקדמות המתנות</h2>
+          {data.vouchersReady ? null : (
+            <p className={styles.help}>הנפקת שוברים עדיין לא זמינה.</p>
+          )}
+          {data.gifts.length === 0 ? (
+            <div className={styles.empty}>
+              <p>אין מתנות באירוע זה.</p>
             </div>
-            <div className={`${styles.stat} ${styles.statPending}`}>
-              <p>סכום ממתין לתשלום</p>
-              <strong>{formatMoney(data.pendingAmount)}</strong>
-              <p>
-                {data.pendingOrderCount === 0
-                  ? "אין הזמנות ממתינות"
-                  : `${data.pendingOrderCount} הזמנות ממתינות`}
-              </p>
-            </div>
-          </div>
+          ) : (
+            <ul className={styles.giftGrid}>
+              {data.gifts.map((gift) => (
+                <li key={gift.id} className={styles.gift} data-gift-target={gift.targetAmount == null ? "hidden" : "shown"}>
+                  <HostPhotoEditor
+                    eventId={data.eventId}
+                    giftId={gift.id}
+                    initialUrl={gift.imageUrl}
+                    title={gift.title || "מתנה"}
+                    description={gift.description}
+                    previewOnly={sample}
+                  />
+                  <div className={styles.giftHead}>
+                    <h3 className={styles.giftTitle} dir="auto">
+                      {gift.title || "מתנה"}
+                    </h3>
+                    {gift.targetAmount ? (
+                      <p className={styles.target}>יעד {formatMoney(gift.targetAmount)}</p>
+                    ) : null}
+                  </div>
+                  {gift.targetAmount == null ? (
+                    <p className={styles.hiddenAmount}>בלי יעד מוצג לאורחים</p>
+                  ) : null}
+                  {gift.description ? <p className={styles.help}>{gift.description}</p> : null}
+                  {gift.storeName ? <p className={styles.help}>חנות: {gift.storeName}</p> : null}
+                  <FundingProgress
+                    raisedAmount={gift.paidAmount}
+                    pendingAmount={gift.pendingAmount}
+                    percentOfTarget={gift.percentOfTarget}
+                    contributorCount={gift.contributorCount}
+                    showPending
+                    prominent
+                  />
+                  <GiftTimeline
+                    paid={gift.paidAmount > 0}
+                    issued={gift.vouchers.some((voucher) => voucher.status !== "CANCELLED")}
+                    redeemed={redemptionStage(gift.vouchers)}
+                  />
+                  {gift.vouchers.some(
+                    (voucher) =>
+                      voucher.status === "ISSUED" || voucher.status === "PARTIALLY_REDEEMED",
+                  ) ? (
+                    <p className={styles.help}>הצעד הבא: הציגו את הכרטיס בחנות</p>
+                  ) : null}
+                  {data.vouchersReady ? (
+                    <IssueVoucherPanel
+                      eventId={data.eventId}
+                      gift={gift}
+                      stores={data.voucherStores}
+                      disabled={locked}
+                    />
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
 
         <section className={styles.card} id="host-orders" data-host-shot="orders">
@@ -238,70 +332,33 @@ export default function HostDashboard({
           )}
         </section>
 
-        <section className={`${styles.card} ${styles.wide}`} id="host-gifts" data-host-shot="gifts">
-          <h2>התקדמות המתנות</h2>
-          {data.vouchersReady ? null : (
-            <p className={styles.help}>הנפקת שוברים עדיין לא זמינה.</p>
-          )}
-          {data.gifts.length === 0 ? (
-            <div className={styles.empty}>
-              <p>אין מתנות באירוע זה.</p>
+        <section className={styles.card} id="host-finance" data-host-shot="finance">
+          <h2>סקירה כספית</h2>
+          <p className={styles.help}>
+            הסכום ששולם הוא השתתפות שאושרה למתנות. עמלת שירות אינה נספרת ליעד.
+            אפשר להנפיק שובר על הסכום ששולם גם לפני שהיעד הושלם, ותשלום שמגיע אחר כך נשאר פנוי לשובר נוסף.
+            מימוש בחנות אינו התחשבנות מול LOLO.
+          </p>
+          <div className={styles.stats}>
+            <div className={styles.stat}>
+              <p>סכום ששולם בהצלחה</p>
+              <strong>{formatMoney(data.paidAmount)}</strong>
+              <p>
+                {data.paidOrderCount === 0
+                  ? "אין הזמנות ששולמו עדיין"
+                  : `${data.paidOrderCount} הזמנות ששולמו`}
+              </p>
             </div>
-          ) : (
-            <ul className={styles.stack}>
-              {data.gifts.map((gift) => (
-                <li key={gift.id} className={styles.gift} data-gift-target={gift.targetAmount == null ? "hidden" : "shown"}>
-                  <HostPhotoEditor
-                    eventId={data.eventId}
-                    giftId={gift.id}
-                    initialUrl={gift.imageUrl}
-                    title={gift.title || "מתנה"}
-                    description={gift.description}
-                    previewOnly={sample}
-                  />
-                  <div className={styles.giftHead}>
-                    <h3 className={styles.giftTitle} dir="auto">
-                      {gift.title || "מתנה"}
-                    </h3>
-                    {gift.targetAmount ? (
-                      <p className={styles.target}>יעד {formatMoney(gift.targetAmount)}</p>
-                    ) : null}
-                  </div>
-                  {gift.targetAmount == null ? (
-                    <p className={styles.hiddenAmount}>בלי יעד מוצג לאורחים</p>
-                  ) : null}
-                  {gift.description ? <p className={styles.help}>{gift.description}</p> : null}
-                  {gift.storeName ? <p className={styles.help}>חנות: {gift.storeName}</p> : null}
-                  <FundingProgress
-                    raisedAmount={gift.paidAmount}
-                    pendingAmount={gift.pendingAmount}
-                    percentOfTarget={gift.percentOfTarget}
-                    contributorCount={gift.contributorCount}
-                    showPending
-                  />
-                  <GiftTimeline
-                    paid={gift.paidAmount > 0}
-                    issued={gift.vouchers.some((voucher) => voucher.status !== "CANCELLED")}
-                    redeemed={redemptionStage(gift.vouchers)}
-                  />
-                  {gift.vouchers.some(
-                    (voucher) =>
-                      voucher.status === "ISSUED" || voucher.status === "PARTIALLY_REDEEMED",
-                  ) ? (
-                    <p className={styles.help}>הצעד הבא: הציגו את הכרטיס בחנות</p>
-                  ) : null}
-                  {data.vouchersReady ? (
-                    <IssueVoucherPanel
-                      eventId={data.eventId}
-                      gift={gift}
-                      stores={data.voucherStores}
-                      disabled={locked}
-                    />
-                  ) : null}
-                </li>
-              ))}
-            </ul>
-          )}
+            <div className={`${styles.stat} ${styles.statPending}`}>
+              <p>סכום ממתין לתשלום</p>
+              <strong>{formatMoney(data.pendingAmount)}</strong>
+              <p>
+                {data.pendingOrderCount === 0
+                  ? "אין הזמנות ממתינות"
+                  : `${data.pendingOrderCount} הזמנות ממתינות`}
+              </p>
+            </div>
+          </div>
         </section>
 
         <div className={styles.wide}>

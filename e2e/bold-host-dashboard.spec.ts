@@ -3,7 +3,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 import { BETA_CLARITY } from "@/app/design/beta-notice";
 
-const ARTIFACTS = "/opt/cursor/artifacts";
+const ARTIFACTS = "/opt/cursor/artifacts/host-final";
 const WIDTHS = [320, 360, 390, 430, 768, 1024, 1440] as const;
 const EVENT_A = "11111111-1111-4111-8111-111111111111";
 const EVENT_B = "22222222-2222-4222-8222-222222222222";
@@ -41,6 +41,11 @@ test.describe("bold host dashboard", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/host");
     await expect(page.getByRole("heading", { name: "כניסה לניהול האירוע" })).toBeVisible();
+    await expect(page.getByText("קישור האירוע או קוד הניהול שגויים.")).toHaveCount(0);
+    await shot(page, "host-login-clean-390");
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await shot(page, "host-login-clean-1440");
+    await page.setViewportSize({ width: 390, height: 844 });
     await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
     const stage = await page.evaluate(
       () => getComputedStyle(document.querySelector("[data-bold-host]")!).backgroundColor,
@@ -66,10 +71,10 @@ test.describe("bold host dashboard", () => {
     await page.getByLabel("קוד ניהול פרטי").fill("ZZZZ-ZZZZ");
     await page.getByRole("button", { name: "כניסה" }).click();
     await expect(page.getByText("קישור האירוע או קוד הניהול שגויים.")).toBeVisible();
-    await shot(page, "host-login-390");
+    await shot(page, "host-login-error-390");
 
     await page.setViewportSize({ width: 1440, height: 900 });
-    await shot(page, "host-login-1440");
+    await shot(page, "host-login-error-1440");
 
     await page.unroute("**/api/host/login");
     await page.route("**/api/host/login", async (route) => {
@@ -91,7 +96,7 @@ test.describe("bold host dashboard", () => {
     page,
   }) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto("/host/example");
+    await page.goto("/host/example?view=live");
     await expect(page.getByRole("heading", { name: "יום ההולדת של יובל" })).toBeVisible();
     await expect(page.getByText("נתוני דוגמה — לא אירוע אמיתי")).toBeVisible();
     await expect(page.getByText(BETA_CLARITY)).toHaveCount(1);
@@ -106,6 +111,14 @@ test.describe("bold host dashboard", () => {
     await expect(page.getByText("הצעד הבא: הציגו את הכרטיס בחנות")).toBeVisible();
     await expect(page.getByText("שובר הדגמה בלבד")).toHaveCount(0);
     await expect(page.getByRole("button", { name: "הנפקת שובר" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "העתקת קישור" })).toBeEnabled();
+    await expect(page.getByRole("link", { name: "שיתוף ב-WhatsApp" })).toHaveAttribute(
+      "href",
+      /api\.whatsapp\.com/,
+    );
+    const frame = await page.locator("[data-host-dashboard]").boundingBox();
+    expect(frame?.width ?? 9999).toBeLessThanOrEqual(1160);
+    expect(frame?.x ?? 0).toBeGreaterThan(8);
 
     await shotLocator(page, "[data-host-shot='top']", "host-overview-390");
     await shotLocator(page, "[data-host-shot='finance']", "host-finance-390");
@@ -114,6 +127,9 @@ test.describe("bold host dashboard", () => {
     await shotLocator(page, "[data-host-shot='guests']", "host-guests-390");
 
     await page.setViewportSize({ width: 1440, height: 900 });
+    const wide = await page.locator("[data-host-dashboard]").boundingBox();
+    expect(wide?.width ?? 9999).toBeLessThanOrEqual(1160);
+    expect(wide?.x ?? 0).toBeGreaterThan(40);
     await shotLocator(page, "[data-host-shot='top']", "host-overview-1440");
     await shotLocator(page, "[data-host-shot='finance']", "host-finance-1440");
     await shotLocator(page, "[data-host-shot='gifts']", "host-gifts-1440");
@@ -160,6 +176,7 @@ test.describe("bold host dashboard", () => {
     );
     const whatsapp = page.getByRole("link", { name: "שלח ב-WhatsApp" });
     await expect(whatsapp).toHaveAttribute("href", /api\.whatsapp\.com/);
+    await expect(page.getByRole("link", { name: "שיתוף ב-WhatsApp" })).toBeVisible();
 
     await page.getByLabel("שם האורח").fill("יעל מזרחי");
     await page.getByLabel("מספר טלפון").fill("0509876543");
@@ -172,7 +189,7 @@ test.describe("bold host dashboard", () => {
   test("a host can replace a cover and return to the library photo", async ({ page }) => {
     for (const width of [390, 1440] as const) {
       await page.setViewportSize({ width, height: width >= 1024 ? 900 : 844 });
-      await page.goto("/host/example");
+      await page.goto("/host/example?view=live");
       const overview = page.locator("section").filter({
         has: page.getByRole("heading", { name: "סקירת האירוע" }),
       });
