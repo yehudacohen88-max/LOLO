@@ -1,5 +1,5 @@
 import "server-only";
-import { isOwnGiftImageUrl } from "@/lib/images/public-url";
+import { isHostUploadImageUrl } from "@/lib/images/public-url";
 import { readHostSessionToken } from "@/lib/host/session";
 
 export type HostImageChange =
@@ -42,7 +42,7 @@ export function parseHostImageBody(body: unknown): { ok: true; change: HostImage
     return { ok: false, error: "הבקשה אינה תקינה." };
   }
   const imageUrl = record.imageUrl.trim();
-  if (imageUrl && !isOwnGiftImageUrl(imageUrl)) {
+  if (imageUrl && !isHostUploadImageUrl(imageUrl)) {
     return { ok: false, error: "אפשר לשמור רק תמונה שהועלתה ל-LOLO." };
   }
   if (Object.prototype.hasOwnProperty.call(record, "giftId")) {
