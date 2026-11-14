@@ -222,11 +222,10 @@ test("bold guest journey keeps contrast, frames, and a visible demo", async ({ p
         await expect.poll(async () => photo.evaluate((image) => (image as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
       }
       if (name === "thanks") {
-        const fit = await page.locator("[data-journey-thanks-photo] img").evaluate((image) => ({
-          fit: getComputedStyle(image).objectFit,
-          position: getComputedStyle(image).objectPosition,
-        }));
-        if (fit.fit !== "contain") failures.push(`${name} ${width} object-fit ${fit.fit}`);
+        const frame = page.locator("[data-journey-thanks-photo] [data-journey-frame]");
+        await expect(frame).toHaveAttribute("data-fit", "cover");
+        const fit = await frame.locator("[data-journey-photo]").evaluate((image) => getComputedStyle(image).objectFit);
+        if (fit !== "cover") failures.push(`${name} ${width} object-fit ${fit}`);
       }
       if (width === 390 && name === "greeting") {
         await page.getByRole("link", { name: "מתנה" }).click();

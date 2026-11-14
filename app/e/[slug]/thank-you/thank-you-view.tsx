@@ -282,7 +282,7 @@ export default function ThankYouView() {
     <div className={styles.thanksLayout} data-journey-thanks="" data-reveal="">
       {hero ? (
         <figure data-journey-hero="" data-journey-thanks-photo="">
-          <JourneyFrame image={hero} gift={heroIsGift} />
+          <JourneyFrame image={hero} gift={heroIsGift} thanks />
         </figure>
       ) : null}
       <div className={styles.thanksMain} data-journey-thanks-main="">
