@@ -1,14 +1,26 @@
 "use client";
 
 import { useState } from "react";
+import styles from "@/app/design/bold-host.module.css";
 
 type CopyGuestLinkProps = {
   guestUrl: string;
+  eventTitle?: string;
   disabled?: boolean;
 };
 
-export default function CopyGuestLink({ guestUrl, disabled = false }: CopyGuestLinkProps) {
+export default function CopyGuestLink({
+  guestUrl,
+  eventTitle = "",
+  disabled = false,
+}: CopyGuestLinkProps) {
   const [toast, setToast] = useState("");
+  const title = eventTitle.trim() || "האירוע";
+  const whatsappHref = guestUrl
+    ? `https://api.whatsapp.com/send?text=${encodeURIComponent(
+        [`לפרטי האירוע ולבחירת מתנה ב-LOLO:`, guestUrl, "", title].join("\n"),
+      )}`
+    : "";
 
   async function copyLink() {
     if (!guestUrl) {
@@ -21,26 +33,28 @@ export default function CopyGuestLink({ guestUrl, disabled = false }: CopyGuestL
   }
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className={styles.share}>
       {toast ? (
-        <p className="rounded-2xl bg-brand-soft px-4 py-3 text-center text-sm font-medium text-brand">
+        <p className={styles.toast} role="status">
           {toast}
         </p>
       ) : null}
-      <p
-        dir="ltr"
-        className="break-all rounded-2xl bg-brand-soft px-4 py-3 text-center text-sm font-medium text-foreground"
-      >
+      <p dir="ltr" className={styles.url}>
         {guestUrl}
       </p>
-      <button
-        type="button"
-        onClick={copyLink}
-        disabled={disabled}
-        className="inline-flex h-12 w-full items-center justify-center rounded-full bg-brand px-6 text-base font-semibold text-white hover:bg-brand-hover disabled:cursor-not-allowed disabled:bg-brand/40 sm:w-auto"
-      >
-        העתקת קישור
-      </button>
+      <div className={styles.shareRow}>
+        <button type="button" onClick={copyLink} disabled={disabled} className={styles.primary}>
+          העתקת קישור
+        </button>
+        {whatsappHref && !disabled ? (
+          <a href={whatsappHref} target="_blank" rel="noopener noreferrer" className={styles.secondary}>
+            שיתוף ב-WhatsApp
+          </a>
+        ) : null}
+        {whatsappHref && disabled ? (
+          <span className={styles.secondary}>שיתוף ב-WhatsApp</span>
+        ) : null}
+      </div>
     </div>
   );
 }

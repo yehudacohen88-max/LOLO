@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { cookies, headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
+import styles from "@/app/design/bold-host.module.css";
 import { isUuid } from "@/lib/vouchers/input";
 import VoucherCard from "@/components/voucher-card";
 import { appPublicOrigin, originFromProxyHeaders } from "@/lib/app-url";
@@ -44,8 +45,8 @@ export default async function HostVoucherPage({ params }: PageProps) {
       message: error instanceof Error ? error.message : "unknown",
     });
     return (
-      <main className="mx-auto flex w-full max-w-lg flex-1 flex-col px-5 py-16 text-center">
-        <p className="text-base text-muted">השובר אינו זמין כרגע. נסו שוב מאוחר יותר.</p>
+      <main className={styles.unavailable}>
+        <p>השובר אינו זמין כרגע. נסו שוב מאוחר יותר.</p>
       </main>
     );
   }
@@ -58,25 +59,25 @@ export default async function HostVoucherPage({ params }: PageProps) {
     card.status === "ISSUED" || card.status === "PARTIALLY_REDEEMED";
 
   return (
-    <main className="mx-auto flex w-full max-w-lg flex-1 flex-col px-5 py-8 sm:py-12">
-      <div className="no-print mb-6 flex items-center justify-between gap-3">
-        <Link href={`/host/events/${eventId}`} className="text-sm font-semibold text-brand">
+    <main className={styles.voucherPage}>
+      <div className={`${styles.voucherBar} no-print`}>
+        <Link href={`/host/events/${eventId}`} className={styles.back}>
           חזרה לניהול האירוע
         </Link>
-        <p className="text-sm text-muted">להצגה בחנות</p>
+        <p>להצגה בחנות</p>
       </div>
       {showAtStore ? (
-        <section className="no-print mb-4 rounded-3xl bg-brand-soft px-5 py-4">
-          <p className="text-sm font-semibold text-brand">הצעד הבא</p>
-          <h1 className="mt-1 text-xl font-bold text-foreground">הציגו את הכרטיס בחנות</h1>
-          <p className="mt-2 text-sm leading-relaxed text-muted">
+        <section className={`${styles.voucherIntro} no-print`}>
+          <p className={styles.eyebrow}>הצעד הבא</p>
+          <h1>הציגו את הכרטיס בחנות</h1>
+          <p className={styles.help}>
             פתחו את הכרטיס על המסך, או שלחו את הקישור. בחנות סורקים את הקוד ומממשים את הסכום.
           </p>
         </section>
       ) : (
-        <h1 className="no-print mb-4 text-xl font-bold text-foreground">כרטיס השובר</h1>
+        <h1 className="no-print">כרטיס השובר</h1>
       )}
-      <VoucherCard model={card} />
+      <VoucherCard model={card} appearance="celebration" />
     </main>
   );
 }

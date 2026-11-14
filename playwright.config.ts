@@ -30,6 +30,7 @@ export default defineConfig({
         ADMIN_SESSION_SECRET: "",
         STORE_SESSION_SECRET: "",
         BETA_ACCESS_ENABLED: "false",
+        LOLO_HOST_SAMPLE_ACTIONS: "1",
       },
     },
     {
