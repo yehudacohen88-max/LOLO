@@ -11,7 +11,12 @@ import {
 import type { VoucherCardModel } from "@/lib/vouchers/types";
 import VoucherShareActions from "@/components/voucher-share-actions";
 
-function statusClass(status: VoucherCardModel["status"]) {
+function statusClass(status: VoucherCardModel["status"], celebration: boolean) {
+  if (celebration) {
+    return status === "ISSUED" || status === "PARTIALLY_REDEEMED"
+      ? "bg-[#ffb84d] text-[#172f2b]"
+      : "bg-[#fff3e4] text-[#172f2b]";
+  }
   if (status === "ISSUED") {
     return "bg-white/20 text-white";
   }
@@ -21,14 +26,33 @@ function statusClass(status: VoucherCardModel["status"]) {
   return "bg-white/80 text-foreground";
 }
 
-export default function VoucherCard({ model }: { model: VoucherCardModel }) {
+export default function VoucherCard({
+  model,
+  appearance = "classic",
+}: {
+  model: VoucherCardModel;
+  appearance?: "classic" | "celebration";
+}) {
   const balanceDiffers = model.remainingAmount !== model.amount;
+  const celebration = appearance === "celebration";
   return (
-    <article className="voucher-print overflow-hidden rounded-[2rem] border border-border bg-white shadow-[0_20px_60px_rgba(76,29,149,0.12)]">
-      <div className="bg-gradient-to-l from-[#4c1d95] via-brand to-[#c084fc] px-6 py-7 text-white">
+    <article
+      className={
+        celebration
+          ? "voucher-print overflow-hidden rounded-[2rem] border border-[rgba(23,47,43,0.12)] bg-white"
+          : "voucher-print overflow-hidden rounded-[2rem] border border-border bg-white shadow-[0_20px_60px_rgba(76,29,149,0.12)]"
+      }
+    >
+      <div
+        className={
+          celebration
+            ? "bg-[#172f2b] px-6 py-7 text-[#fff3e4]"
+            : "bg-gradient-to-l from-[#4c1d95] via-brand to-[#c084fc] px-6 py-7 text-white"
+        }
+      >
         <div className="flex items-center justify-between gap-3">
           <p className="text-2xl font-extrabold tracking-[0.28em]">LOLO</p>
-          <span className={`rounded-full px-3 py-1 text-xs font-semibold ${statusClass(model.status)}`}>
+          <span className={`rounded-full px-3 py-1 text-xs font-semibold ${statusClass(model.status, celebration)}`}>
             {voucherStatusLabel(model.status)}
           </span>
         </div>
@@ -41,7 +65,13 @@ export default function VoucherCard({ model }: { model: VoucherCardModel }) {
         ) : (
           <p className="mt-2 text-sm text-white/80">הסכום המלא זמין למימוש</p>
         )}
-        <p className="mt-5 rounded-2xl bg-white/15 px-4 py-3 text-sm font-bold leading-relaxed">
+        <p
+          className={
+            celebration
+              ? "mt-5 rounded-2xl bg-[#ffb84d] px-4 py-3 text-sm font-bold leading-relaxed text-[#172f2b]"
+              : "mt-5 rounded-2xl bg-white/15 px-4 py-3 text-sm font-bold leading-relaxed"
+          }
+        >
           שובר הדגמה בלבד — ללא ערך כספי ואינו ניתן למימוש בחנות
         </p>
       </div>

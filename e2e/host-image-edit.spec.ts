@@ -112,6 +112,6 @@ test.describe("final bold screens and host image edit", () => {
     const gifts = page.locator("section").filter({
       has: page.getByRole("heading", { name: "התקדמות המתנות" }),
     });
-    await expect(gifts.locator("[data-illustrative-label]")).toHaveText("תמונה להמחשה");
+    await expect(gifts.locator("[data-illustrative-label]").first()).toHaveText("תמונה להמחשה");
   });
 });

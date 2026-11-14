@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import FlagshipFrame from "@/app/design/flagship-frame";
+import BoldHostFrame from "@/app/design/bold-host-frame";
 
 export default function HostLayout({ children }: { children: ReactNode }) {
-  return <FlagshipFrame>{children}</FlagshipFrame>;
+  return <BoldHostFrame>{children}</BoldHostFrame>;
 }

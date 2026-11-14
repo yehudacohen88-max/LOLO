@@ -1,6 +1,6 @@
 import Link from "next/link";
 import LoloMark from "@/app/design/lolo-mark";
-import styles from "@/app/design/host-experience.module.css";
+import styles from "@/app/design/bold-host.module.css";
 import FundingProgress from "@/components/funding-progress";
 import GiftTimeline from "@/components/gift-timeline";
 import HostPhotoEditor from "./host-photo-editor";
@@ -62,6 +62,16 @@ function paymentLabel(status: HostPaymentStatus) {
   return "ממתין לתשלום";
 }
 
+function paymentClass(status: HostPaymentStatus) {
+  if (status === "paid") {
+    return styles.paid;
+  }
+  if (status === "failed" || status === "cancelled") {
+    return styles.failed;
+  }
+  return styles.pending;
+}
+
 function redemptionStage(vouchers: HostDashboardGift["vouchers"]) {
   const active = vouchers.filter(
     (voucher) => voucher.status !== "CANCELLED" && voucher.status !== "EXPIRED",
@@ -75,21 +85,12 @@ function redemptionStage(vouchers: HostDashboardGift["vouchers"]) {
   return fully ? ("full" as const) : ("partial" as const);
 }
 
-function paymentClass(status: HostPaymentStatus) {
-  if (status === "paid") {
-    return "bg-brand-soft text-brand";
-  }
-  if (status === "failed" || status === "cancelled") {
-    return "bg-border text-muted";
-  }
-  return "bg-brand-soft/60 text-foreground";
-}
-
 type HostDashboardProps = {
   data: HostDashboardData;
   guestUrl: string;
   origin: string;
   exampleNote?: string;
+  actionsEnabled?: boolean;
 };
 
 export default function HostDashboard({
@@ -97,243 +98,222 @@ export default function HostDashboard({
   guestUrl,
   origin,
   exampleNote,
+  actionsEnabled = false,
 }: HostDashboardProps) {
-  const readOnly = Boolean(exampleNote);
+  const sample = Boolean(exampleNote);
+  const locked = sample && !actionsEnabled;
+
   return (
-    <main className={styles.board}>
-        <header className={styles.boardHead}>
+    <main className={styles.board} data-host-dashboard="">
+      <div className={`${styles.mast} ${styles.wide}`} data-host-shot="top">
+        <header>
           <Link href="/" className={styles.wordmark}>
             <LoloMark />
           </Link>
-          <h1 className={styles.title}>ניהול האירוע</h1>
-          <p className="mt-3 text-lg font-semibold text-foreground" dir="auto">
+          <p className={styles.kicker}>ניהול האירוע</p>
+          <h1 className={styles.eventTitle} dir="auto">
             {data.title || "האירוע"}
-          </p>
+          </h1>
+          <ul className={styles.meta}>
+            <li>{formatEventDate(data.eventDate)}</li>
+            <li>{data.eventType || "סוג לא צוין"}</li>
+            <li dir="auto">{data.hostName || "מארח לא צוין"}</li>
+          </ul>
           {exampleNote ? (
             <>
               <p className={styles.example} role="note">
                 {exampleNote}
               </p>
-              <p className={styles.exampleHint}>בדוגמה זו הפעולות מושבתות</p>
+              {locked ? <p className={styles.exampleHint}>בדוגמה זו הפעולות מושבתות</p> : null}
             </>
           ) : null}
+          <nav className={styles.nav} aria-label="ניווט בניהול">
+            <a href="#host-overview">סקירה</a>
+            <a href="#host-finance">כספים</a>
+            <a href="#host-gifts">מתנות</a>
+            <a href="#host-orders">הזמנות</a>
+            <a href="#host-guests">מוזמנים</a>
+          </nav>
         </header>
 
-        <div className={styles.columns}>
-        <div className={styles.stack}>
-        <section className="rounded-3xl border border-border bg-white p-5 sm:p-6">
-          <h2 className="text-lg font-bold text-foreground">סקירת האירוע</h2>
-          <div className="mt-4">
+        <section className={styles.card} id="host-overview" data-host-shot="overview">
+          <h2>סקירת האירוע</h2>
+          <div className={styles.overview}>
             <HostPhotoEditor
               eventId={data.eventId}
               initialUrl={data.coverImage}
               eventType={data.eventType}
               title={data.title || "האירוע"}
-              previewOnly={readOnly}
+              previewOnly={sample}
             />
-          </div>
-          <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
             <div>
-              <dt className="text-muted">שם האירוע</dt>
-              <dd className="mt-1 font-semibold" dir="auto">
-                {data.title || "—"}
-              </dd>
+              <dl className={styles.facts}>
+                <div>
+                  <dt>שם האירוע</dt>
+                  <dd dir="auto">{data.title || "—"}</dd>
+                </div>
+                <div>
+                  <dt>סוג האירוע</dt>
+                  <dd>{data.eventType || "—"}</dd>
+                </div>
+                <div>
+                  <dt>תאריך</dt>
+                  <dd>{formatEventDate(data.eventDate)}</dd>
+                </div>
+                <div>
+                  <dt>שם המארח</dt>
+                  <dd dir="auto">{data.hostName || "—"}</dd>
+                </div>
+              </dl>
+              <div>
+                <p className={styles.help}>קישור האורחים</p>
+                <CopyGuestLink guestUrl={guestUrl} disabled={locked} />
+              </div>
             </div>
-            <div>
-              <dt className="text-muted">סוג האירוע</dt>
-              <dd className="mt-1 font-semibold">{data.eventType || "—"}</dd>
-            </div>
-            <div>
-              <dt className="text-muted">תאריך</dt>
-              <dd className="mt-1 font-semibold">{formatEventDate(data.eventDate)}</dd>
-            </div>
-            <div>
-              <dt className="text-muted">שם המארח</dt>
-              <dd className="mt-1 font-semibold" dir="auto">
-                {data.hostName || "—"}
-              </dd>
-            </div>
-          </dl>
-          <div className="mt-5">
-            <p className="mb-2 text-sm text-muted">קישור האורחים</p>
-            <CopyGuestLink guestUrl={guestUrl} disabled={readOnly} />
           </div>
         </section>
+      </div>
 
-        <section className="rounded-3xl border border-border bg-white p-5 sm:p-6">
-          <h2 className="text-lg font-bold text-foreground">סקירה כספית</h2>
-          <p className="mt-2 text-sm leading-relaxed text-muted">
+      <div className={styles.layout}>
+        <section className={styles.card} id="host-finance" data-host-shot="finance">
+          <h2>סקירה כספית</h2>
+          <p className={styles.help}>
             הסכום ששולם הוא השתתפות שאושרה למתנות. עמלת שירות אינה נספרת ליעד.
             אפשר להנפיק שובר על הסכום ששולם גם לפני שהיעד הושלם, ותשלום שמגיע אחר כך נשאר פנוי לשובר נוסף.
             מימוש בחנות אינו התחשבנות מול LOLO.
           </p>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            <article className="rounded-2xl bg-brand-soft px-4 py-4">
-              <p className="text-sm text-muted">סכום ששולם בהצלחה</p>
-              <p className="mt-1 text-2xl font-bold text-brand">
-                {formatMoney(data.paidAmount)}
-              </p>
-              <p className="mt-1 text-sm text-muted">
+          <div className={styles.stats}>
+            <div className={styles.stat}>
+              <p>סכום ששולם בהצלחה</p>
+              <strong>{formatMoney(data.paidAmount)}</strong>
+              <p>
                 {data.paidOrderCount === 0
                   ? "אין הזמנות ששולמו עדיין"
                   : `${data.paidOrderCount} הזמנות ששולמו`}
               </p>
-            </article>
-            <article className="rounded-2xl border border-border px-4 py-4">
-              <p className="text-sm text-muted">סכום ממתין לתשלום</p>
-              <p className="mt-1 text-2xl font-bold text-foreground">
-                {formatMoney(data.pendingAmount)}
-              </p>
-              <p className="mt-1 text-sm text-muted">
+            </div>
+            <div className={`${styles.stat} ${styles.statPending}`}>
+              <p>סכום ממתין לתשלום</p>
+              <strong>{formatMoney(data.pendingAmount)}</strong>
+              <p>
                 {data.pendingOrderCount === 0
                   ? "אין הזמנות ממתינות"
                   : `${data.pendingOrderCount} הזמנות ממתינות`}
               </p>
-            </article>
+            </div>
           </div>
         </section>
 
-        <HostGuestList
-          eventId={data.eventId}
-          eventTitle={data.title}
-          origin={origin}
-          guests={data.invitedGuests}
-          disabled={readOnly}
-        />
-        </div>
-
-        <div className={styles.stack}>
-        <section className="rounded-3xl border border-border bg-white p-5 sm:p-6">
-          <h2 className="text-lg font-bold text-foreground">התקדמות המתנות</h2>
-          {data.vouchersReady ? null : (
-            <p className="mt-3 text-sm text-muted">
-              הנפקת שוברים עדיין לא זמינה.
-            </p>
-          )}
-          {data.gifts.length === 0 ? (
-            <p className="mt-4 text-sm text-muted">אין מתנות באירוע זה.</p>
-          ) : (
-            <ul className="mt-4 flex flex-col gap-3">
-              {data.gifts.map((gift) => {
-                return (
-                  <li
-                    key={gift.id}
-                    className="rounded-2xl border border-border px-4 py-4"
-                  >
-                    <HostPhotoEditor
-                      eventId={data.eventId}
-                      giftId={gift.id}
-                      initialUrl={gift.imageUrl}
-                      title={gift.title || "מתנה"}
-                      description={gift.description}
-                      compact
-                      previewOnly={readOnly}
-                    />
-                    <div className="flex items-start gap-3">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-start justify-between gap-3">
-                          <p className="font-semibold text-foreground" dir="auto">
-                            {gift.title || "מתנה"}
-                          </p>
-                          {gift.targetAmount ? (
-                            <p className="shrink-0 text-sm text-muted">
-                              יעד {formatMoney(gift.targetAmount)}
-                            </p>
-                          ) : null}
-                        </div>
-                        {gift.description ? (
-                          <p className="mt-1 text-sm leading-relaxed text-muted">
-                            {gift.description}
-                          </p>
-                        ) : null}
-                        {gift.storeName ? (
-                          <p className="mt-1 text-sm text-muted">חנות: {gift.storeName}</p>
-                        ) : null}
-                      </div>
-                    </div>
-                    <FundingProgress
-                      raisedAmount={gift.paidAmount}
-                      pendingAmount={gift.pendingAmount}
-                      percentOfTarget={gift.percentOfTarget}
-                      contributorCount={gift.contributorCount}
-                      showPending
-                    />
-                    <GiftTimeline
-                      paid={gift.paidAmount > 0}
-                      issued={gift.vouchers.some((voucher) => voucher.status !== "CANCELLED")}
-                      redeemed={redemptionStage(gift.vouchers)}
-                    />
-                    {gift.vouchers.some(
-                      (voucher) =>
-                        voucher.status === "ISSUED" || voucher.status === "PARTIALLY_REDEEMED",
-                    ) ? (
-                      <p className="mt-2 text-sm font-semibold text-brand">
-                        הצעד הבא: הציגו את הכרטיס בחנות
-                      </p>
-                    ) : null}
-                    {data.vouchersReady ? (
-                      <IssueVoucherPanel
-                        eventId={data.eventId}
-                        gift={gift}
-                        stores={data.voucherStores}
-                        disabled={readOnly}
-                      />
-                    ) : null}
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </section>
-
-        <section className="rounded-3xl border border-border bg-white p-5 sm:p-6">
-          <h2 className="text-lg font-bold text-foreground">הזמנות אורחים</h2>
+        <section className={styles.card} id="host-orders" data-host-shot="orders">
+          <h2>הזמנות אורחים</h2>
           {data.orders.length === 0 ? (
-            <p className="mt-4 text-sm leading-relaxed text-muted">
-              אין הזמנות עדיין. כשאורחים יבחרו מתנות, ההזמנות יופיעו כאן.
-            </p>
+            <div className={styles.empty}>
+              <p>אין הזמנות עדיין. כשאורחים יבחרו מתנות, ההזמנות יופיעו כאן.</p>
+            </div>
           ) : (
-            <ul className="mt-4 flex flex-col gap-3">
+            <ul className={styles.stack}>
               {data.orders.map((order) => (
-                <li
-                  key={order.id}
-                  className="rounded-2xl border border-border px-4 py-4"
-                >
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <p className="font-semibold text-foreground">
-                      {order.guestName || "אורח"}
-                    </p>
-                    <span
-                      className={`rounded-full px-3 py-1 text-xs font-semibold ${paymentClass(order.paymentStatus)}`}
-                    >
+                <li key={order.id} className={styles.order}>
+                  <div className={styles.orderTop}>
+                    <p className={styles.orderName}>{order.guestName || "אורח"}</p>
+                    <span className={`${styles.badge} ${paymentClass(order.paymentStatus)}`}>
                       {paymentLabel(order.paymentStatus)}
                     </span>
                   </div>
-                  <p className="mt-2 text-sm text-muted">
-                    {formatOrderDate(order.createdAt)}
-                  </p>
-                  <p className="mt-1 text-base font-semibold text-foreground">
-                    {formatMoney(order.totalAmount)}
-                  </p>
-                  <p className="text-xs text-muted">השתתפות במתנה</p>
+                  <p className={styles.help}>{formatOrderDate(order.createdAt)}</p>
+                  <p className={styles.amount}>{formatMoney(order.totalAmount)}</p>
+                  <p className={styles.help}>השתתפות במתנה</p>
                   {order.guestPhone || order.guestEmail ? (
-                    <div className="mt-2 space-y-1 text-sm text-muted" dir="ltr">
+                    <div className={styles.help} dir="ltr">
                       {order.guestPhone ? <p>{order.guestPhone}</p> : null}
                       {order.guestEmail ? <p>{order.guestEmail}</p> : null}
                     </div>
                   ) : null}
                   {order.greetingText ? (
-                    <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-relaxed text-foreground">
-                      {order.greetingText}
-                    </p>
+                    <p className={styles.help}>{order.greetingText}</p>
                   ) : null}
                 </li>
               ))}
             </ul>
           )}
         </section>
+
+        <section className={`${styles.card} ${styles.wide}`} id="host-gifts" data-host-shot="gifts">
+          <h2>התקדמות המתנות</h2>
+          {data.vouchersReady ? null : (
+            <p className={styles.help}>הנפקת שוברים עדיין לא זמינה.</p>
+          )}
+          {data.gifts.length === 0 ? (
+            <div className={styles.empty}>
+              <p>אין מתנות באירוע זה.</p>
+            </div>
+          ) : (
+            <ul className={styles.stack}>
+              {data.gifts.map((gift) => (
+                <li key={gift.id} className={styles.gift} data-gift-target={gift.targetAmount == null ? "hidden" : "shown"}>
+                  <HostPhotoEditor
+                    eventId={data.eventId}
+                    giftId={gift.id}
+                    initialUrl={gift.imageUrl}
+                    title={gift.title || "מתנה"}
+                    description={gift.description}
+                    previewOnly={sample}
+                  />
+                  <div className={styles.giftHead}>
+                    <h3 className={styles.giftTitle} dir="auto">
+                      {gift.title || "מתנה"}
+                    </h3>
+                    {gift.targetAmount ? (
+                      <p className={styles.target}>יעד {formatMoney(gift.targetAmount)}</p>
+                    ) : null}
+                  </div>
+                  {gift.targetAmount == null ? (
+                    <p className={styles.hiddenAmount}>בלי יעד מוצג לאורחים</p>
+                  ) : null}
+                  {gift.description ? <p className={styles.help}>{gift.description}</p> : null}
+                  {gift.storeName ? <p className={styles.help}>חנות: {gift.storeName}</p> : null}
+                  <FundingProgress
+                    raisedAmount={gift.paidAmount}
+                    pendingAmount={gift.pendingAmount}
+                    percentOfTarget={gift.percentOfTarget}
+                    contributorCount={gift.contributorCount}
+                    showPending
+                  />
+                  <GiftTimeline
+                    paid={gift.paidAmount > 0}
+                    issued={gift.vouchers.some((voucher) => voucher.status !== "CANCELLED")}
+                    redeemed={redemptionStage(gift.vouchers)}
+                  />
+                  {gift.vouchers.some(
+                    (voucher) =>
+                      voucher.status === "ISSUED" || voucher.status === "PARTIALLY_REDEEMED",
+                  ) ? (
+                    <p className={styles.help}>הצעד הבא: הציגו את הכרטיס בחנות</p>
+                  ) : null}
+                  {data.vouchersReady ? (
+                    <IssueVoucherPanel
+                      eventId={data.eventId}
+                      gift={gift}
+                      stores={data.voucherStores}
+                      disabled={locked}
+                    />
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        <div className={styles.wide}>
+          <HostGuestList
+            eventId={data.eventId}
+            eventTitle={data.title}
+            origin={origin}
+            guests={data.invitedGuests}
+            disabled={locked}
+          />
         </div>
-        </div>
+      </div>
     </main>
   );
 }

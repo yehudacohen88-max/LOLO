@@ -341,3 +341,45 @@ describe("host image replacement", () => {
     assert.doesNotMatch(route, /file\.type/);
   });
 });
+
+describe("host pages and routes stay on the signed-in event", () => {
+  const read = (path: string) => readFileSync(new URL(path, import.meta.url), "utf8");
+
+  it("redirects a host page when the session is missing or belongs to another event", () => {
+    const dashboard = read("../app/host/events/[eventId]/page.tsx");
+    const voucher = read("../app/host/events/[eventId]/vouchers/[voucherId]/page.tsx");
+    for (const source of [dashboard, voucher]) {
+      assert.match(source, /session\.eventId !== eventId/);
+      assert.match(source, /redirect\("\/host"\)/);
+      assert.equal(source.includes("accessCode"), false);
+      assert.doesNotMatch(source, /HOST_SESSION_SECRET|SERVICE_ROLE|SUPABASE_SERVICE_ROLE_KEY/);
+    }
+    assert.match(dashboard, /getHostDashboardData\(session\.eventId\)/);
+    assert.match(voucher, /getHostVoucherCard\(eventId, voucherId, origin\)/);
+    assert.match(read("../lib/vouchers/repository.ts"), /row\.event_id !== eventId/);
+  });
+
+  it("refuses host APIs without a matching session and writes with that session's event", () => {
+    const guests = read("../app/api/host/events/[eventId]/guests/route.ts");
+    const removal = read("../app/api/host/events/[eventId]/guests/[guestId]/route.ts");
+    const vouchers = read("../app/api/host/events/[eventId]/vouchers/route.ts");
+    const images = read("../app/api/host/events/[eventId]/images/route.ts");
+    const imageHandler = read("../lib/host/event-images.ts");
+    for (const source of [guests, removal, vouchers, images, imageHandler]) {
+      assert.equal(source.includes("accessCode"), false);
+      assert.doesNotMatch(source, /HOST_SESSION_SECRET|SERVICE_ROLE/);
+    }
+    for (const source of [guests, removal, vouchers, imageHandler]) {
+      assert.match(source, /401/);
+    }
+    assert.match(guests, /requireHostEventSession\(eventId\)/);
+    assert.match(guests, /addEventGuest\(session\.eventId/);
+    assert.match(guests, /listEventGuests\(session\.eventId\)/);
+    assert.match(removal, /requireHostEventSession\(eventId\)/);
+    assert.match(removal, /deleteEventGuest\(session\.eventId, guestId\)/);
+    assert.match(vouchers, /session\.eventId !== eventId/);
+    assert.match(images, /handleHostImagePatch/);
+    assert.match(read("../lib/host/guest-list.ts"), /session\.eventId !== eventId/);
+    assert.match(read("../lib/host/event-images.ts"), /session\.eventId !== input\.eventId/);
+  });
+});

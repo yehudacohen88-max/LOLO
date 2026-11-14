@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import styles from "@/app/design/bold-host.module.css";
 
 type CopyGuestLinkProps = {
   guestUrl: string;
@@ -21,23 +22,20 @@ export default function CopyGuestLink({ guestUrl, disabled = false }: CopyGuestL
   }
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className={styles.share}>
       {toast ? (
-        <p className="rounded-2xl bg-brand-soft px-4 py-3 text-center text-sm font-medium text-brand">
+        <p className={styles.toast} role="status">
           {toast}
         </p>
       ) : null}
-      <p
-        dir="ltr"
-        className="break-all rounded-2xl bg-brand-soft px-4 py-3 text-center text-sm font-medium text-foreground"
-      >
+      <p dir="ltr" className={styles.url}>
         {guestUrl}
       </p>
       <button
         type="button"
         onClick={copyLink}
         disabled={disabled}
-        className="inline-flex h-12 w-full items-center justify-center rounded-full bg-brand px-6 text-base font-semibold text-white hover:bg-brand-hover disabled:cursor-not-allowed disabled:bg-brand/40 sm:w-auto"
+        className={`${styles.primary} ${styles.inline}`}
       >
         העתקת קישור
       </button>
