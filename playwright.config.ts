@@ -25,7 +25,7 @@ export default defineConfig({
         NEXT_PUBLIC_SUPABASE_ANON_KEY: "",
         SUPABASE_SERVICE_ROLE_KEY: "",
         LOLO_ADMIN_PASSWORD: "",
-        HOST_SESSION_SECRET: "",
+        HOST_SESSION_SECRET: "playwright-host-isolation-secret",
         INVITE_TOKEN_SECRET: "",
         ADMIN_SESSION_SECRET: "",
         STORE_SESSION_SECRET: "",

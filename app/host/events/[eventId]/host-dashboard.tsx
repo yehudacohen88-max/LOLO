@@ -172,6 +172,7 @@ export default function HostDashboard({
                 {formatMoney(progress.raised)} מתוך {formatMoney(progress.target)}
                 {progress.percent > 100 ? " · היעד הושג ואף יותר" : ""}
               </p>
+              <p className={styles.help}>האחוז מחושב ביחס ליעדי המתנות שהוגדרו בלבד.</p>
               <div className={styles.summaryBar} aria-hidden>
                 <span style={{ width: `${progressWidth}%` }} />
               </div>

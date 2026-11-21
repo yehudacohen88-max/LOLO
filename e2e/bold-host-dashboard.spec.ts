@@ -108,6 +108,7 @@ test.describe("bold host dashboard", () => {
     await expect(page.getByText("נועם לוי")).toBeVisible();
     await expect(page.getByText("ממתין לתשלום").first()).toBeVisible();
     await expect(page.getByText("שולם").first()).toBeVisible();
+    await expect(page.getByText("האחוז מחושב ביחס ליעדי המתנות שהוגדרו בלבד.")).toBeVisible();
     await expect(page.getByText("הצעד הבא: הציגו את הכרטיס בחנות")).toBeVisible();
     await expect(page.getByText("שובר הדגמה בלבד")).toHaveCount(0);
     await expect(page.getByRole("button", { name: "הנפקת שובר" })).toHaveCount(0);

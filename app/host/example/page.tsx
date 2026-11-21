@@ -13,12 +13,16 @@ type ExamplePageProps = {
 
 export default async function HostExamplePage({ searchParams }: ExamplePageProps) {
   const params = await searchParams;
-  const empty = params.view === "empty";
-  const interactive = params.view === "live" && process.env.LOLO_HOST_SAMPLE_ACTIONS === "1";
+  const view = params.view;
+  const sampleView =
+    view === "empty" || view === "zero" || view === "nogoal" || view === "many" || view === "ratios"
+      ? view
+      : "sample";
+  const interactive = view === "live" && process.env.LOLO_HOST_SAMPLE_ACTIONS === "1";
 
   return (
     <HostDashboard
-      data={exampleDashboardData(empty ? "empty" : "sample")}
+      data={exampleDashboardData(sampleView)}
       guestUrl="https://lolo.example/e/event-example"
       origin="https://lolo.example"
       exampleNote={EXAMPLE_DASHBOARD_NOTE}
