@@ -7,6 +7,10 @@ import { authorizeImageUpload } from "@/lib/images/upload-auth";
 import { clientIpFromVercelHeaders } from "@/lib/security/client-ip";
 import { caughtErrorBody } from "@/lib/security/required-secret";
 import { consumeUpload } from "@/lib/security/upload-limit";
+import {
+  decideUploadSharedLimit,
+  type UploadSharedDecision,
+} from "@/lib/security/upload-shared-limit";
 
 export const MULTIPART_OVERHEAD = 256 * 1024;
 
@@ -32,11 +36,13 @@ export async function receiveImageUpload(input: {
   betaToken?: string;
   storage: UploadStorage;
   now?: number;
+  sharedLimit?: () => Promise<UploadSharedDecision>;
 }) {
   const auth = await authorizeImageUpload({
     hostToken: input.hostToken,
     betaToken: input.betaToken,
     uploadToken: input.request.headers.get(UPLOAD_GRANT_HEADER) ?? undefined,
+    headers: input.request.headers,
     now: input.now,
   });
   if (!auth.ok) {
@@ -51,11 +57,9 @@ export async function receiveImageUpload(input: {
     return { status: 413, body: { error: TOO_BIG } };
   }
 
+  const ip = clientIpFromVercelHeaders(input.request.headers);
   const limit = consumeUpload(
-    {
-      ip: clientIpFromVercelHeaders(input.request.headers),
-      principal: auth.principal,
-    },
+    { ip, principal: auth.principal },
     input.now ?? Date.now(),
   );
   if (!limit.ok) {
@@ -63,6 +67,25 @@ export async function receiveImageUpload(input: {
       status: 429,
       body: { error: RATE_LIMITED },
       retryAfter: limit.retryAfterSeconds,
+    };
+  }
+
+  let shared: UploadSharedDecision = { ok: true };
+  try {
+    shared = input.sharedLimit
+      ? await input.sharedLimit()
+      : await decideUploadSharedLimit({
+          ip,
+          request: input.request,
+        });
+  } catch {
+    shared = { ok: true };
+  }
+  if (!shared.ok) {
+    return {
+      status: 429,
+      body: { error: RATE_LIMITED },
+      retryAfter: shared.retryAfterSeconds,
     };
   }
 

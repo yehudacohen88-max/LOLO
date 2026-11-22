@@ -3,9 +3,10 @@ import "server-only";
 /**
  * In-memory upload counters for one server instance.
  *
- * Counters are not shared across instances and reset when a new instance
- * starts. A shared store would need new infrastructure, so it is not wired
- * here. See docs/upload-rate-limit-proposal.md.
+ * These counters are per instance. A published Vercel Firewall rule can add
+ * a shared IP cap; see lib/security/upload-shared-limit.ts. Until that rule
+ * exists, a missing check fails open and these counters remain the limit.
+ * See docs/upload-rate-limit-proposal.md.
  *
  * Callers pass the platform client IP (x-vercel-forwarded-for or x-real-ip),
  * never the first X-Forwarded-For hop, plus a host, beta, or upload-grant id.

@@ -1,28 +1,47 @@
-# Shared upload rate-limit store — proposal only
+# Upload rate limits — what is active, and what needs approval
 
-`POST /api/uploads/images` keeps its in-memory counters in `lib/security/upload-limit.ts`. This change does not add Redis, Vercel KV, or a new firewall rule.
+No new environment variable is required. `IMAGE_UPLOAD_SECRET` is only the HMAC key for create-event grants. This document does not provision a firewall rule, a database, or a secret.
 
-## What is enforced today
+## Active now (no approval)
 
-On one server instance, for a 10 minute window:
+On each server instance, for 10 minutes:
 
-- 24 uploads per platform client IP
-- 24 uploads per principal (host session, beta session, or upload grant)
-- 180 uploads for the whole instance
+- 24 uploads per trusted IP (`x-vercel-forwarded-for`, then `x-real-ip`; otherwise the shared bucket `unknown`)
+- 24 uploads per principal (host session, beta session, or one grant id)
+- 180 uploads for that instance
+- 300 create-event grants minted per trusted IP
 
-The client IP comes from `x-vercel-forwarded-for`, then `x-real-ip` (`clientIpFromVercelHeaders`). A caller-supplied first `X-Forwarded-For` hop is ignored. When neither trusted header is present, every such request shares the bucket `unknown` instead of a spoofed address.
+A new grant does not raise the upload cap. The IP counter is checked even when a grant is present. The grant id is an additional cap, not a replacement. Each grant is signed for the trusted IP that rendered the create-event page and is rejected from any other IP. Grants last 30 minutes.
 
-Those counters reset when a new instance starts, and they are not shared across instances. The global cap only limits the instance that received the requests.
+Login, beta login, store lookup, and store redeem use the same IP helper. A spoofed first `X-Forwarded-For` hop does not reset those counters.
 
-## Why a shared store is not in this change
+These counters are not shared across instances. A new instance starts at zero.
 
-Guest routes already call `@vercel/firewall` with rule ids Yehuda publishes (`lolo-guest-read`, `lolo-guest-write`). A shared upload limit needs the same kind of new infrastructure: a rule published outside this repo, or another counter service. Neither exists for uploads. Adding a client call to an unpublished rule id would not create the shared store.
+## Shared store — implemented, inactive until Yehuda publishes a rule
 
-## Proposed follow-up
+`lib/security/upload-shared-limit.ts` calls `@vercel/firewall` `checkRateLimit` only when `VERCEL=1` (set by Vercel, not a secret we add).
 
-1. Publish a Vercel Firewall rate-limit rule, for example `lolo-image-upload`, keyed by platform IP and principal (`host:<eventId>`, `beta:<digest>`, or `grant:<id>`).
-2. Call it from the upload route the same way guest writes call `checkRateLimit`: on Vercel, a real `rateLimited` result returns 429; a missing rule, timeout, or other error falls through.
-3. Keep the in-memory counters as the local backstop when the shared check is skipped.
-4. Do not invent a database table for counters unless the firewall rule cannot express the per-principal key.
+- Rule id: `lolo-image-upload`
+- Key passed by the app: the trusted IP only (not the grant id)
+- Suggested firewall limit: 24 requests per 10 minutes per key
+- If the rule is missing (`not-found`), the call times out, or it throws, the decision is **open**. The in-memory limiter still applies. Event creation is not blocked because the store is down or unpublished.
+- If the rule returns `rateLimited: true`, the upload is 429 even when this instance has not reached its memory cap.
 
-Login routes still read the first `X-Forwarded-For` hop via `clientIpFromRequest`. That is separate from uploads and is not changed here.
+**This rule is not published.** Until it is, the shared check does nothing and the in-memory caps above are the only active limit.
+
+To turn it on, in the Vercel Firewall for the lolo project create a rate-limit rule whose `@vercel/firewall` id is exactly `lolo-image-upload`, keyed by the rate-limit key the app sends (the trusted client IP), at 24 / 10 minutes. No new env var. No SQL.
+
+## Supabase counter — NOT APPLIED, not wired
+
+A table was considered and is not used. The app does not query it. Do not run the statement below until you explicitly want a database counter instead of the firewall rule. Running it is a schema change on whatever database you point at, including production.
+
+```sql
+-- NOT APPLIED. The application does not read or write this table.
+-- create table if not exists public.upload_rate_buckets (
+--   bucket_key text primary key,
+--   count integer not null,
+--   reset_at timestamptz not null
+-- );
+```
+
+No migration file was added under `supabase/`, so it cannot be picked up by the manual SQL list in the README.

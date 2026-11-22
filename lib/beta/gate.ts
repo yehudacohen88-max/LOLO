@@ -1,3 +1,5 @@
+import { clientIpFromVercelHeaders } from "@/lib/security/client-ip";
+
 export const BETA_SESSION_COOKIE = "lolo_beta_session";
 export const BETA_ATTEMPT_COOKIE = "lolo_beta_attempts";
 
@@ -122,16 +124,7 @@ export function safeNextPath(value: string | null | undefined) {
 }
 
 export function clientIpFromHeaders(headerStore: { get(name: string): string | null }) {
-  const forwarded = headerStore.get("x-forwarded-for");
-  const first = forwarded?.split(",")[0]?.trim();
-  if (first) {
-    return first.slice(0, 128);
-  }
-  const realIp = headerStore.get("x-real-ip")?.trim();
-  if (realIp) {
-    return realIp.slice(0, 128);
-  }
-  return "unknown";
+  return clientIpFromVercelHeaders(headerStore);
 }
 
 export async function betaPasswordMatches(input: string, expected: string) {

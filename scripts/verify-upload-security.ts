@@ -8,12 +8,13 @@ import { UPLOAD_GRANT_HEADER } from "../lib/images/active-upload-grant";
 import { isHostUploadImageUrl } from "../lib/images/public-url";
 import { receiveImageUpload, type UploadStorage } from "../lib/images/receive-upload";
 import { inspectImage } from "../lib/images/sniff";
-import { createImageUploadGrant } from "../lib/images/upload-grant";
 import {
-  UPLOAD_LIMIT_PER_IP,
-  UPLOAD_LIMIT_PER_PRINCIPAL,
-  resetUploadLimits,
-} from "../lib/security/upload-limit";
+  UPLOAD_GRANT_ISSUE_LIMIT,
+  createImageUploadGrant,
+  resetUploadGrantIssuance,
+} from "../lib/images/upload-grant";
+import { UPLOAD_LIMIT_PER_IP, resetUploadLimits } from "../lib/security/upload-limit";
+import { decideUploadSharedLimit } from "../lib/security/upload-shared-limit";
 
 const EVENT_A = "11111111-1111-4111-8111-111111111111";
 const EVENT_B = "22222222-2222-4222-8222-222222222222";
@@ -90,8 +91,20 @@ async function tiny(type: "png" | "jpeg" | "webp") {
   return image.jpeg().toBuffer();
 }
 
+function trustedIp(headers: Record<string, string>) {
+  const vercel = headers["x-vercel-forwarded-for"]?.split(",")[0]?.trim() ?? "";
+  if (vercel && vercel.length <= 128) {
+    return vercel;
+  }
+  const real = headers["x-real-ip"]?.split(",")[0]?.trim() ?? "";
+  if (real && real.length <= 128) {
+    return real;
+  }
+  return "unknown";
+}
+
 function grantHeader(extra: Record<string, string> = {}) {
-  const token = createImageUploadGrant();
+  const token = createImageUploadGrant(trustedIp(extra));
   assert.ok(token);
   return { [UPLOAD_GRANT_HEADER]: token, ...extra };
 }
@@ -145,6 +158,7 @@ describe("image upload authorization and integrity", () => {
     process.env.NEXT_PUBLIC_SUPABASE_URL = ORIGIN;
     delete process.env.SUPABASE_SERVICE_ROLE_KEY;
     resetUploadLimits();
+    resetUploadGrantIssuance();
   });
 
   it("returns 401 and does not call storage without a session or grant", async () => {
@@ -195,7 +209,7 @@ describe("image upload authorization and integrity", () => {
   it("rejects an expired or tampered upload grant before storage", async () => {
     const png = await tiny("png");
     const now = 1_700_000_000_000;
-    const expired = createImageUploadGrant(now - 3 * 60 * 60 * 1000);
+    const expired = createImageUploadGrant("unknown", now - 3 * 60 * 60 * 1000);
     assert.ok(expired);
     const { calls, storage } = mockStorage();
     const stale = await receiveImageUpload({
@@ -206,7 +220,20 @@ describe("image upload authorization and integrity", () => {
     assert.equal(stale.status, 401);
     assert.equal(calls.length, 0);
 
-    const token = createImageUploadGrant() ?? "";
+    const moved = createImageUploadGrant("203.0.113.10");
+    assert.ok(moved);
+    const wrongIp = await receiveImageUpload({
+      request: imageRequest(png, {
+        [UPLOAD_GRANT_HEADER]: moved,
+        "x-real-ip": "203.0.113.99",
+        "x-forwarded-for": "203.0.113.10",
+      }),
+      storage,
+    });
+    assert.equal(wrongIp.status, 401);
+    assert.equal(calls.length, 0);
+
+    const token = createImageUploadGrant("unknown") ?? "";
     const [encoded, signature] = token.split(".");
     const flipped = signature.endsWith("a") ? "b" : "a";
     const tampered = await receiveImageUpload({
@@ -263,7 +290,7 @@ describe("image upload authorization and integrity", () => {
 
   it("does not let a spoofed x-forwarded-for reset the ip or the principal counter", async () => {
     const png = await tiny("png");
-    const token = createImageUploadGrant();
+    const token = createImageUploadGrant("203.0.113.50");
     assert.ok(token);
     const codes: number[] = [];
     for (let index = 0; index < UPLOAD_LIMIT_PER_IP + 3; index += 1) {
@@ -291,28 +318,32 @@ describe("image upload authorization and integrity", () => {
     assert.equal(stillLimited.status, 429);
 
     const rotatedPrincipal = await receiveImageUpload({
-      request: imageRequest(png, {
-        ...grantHeader(),
-        "x-real-ip": "203.0.113.50",
-        "x-forwarded-for": "203.0.113.77",
-      }),
+      request: imageRequest(
+        png,
+        grantHeader({
+          "x-real-ip": "203.0.113.50",
+          "x-forwarded-for": "203.0.113.77",
+        }),
+      ),
       storage: mockStorage().storage,
     });
     assert.equal(rotatedPrincipal.status, 429);
 
     const freshAddress = await receiveImageUpload({
-      request: imageRequest(png, {
-        ...grantHeader(),
-        "x-vercel-forwarded-for": "198.51.100.8",
-        "x-real-ip": "203.0.113.50",
-        "x-forwarded-for": "1.1.1.1",
-      }),
+      request: imageRequest(
+        png,
+        grantHeader({
+          "x-vercel-forwarded-for": "198.51.100.8",
+          "x-real-ip": "203.0.113.50",
+          "x-forwarded-for": "1.1.1.1",
+        }),
+      ),
       storage: mockStorage().storage,
     });
     assert.equal(freshAddress.status, 200);
 
     resetUploadLimits();
-    const sharedUnknown = createImageUploadGrant();
+    const sharedUnknown = createImageUploadGrant("unknown");
     assert.ok(sharedUnknown);
     let accepted = 0;
     for (let index = 0; index < UPLOAD_LIMIT_PER_IP + 5; index += 1) {
@@ -330,20 +361,112 @@ describe("image upload authorization and integrity", () => {
     assert.equal(accepted, UPLOAD_LIMIT_PER_IP);
 
     resetUploadLimits();
-    let acrossIps = 0;
-    for (let index = 0; index < UPLOAD_LIMIT_PER_PRINCIPAL + 4; index += 1) {
+    const bound = createImageUploadGrant("198.51.100.8");
+    assert.ok(bound);
+    let movedOffIp = 0;
+    for (let index = 0; index < 4; index += 1) {
+      const { calls, storage } = mockStorage();
       const result = await receiveImageUpload({
         request: imageRequest(png, {
-          [UPLOAD_GRANT_HEADER]: sharedUnknown,
-          "x-real-ip": `198.51.100.${index + 1}`,
+          [UPLOAD_GRANT_HEADER]: bound,
+          "x-real-ip": `198.51.100.${index + 20}`,
+          "x-forwarded-for": "198.51.100.8",
+        }),
+        storage,
+      });
+      assert.equal(result.status, 401);
+      assert.equal(calls.length, 0);
+      movedOffIp += 1;
+    }
+    assert.equal(movedOffIp, 4);
+
+    let freshGrants = 0;
+    for (let index = 0; index < UPLOAD_LIMIT_PER_IP + 6; index += 1) {
+      const minted = createImageUploadGrant("203.0.113.90");
+      assert.ok(minted);
+      const result = await receiveImageUpload({
+        request: imageRequest(png, {
+          [UPLOAD_GRANT_HEADER]: minted,
+          "x-real-ip": "203.0.113.90",
+          "x-forwarded-for": `203.0.113.${index}`,
         }),
         storage: mockStorage().storage,
       });
       if (result.status === 200) {
-        acrossIps += 1;
+        freshGrants += 1;
       }
     }
-    assert.equal(acrossIps, UPLOAD_LIMIT_PER_PRINCIPAL);
+    assert.equal(freshGrants, UPLOAD_LIMIT_PER_IP);
+  });
+
+  it("stops minting grants for one trusted IP after the issuance cap", () => {
+    const now = 1_800_000_000_000;
+    let minted = 0;
+    for (let index = 0; index < UPLOAD_GRANT_ISSUE_LIMIT + 2; index += 1) {
+      if (createImageUploadGrant("203.0.113.70", now)) {
+        minted += 1;
+      }
+    }
+    assert.equal(minted, UPLOAD_GRANT_ISSUE_LIMIT);
+    assert.ok(createImageUploadGrant("203.0.113.71", now));
+  });
+
+  it("uses a shared IP cap when it is published and ignores a store failure", async () => {
+    const png = await tiny("png");
+    const open = await decideUploadSharedLimit({
+      ip: "203.0.113.1",
+      onVercel: false,
+      check: async () => {
+        throw new Error("should not be called off Vercel");
+      },
+    });
+    assert.deepEqual(open, { ok: true });
+
+    const missing = await decideUploadSharedLimit({
+      ip: "203.0.113.1",
+      onVercel: true,
+      check: async () => ({ rateLimited: false, error: "not-found" }),
+    });
+    assert.deepEqual(missing, { ok: true });
+
+    const down = await decideUploadSharedLimit({
+      ip: "203.0.113.1",
+      onVercel: true,
+      check: async () => {
+        throw new Error("timeout");
+      },
+    });
+    assert.deepEqual(down, { ok: true });
+
+    const blocked = await decideUploadSharedLimit({
+      ip: "203.0.113.1",
+      onVercel: true,
+      check: async (_id, options) => {
+        assert.equal(options?.rateLimitKey, "203.0.113.1");
+        return { rateLimited: true };
+      },
+    });
+    assert.deepEqual(blocked, { ok: false, retryAfterSeconds: 60 });
+
+    const { calls, storage } = mockStorage();
+    const limited = await receiveImageUpload({
+      request: imageRequest(png, grantHeader({ "x-real-ip": "203.0.113.91" })),
+      storage,
+      sharedLimit: async () => ({ ok: false, retryAfterSeconds: 60 }),
+    });
+    assert.equal(limited.status, 429);
+    assert.equal(calls.length, 0);
+
+    const stored = mockStorage();
+    const continued = await receiveImageUpload({
+      request: imageRequest(png, grantHeader({ "x-real-ip": "203.0.113.92" })),
+      storage: stored.storage,
+      sharedLimit: async () => {
+        throw new Error("store down");
+      },
+    });
+    assert.equal(continued.status, 200);
+    assert.equal(stored.calls.length, 1);
   });
 
   it("rejects a jpeg header, a trailing polyglot, gif, and svg without writing", async () => {

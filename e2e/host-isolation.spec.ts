@@ -1,5 +1,6 @@
 import { createHmac } from "node:crypto";
 import { expect, test } from "@playwright/test";
+import { createBetaSessionValue } from "@/lib/beta/gate";
 
 const SECRET = "playwright-host-isolation-secret";
 const EVENT_A = "11111111-1111-4111-8111-111111111111";
@@ -133,7 +134,7 @@ test.describe("host A and host B stay isolated", () => {
     });
     expect(anonymous.status()).toBe(401);
 
-    const grant = uploadGrant("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa");
+    const grant = uploadGrant("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", "203.0.113.10");
     const spoofed = await request.post("/api/uploads/images", {
       multipart: {
         file: { name: "photo.jpg", mimeType: "image/jpeg", buffer: gif },
@@ -156,11 +157,23 @@ test.describe("host A and host B stay isolated", () => {
         },
       },
       headers: {
-        "x-lolo-upload-token": grant,
+        "x-lolo-upload-token": uploadGrant("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaab", "203.0.113.11"),
         "x-real-ip": "203.0.113.11",
       },
     });
     expect(headerOnly.status()).toBe(400);
+
+    const movedGrant = await request.post("/api/uploads/images", {
+      multipart: {
+        file: { name: "moved.gif", mimeType: "image/gif", buffer: gif },
+      },
+      headers: {
+        "x-lolo-upload-token": grant,
+        "x-real-ip": "203.0.113.19",
+        "x-forwarded-for": "203.0.113.10",
+      },
+    });
+    expect(movedGrant.status()).toBe(401);
 
     const hostJpeg = Buffer.from(
       "/9j/4AAQSkZJRgABAgAAAQABAAD//gAQTGF2YzYwLjMxLjEwMgD/2wBDAAgEBAQEBAUFBQUFBQYGBgYGBgYGBgYGBgYHBwcICAgHBwcGBgcHCAgICAkJCQgICAgJCQoKCgwMCwsODg4RERT/xABLAAEBAAAAAAAAAAAAAAAAAAAABgEBAAAAAAAAAAAAAAAAAAAABhABAAAAAAAAAAAAAAAAAAAAABEBAAAAAAAAAAAAAAAAAAAAAP/AABEIAAgACAMBIgACEQADEQD/2gAMAwEAAhEDEQA/ALcApHn/2Q==",
@@ -177,7 +190,30 @@ test.describe("host A and host B stay isolated", () => {
     });
     expect(hosted.status(), "a host session reaches storage").toBe(503);
 
-    const rateGrant = uploadGrant("bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb");
+    const granted = await request.post("/api/uploads/images", {
+      multipart: {
+        file: { name: "cover.jpg", mimeType: "image/jpeg", buffer: hostJpeg },
+      },
+      headers: {
+        "x-lolo-upload-token": uploadGrant("cccccccc-cccc-4ccc-8ccc-cccccccccccc", "203.0.113.15"),
+        "x-real-ip": "203.0.113.15",
+      },
+    });
+    expect(granted.status(), "a create-event grant reaches storage when the gate is open").toBe(503);
+
+    const beta = await createBetaSessionValue("playwright-beta-secret");
+    const betaUpload = await request.post("http://127.0.0.1:3001/api/uploads/images", {
+      multipart: {
+        file: { name: "cover.jpg", mimeType: "image/jpeg", buffer: hostJpeg },
+      },
+      headers: {
+        cookie: `lolo_beta_session=${beta}`,
+        "x-real-ip": "203.0.113.16",
+      },
+    });
+    expect(betaUpload.status(), "a beta session reaches storage").toBe(503);
+
+    const rateGrant = uploadGrant("bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb", "203.0.113.44");
     let passed = 0;
     let blocked = false;
     for (let count = 0; count < 30; count += 1) {
@@ -217,9 +253,9 @@ test.describe("host A and host B stay isolated", () => {
 
 const UPLOAD_SECRET = "playwright-image-upload-secret";
 
-function uploadGrant(id: string) {
+function uploadGrant(id: string, ip: string) {
   const payload = Buffer.from(
-    JSON.stringify({ typ: "image-upload", id, exp: Date.now() + 60 * 60 * 1000 }),
+    JSON.stringify({ typ: "image-upload", id, ip, exp: Date.now() + 60 * 60 * 1000 }),
     "utf8",
   ).toString("base64url");
   const signature = createHmac("sha256", UPLOAD_SECRET)

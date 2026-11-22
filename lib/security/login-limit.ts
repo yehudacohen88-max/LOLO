@@ -1,4 +1,5 @@
 import "server-only";
+import { clientIpFromVercelHeaders } from "@/lib/security/client-ip";
 
 type Bucket = {
   failures: number;
@@ -54,17 +55,9 @@ function globalKey(scope: LoginScope) {
   return `${scope}:global`;
 }
 
+/** Platform client IP. Same helper as uploads: never the first X-Forwarded-For hop. */
 export function clientIpFromRequest(request: Request) {
-  const forwarded = request.headers.get("x-forwarded-for");
-  const first = forwarded?.split(",")[0]?.trim();
-  if (first) {
-    return first.slice(0, 128);
-  }
-  const realIp = request.headers.get("x-real-ip")?.trim();
-  if (realIp) {
-    return realIp.slice(0, 128);
-  }
-  return "unknown";
+  return clientIpFromVercelHeaders(request.headers);
 }
 
 function bucket(key: string, now: number, windowMs: number) {

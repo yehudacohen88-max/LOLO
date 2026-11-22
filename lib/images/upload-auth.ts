@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import { readBetaSessionValue } from "@/lib/beta/gate";
 import { readHostSessionToken } from "@/lib/host/session";
 import { readImageUploadGrant } from "@/lib/images/upload-grant";
+import { clientIpFromVercelHeaders } from "@/lib/security/client-ip";
 
 function principalDigest(value: string) {
   return createHash("sha256").update(value).digest("base64url").slice(0, 22);
@@ -16,6 +17,7 @@ export async function authorizeImageUpload(input: {
   hostToken?: string;
   betaToken?: string;
   uploadToken?: string;
+  headers: { get(name: string): string | null };
   now?: number;
 }): Promise<{ ok: true; principal: string } | { ok: false }> {
   const host = readHostSessionToken(input.hostToken);
@@ -31,7 +33,11 @@ export async function authorizeImageUpload(input: {
     }
   }
 
-  const grant = readImageUploadGrant(input.uploadToken, input.now);
+  const grant = readImageUploadGrant(
+    input.uploadToken,
+    clientIpFromVercelHeaders(input.headers),
+    input.now,
+  );
   if (grant) {
     return { ok: true, principal: `grant:${grant.id}` };
   }
