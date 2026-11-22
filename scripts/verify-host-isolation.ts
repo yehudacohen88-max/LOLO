@@ -111,16 +111,24 @@ describe("two hosts cannot read or change each other's event", () => {
 
 describe("shared upload route guards", () => {
   const route = readFileSync(new URL("../app/api/uploads/images/route.ts", import.meta.url), "utf8");
+  const handler = readFileSync(new URL("../lib/images/receive-upload.ts", import.meta.url), "utf8");
 
-  it("checks magic bytes, both size caps, and a rate limit, and ignores the client filename", () => {
-    assert.match(route, /sniffImageType\(bytes\)/);
-    assert.match(route, /contentLength > MAX_IMAGE_BYTES \+ MULTIPART_OVERHEAD/);
-    assert.match(route, /file\.size > MAX_IMAGE_BYTES/);
-    assert.match(route, /bytes\.byteLength > MAX_IMAGE_BYTES/);
-    assert.match(route, /consumeUpload\(clientIpFromRequest\(request\)\)/);
-    assert.match(route, /crypto\.randomUUID\(\)/);
-    assert.doesNotMatch(route, /file\.name/);
-    assert.doesNotMatch(route, /readHostSessionToken|requireHostEventSession/);
+  it("authorizes before storage and limits by the platform IP plus a principal", () => {
+    assert.match(route, /receiveImageUpload/);
+    assert.match(route, /HOST_SESSION_COOKIE/);
+    assert.match(route, /BETA_SESSION_COOKIE/);
+    assert.doesNotMatch(route, /clientIpFromRequest/);
+    assert.doesNotMatch(route, /x-forwarded-for/);
+    assert.match(handler, /authorizeImageUpload/);
+    assert.match(handler, /clientIpFromVercelHeaders/);
+    assert.match(handler, /consumeUpload/);
+    assert.match(handler, /contentLength > MAX_IMAGE_BYTES \+ MULTIPART_OVERHEAD/);
+    assert.match(handler, /file\.size > MAX_IMAGE_BYTES/);
+    assert.match(handler, /bytes\.byteLength > MAX_IMAGE_BYTES/);
+    assert.match(handler, /crypto\.randomUUID\(\)/);
+    assert.match(handler, /upsert: false/);
+    assert.doesNotMatch(handler, /file\.name/);
+    assert.doesNotMatch(handler, /clientIpFromRequest/);
   });
 });
 

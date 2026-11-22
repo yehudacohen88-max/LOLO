@@ -91,5 +91,13 @@ export function describeImageUploadError(file: File | undefined, error: unknown)
     return unreadableMessage();
   }
 
+  if (/אין הרשאה/.test(raw)) {
+    return {
+      retryable: true,
+      unsupported: false,
+      message: "אין הרשאה להעלות תמונה. רעננו את העמוד ונסו שוב.",
+    };
+  }
+
   return networkMessage();
 }
