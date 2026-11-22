@@ -1,5 +1,6 @@
 import { createHmac } from "node:crypto";
 import { expect, test } from "@playwright/test";
+import { createBetaSessionValue } from "@/lib/beta/gate";
 
 const SECRET = "playwright-host-isolation-secret";
 const EVENT_A = "11111111-1111-4111-8111-111111111111";
@@ -121,41 +122,144 @@ test.describe("host A and host B stay isolated", () => {
     expect(failed, results.join("\n")).toEqual([]);
   });
 
-  test("the shared upload route checks bytes, size, and rate, and is not a host session", async ({
+  test("the shared upload route requires a credential and ignores a spoofed forwarding header", async ({
     request,
   }) => {
+    const gif = Buffer.from([0x47, 0x49, 0x46, 0x38, 0x39, 0x61]);
+    const anonymous = await request.post("/api/uploads/images", {
+      multipart: {
+        file: { name: "photo.jpg", mimeType: "image/jpeg", buffer: gif },
+        kind: "../covers",
+      },
+    });
+    expect(anonymous.status()).toBe(401);
+
+    const grant = uploadGrant("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", "203.0.113.10");
     const spoofed = await request.post("/api/uploads/images", {
       multipart: {
-        file: {
-          name: "photo.jpg",
-          mimeType: "image/jpeg",
-          buffer: Buffer.from([0x47, 0x49, 0x46, 0x38, 0x39, 0x61]),
-        },
+        file: { name: "photo.jpg", mimeType: "image/jpeg", buffer: gif },
         kind: "../covers",
+      },
+      headers: {
+        "x-lolo-upload-token": grant,
+        "x-real-ip": "203.0.113.10",
+        "x-forwarded-for": "198.51.100.1",
       },
     });
     expect(spoofed.status()).toBe(400);
 
-    const jpeg = Buffer.from([0xff, 0xd8, 0xff, 0x00]);
-    const first = await request.post("/api/uploads/images", {
+    const headerOnly = await request.post("/api/uploads/images", {
       multipart: {
-        file: { name: "first.jpg", mimeType: "text/plain", buffer: jpeg },
+        file: {
+          name: "header.jpg",
+          mimeType: "image/jpeg",
+          buffer: Buffer.from([0xff, 0xd8, 0xff]),
+        },
       },
-      headers: { "x-forwarded-for": "203.0.113.44" },
+      headers: {
+        "x-lolo-upload-token": uploadGrant("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaab", "203.0.113.11"),
+        "x-real-ip": "203.0.113.11",
+      },
     });
-    expect(first.status(), "a valid jpeg is not blocked for lack of a host session").toBe(503);
+    expect(headerOnly.status()).toBe(400);
 
-    let limited = first.status();
-    for (let count = 0; count < 30 && limited !== 429; count += 1) {
+    const movedGrant = await request.post("/api/uploads/images", {
+      multipart: {
+        file: { name: "moved.gif", mimeType: "image/gif", buffer: gif },
+      },
+      headers: {
+        "x-lolo-upload-token": grant,
+        "x-real-ip": "203.0.113.19",
+        "x-forwarded-for": "203.0.113.10",
+      },
+    });
+    expect(movedGrant.status()).toBe(401);
+
+    const hostJpeg = Buffer.from(
+      "/9j/4AAQSkZJRgABAgAAAQABAAD//gAQTGF2YzYwLjMxLjEwMgD/2wBDAAgEBAQEBAUFBQUFBQYGBgYGBgYGBgYGBgYHBwcICAgHBwcGBgcHCAgICAkJCQgICAgJCQoKCgwMCwsODg4RERT/xABLAAEBAAAAAAAAAAAAAAAAAAAABgEBAAAAAAAAAAAAAAAAAAAABhABAAAAAAAAAAAAAAAAAAAAABEBAAAAAAAAAAAAAAAAAAAAAP/AABEIAAgACAMBIgACEQADEQD/2gAMAwEAAhEDEQA/ALcApHn/2Q==",
+      "base64",
+    );
+    const hosted = await request.post("/api/uploads/images", {
+      multipart: {
+        file: { name: "cover.jpg", mimeType: "image/jpeg", buffer: hostJpeg },
+      },
+      headers: {
+        cookie: `lolo_host_session=${hostToken(EVENT_A)}`,
+        "x-real-ip": "203.0.113.12",
+      },
+    });
+    expect(hosted.status(), "a host session reaches storage").toBe(503);
+
+    const granted = await request.post("/api/uploads/images", {
+      multipart: {
+        file: { name: "cover.jpg", mimeType: "image/jpeg", buffer: hostJpeg },
+      },
+      headers: {
+        "x-lolo-upload-token": uploadGrant("cccccccc-cccc-4ccc-8ccc-cccccccccccc", "203.0.113.15"),
+        "x-real-ip": "203.0.113.15",
+      },
+    });
+    expect(granted.status(), "a create-event grant reaches storage when the gate is open").toBe(503);
+
+    const beta = await createBetaSessionValue("playwright-beta-secret");
+    const betaUpload = await request.post("http://127.0.0.1:3001/api/uploads/images", {
+      multipart: {
+        file: { name: "cover.jpg", mimeType: "image/jpeg", buffer: hostJpeg },
+      },
+      headers: {
+        cookie: `lolo_beta_session=${beta}`,
+        "x-real-ip": "203.0.113.16",
+      },
+    });
+    expect(betaUpload.status(), "a beta session reaches storage").toBe(503);
+
+    const rateGrant = uploadGrant("bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb", "203.0.113.44");
+    let passed = 0;
+    let blocked = false;
+    for (let count = 0; count < 30; count += 1) {
       const response = await request.post("/api/uploads/images", {
         multipart: {
-          file: { name: `n-${count}.jpg`, mimeType: "image/jpeg", buffer: jpeg },
+          file: { name: `n-${count}.gif`, mimeType: "image/gif", buffer: gif },
         },
-        headers: { "x-forwarded-for": "203.0.113.44" },
+        headers: {
+          "x-lolo-upload-token": rateGrant,
+          "x-real-ip": "203.0.113.44",
+          "x-forwarded-for": `198.51.100.${count}`,
+        },
       });
-      limited = response.status();
-      if (limited === 429) break;
+      if (response.status() === 429) {
+        blocked = true;
+        break;
+      }
+      expect(response.status()).toBe(400);
+      passed += 1;
     }
-    expect(limited).toBe(429);
+    expect(passed).toBe(24);
+    expect(blocked).toBe(true);
+
+    const stillBlocked = await request.post("/api/uploads/images", {
+      multipart: {
+        file: { name: "again.gif", mimeType: "image/gif", buffer: gif },
+      },
+      headers: {
+        "x-lolo-upload-token": rateGrant,
+        "x-real-ip": "203.0.113.44",
+        "x-forwarded-for": "203.0.113.99",
+      },
+    });
+    expect(stillBlocked.status()).toBe(429);
   });
 });
+
+const UPLOAD_SECRET = "playwright-image-upload-secret";
+
+function uploadGrant(id: string, ip: string) {
+  const payload = Buffer.from(
+    JSON.stringify({ typ: "image-upload", id, ip, exp: Date.now() + 60 * 60 * 1000 }),
+    "utf8",
+  ).toString("base64url");
+  const signature = createHmac("sha256", UPLOAD_SECRET)
+    .update(`image-upload:${payload}`)
+    .digest("base64url");
+  return `${payload}.${signature}`;
+}

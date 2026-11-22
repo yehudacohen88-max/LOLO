@@ -1,3 +1,4 @@
+import { readActiveUploadGrant, UPLOAD_GRANT_HEADER } from "@/lib/images/active-upload-grant";
 import { ImagePrepareError, prepareImageFile } from "@/lib/images/prepare";
 
 export async function uploadImageFile(file: File, kind: "gift" | "cover" = "gift") {
@@ -5,12 +6,18 @@ export async function uploadImageFile(file: File, kind: "gift" | "cover" = "gift
   const body = new FormData();
   body.set("file", prepared);
   body.set("kind", kind);
+  const headers = new Headers();
+  const grant = readActiveUploadGrant();
+  if (grant) {
+    headers.set(UPLOAD_GRANT_HEADER, grant);
+  }
 
   let response: Response;
   try {
     response = await fetch("/api/uploads/images", {
       method: "POST",
       body,
+      headers,
     });
   } catch {
     throw new ImagePrepareError("העלאת התמונה נכשלה. בדקו את החיבור ונסו שוב.");

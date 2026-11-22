@@ -36,8 +36,10 @@ test("a chosen cover can be replaced or removed without clearing the other field
   page,
 }) => {
   let uploads = 0;
+  let uploadGrant = "";
   await page.route("**/api/uploads/images", async (route) => {
     uploads += 1;
+    uploadGrant = route.request().headers()["x-lolo-upload-token"] ?? uploadGrant;
     await route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -63,7 +65,11 @@ test("a chosen cover can be replaced or removed without clearing the other field
     mimeType: "image/jpeg",
     buffer: TINY_JPEG,
   });
-  await expect(page.getByRole("img", { name: "תצוגה מקדימה של תמונת האירוע" })).toBeVisible();
+  await expect(page.getByRole("img", { name: "תצוגה מקדימה של תמונת האירוע" })).toHaveAttribute(
+    "src",
+    COVER_URL,
+  );
+  expect(uploadGrant.split(".")).toHaveLength(2);
   await expect(page.getByRole("button", { name: "החלפת תמונה" })).toBeVisible();
   await expect(page.getByRole("button", { name: "הסרת תמונה" })).toBeVisible();
 

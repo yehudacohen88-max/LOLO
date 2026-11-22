@@ -317,28 +317,29 @@ describe("host image replacement", () => {
     );
   });
 
-  it("accepts only jpeg, png, and webp magic bytes and caps uploads at 5MB", () => {
+  it("rejects truncated image headers and caps uploads at 5MB", () => {
     assert.equal(MAX_IMAGE_BYTES, 5 * 1024 * 1024);
-    assert.equal(sniffImageType(Uint8Array.from([0xff, 0xd8, 0xff, 0x00])), "image/jpeg");
+    assert.equal(sniffImageType(Uint8Array.from([0xff, 0xd8, 0xff])), null);
+    assert.equal(sniffImageType(Uint8Array.from([0xff, 0xd8, 0xff, 0x00])), null);
     assert.equal(
       sniffImageType(Uint8Array.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])),
-      "image/png",
+      null,
     );
     const webp = new Uint8Array(12);
     webp.set([0x52, 0x49, 0x46, 0x46, 0, 0, 0, 0, 0x57, 0x45, 0x42, 0x50]);
-    assert.equal(sniffImageType(webp), "image/webp");
+    assert.equal(sniffImageType(webp), null);
     assert.equal(sniffImageType(Uint8Array.from([0x47, 0x49, 0x46, 0x38])), null);
+    assert.equal(sniffImageType(new TextEncoder().encode("<svg xmlns='http://www.w3.org/2000/svg'/>")), null);
     assert.equal(sniffImageType(new TextEncoder().encode("not-an-image")), null);
 
-    const route = readFileSync(
-      new URL("../app/api/uploads/images/route.ts", import.meta.url),
-      "utf8",
-    );
-    assert.match(route, /sniffImageType\(bytes\)/);
-    assert.match(route, /file\.size > MAX_IMAGE_BYTES/);
-    assert.match(route, /bytes\.byteLength > MAX_IMAGE_BYTES/);
-    assert.match(route, /contentLength > MAX_IMAGE_BYTES/);
-    assert.doesNotMatch(route, /file\.type/);
+    const handler = readFileSync(new URL("../lib/images/receive-upload.ts", import.meta.url), "utf8");
+    assert.match(handler, /reencodeImage\(bytes\)/);
+    assert.match(handler, /file\.size > MAX_IMAGE_BYTES/);
+    assert.match(handler, /bytes\.byteLength > MAX_IMAGE_BYTES/);
+    assert.match(handler, /contentLength > MAX_IMAGE_BYTES/);
+    assert.match(handler, /upsert: false/);
+    assert.doesNotMatch(handler, /file\.type/);
+    assert.doesNotMatch(handler, /file\.name/);
   });
 });
 
