@@ -2,10 +2,8 @@
 
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
+import styles from "@/app/design/bold-host.module.css";
 import { userFacingMessage } from "@/app/design/user-error";
-
-const fieldClass =
-  "h-12 rounded-2xl border border-border bg-white px-4 text-base text-foreground outline-none placeholder:text-muted/70 focus:border-brand";
 
 export default function HostLoginForm() {
   const router = useRouter();
@@ -45,40 +43,35 @@ export default function HostLoginForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="mt-10 flex flex-col gap-5">
-      <label className="flex flex-col gap-2">
-        <span className="text-sm font-semibold text-foreground">
-          קישור האירוע או כתובת עמוד האורחים
-        </span>
+    <form onSubmit={handleSubmit} className={styles.form}>
+      <label className={styles.field}>
+        <span>קישור האירוע או כתובת עמוד האורחים</span>
         <input
           value={identifier}
           onChange={(event) => setIdentifier(event.target.value)}
           placeholder="event-ab12"
           dir="ltr"
-          className={fieldClass}
+          className={styles.input}
+          autoComplete="off"
         />
       </label>
-      <label className="flex flex-col gap-2">
-        <span className="text-sm font-semibold text-foreground">
-          קוד ניהול פרטי
-        </span>
+      <label className={styles.field}>
+        <span>קוד ניהול פרטי</span>
         <input
           value={accessCode}
           onChange={(event) => setAccessCode(event.target.value)}
           placeholder="XXXX-XXXX"
           dir="ltr"
           autoComplete="off"
-          className={fieldClass}
+          className={styles.input}
         />
       </label>
       {error ? (
-        <p className="text-center text-sm text-brand">{error}</p>
+        <p className={styles.error} role="alert">
+          {error}
+        </p>
       ) : null}
-      <button
-        type="submit"
-        disabled={saving}
-        className="inline-flex h-12 w-full items-center justify-center rounded-full bg-brand px-6 text-base font-semibold text-white hover:bg-brand-hover disabled:cursor-not-allowed disabled:bg-brand/40"
-      >
+      <button type="submit" disabled={saving} className={styles.primary}>
         כניסה
       </button>
     </form>

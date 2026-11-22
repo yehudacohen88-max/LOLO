@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { cookies, headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
+import styles from "@/app/design/bold-host.module.css";
 import { getHostDashboardData } from "@/lib/host/dashboard";
 import {
   HOST_SESSION_COOKIE,
@@ -50,10 +51,8 @@ export default async function HostEventDashboardPage({
       message: error instanceof Error ? error.message : "unknown",
     });
     return (
-      <main className="mx-auto flex w-full max-w-lg flex-1 flex-col px-5 py-16 text-center">
-        <p className="text-base text-muted">
-          השירות אינו זמין כרגע. נסו שוב מאוחר יותר.
-        </p>
+      <main className={styles.unavailable}>
+        <p>השירות אינו זמין כרגע. נסו שוב מאוחר יותר.</p>
       </main>
     );
   }

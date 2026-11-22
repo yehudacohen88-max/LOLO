@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import LoloMark from "@/app/design/lolo-mark";
-import styles from "@/app/design/host-experience.module.css";
+import styles from "@/app/design/bold-host.module.css";
 import HostLoginForm from "./host-login-form";
 
 export const metadata: Metadata = {
@@ -15,6 +15,7 @@ export default function HostLoginPage() {
         <Link href="/" className={styles.wordmark}>
           <LoloMark />
         </Link>
+        <p className={styles.kicker}>למארחים</p>
         <h1 className={styles.title}>כניסה לניהול האירוע</h1>
         <p className={styles.lede}>הזינו את קישור האירוע ואת קוד הניהול הפרטי</p>
       </section>

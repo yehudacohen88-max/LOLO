@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
+import styles from "@/app/design/bold-host.module.css";
 import ImageFormatHint from "@/app/design/image-format-hint";
 import ResolvedPhoto from "@/app/design/resolved-photo";
 import UploadActions from "@/app/design/upload-actions";
@@ -137,7 +138,7 @@ export default function HostPhotoEditor({
   }
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className={`${styles.photo} ${giftId ? styles.photoGift : ""} flex flex-col gap-3`}>
       <ResolvedPhoto
         visual={visual}
         backup={backup}

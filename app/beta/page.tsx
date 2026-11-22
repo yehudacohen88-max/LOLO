@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import LoloMark from "@/app/design/lolo-mark";
-import styles from "@/app/design/host-experience.module.css";
+import styles from "@/app/design/bold-host.module.css";
 import { betaGateModeFromEnv, safeNextPath } from "@/lib/beta/gate";
 
 export const metadata: Metadata = {
@@ -37,6 +37,7 @@ export default async function BetaPage({ searchParams }: BetaPageProps) {
         <Link href="/" className={styles.wordmark}>
           <LoloMark />
         </Link>
+        <p className={styles.kicker}>בטא סגורה</p>
         <h1 className={styles.title}>כניסה לבטא</h1>
         <p className={styles.lede}>
           הזינו את סיסמת הבטא פעם אחת. אחר כך הקישורים שקיבלתם ייפתחו כרגיל.
@@ -44,41 +45,27 @@ export default async function BetaPage({ searchParams }: BetaPageProps) {
       </section>
       <section className={styles.loginCard}>
         {misconfigured ? (
-          <p className="rounded-3xl border border-border bg-white px-5 py-4 text-center text-sm leading-relaxed text-foreground">
-            {message}
-          </p>
+          <p className={styles.notice}>{message}</p>
         ) : (
-          <form
-            method="post"
-            action="/api/beta/login"
-            className="flex flex-col gap-5"
-          >
+          <form method="post" action="/api/beta/login" className={styles.form}>
             <input type="hidden" name="next" value={next} />
-            <label className="flex flex-col gap-2">
-              <span className="text-sm font-semibold text-foreground">
-                סיסמת בטא
-              </span>
+            <label className={styles.field}>
+              <span>סיסמת בטא</span>
               <input
                 name="password"
                 type="password"
                 autoComplete="current-password"
                 dir="ltr"
                 required
-                className="h-12 rounded-2xl border border-border bg-white px-4 text-base text-foreground outline-none focus:border-brand"
+                className={styles.input}
               />
             </label>
             {message ? (
-              <p
-                role="alert"
-                className="text-center text-sm font-semibold text-brand"
-              >
+              <p role="alert" className={styles.error}>
                 {message}
               </p>
             ) : null}
-            <button
-              type="submit"
-              className="inline-flex h-12 w-full items-center justify-center rounded-full bg-brand px-6 text-base font-semibold text-white hover:bg-brand-hover"
-            >
+            <button type="submit" className={styles.primary}>
               כניסה
             </button>
           </form>

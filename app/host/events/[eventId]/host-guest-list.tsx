@@ -1,14 +1,12 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
+import styles from "@/app/design/bold-host.module.css";
 import { userFacingMessage } from "@/app/design/user-error";
 import { absoluteAppUrl } from "@/lib/app-url";
 import type { EventGuest } from "@/lib/host/guest-fields";
 import { whatsappInviteUrl } from "@/lib/invite/whatsapp";
-
-const fieldClass =
-  "h-12 rounded-2xl border border-border bg-white px-4 text-base text-foreground outline-none placeholder:text-muted/70 focus:border-brand";
 
 type HostGuestListProps = {
   eventId: string;
@@ -31,6 +29,15 @@ export default function HostGuestList({
   const [error, setError] = useState("");
   const [toast, setToast] = useState("");
   const [saving, setSaving] = useState(false);
+  const [added, setAdded] = useState<EventGuest[]>([]);
+  const [removed, setRemoved] = useState<string[]>([]);
+
+  const visible = [
+    ...guests.filter((guest) => !removed.includes(guest.id)),
+    ...added.filter(
+      (guest) => !guests.some((item) => item.id === guest.id) && !removed.includes(guest.id),
+    ),
+  ];
 
   function absoluteInviteUrl(invitePath: string) {
     const fallback =
@@ -61,9 +68,12 @@ export default function HostGuestList({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, phone }),
       });
-      const payload = (await response.json()) as { error?: string };
+      const payload = (await response.json()) as { error?: string; guest?: EventGuest };
       if (!response.ok) {
         throw new Error(payload.error || "הוספת האורח נכשלה.");
+      }
+      if (payload.guest?.id) {
+        setAdded((current) => [...current, payload.guest as EventGuest]);
       }
       setName("");
       setPhone("");
@@ -90,6 +100,7 @@ export default function HostGuestList({
       if (!response.ok) {
         throw new Error(payload.error || "הסרת האורח נכשלה.");
       }
+      setRemoved((current) => [...current, guestId]);
       router.refresh();
     } catch (nextError) {
       setError(userFacingMessage(nextError, "הסרת האורח נכשלה. בדקו את החיבור ונסו שוב."));
@@ -99,26 +110,26 @@ export default function HostGuestList({
   }
 
   return (
-    <section className="rounded-3xl border border-border bg-white p-5 sm:p-6">
-      <h2 className="text-lg font-bold text-foreground">רשימת מוזמנים</h2>
-      <p className="mt-2 text-sm text-muted">
-        {guests.length === 0
+    <section className={styles.card} id="host-guests" data-host-shot="guests">
+      <h2>רשימת מוזמנים</h2>
+      <p className={styles.help}>
+        {visible.length === 0
           ? "אין מוזמנים ברשימה עדיין"
-          : `${guests.length} מוזמנים`}
+          : `${visible.length} מוזמנים`}
       </p>
       {toast ? (
-        <p className="mt-3 rounded-2xl bg-brand-soft px-4 py-3 text-center text-sm font-medium text-brand">
+        <p className={styles.toast} role="status">
           {toast}
         </p>
       ) : null}
 
-      {guests.length === 0 ? (
-        <p className="mt-4 text-sm leading-relaxed text-muted">
-          הוסיפו אורחים ידנית. זו רשימת ההזמנה, לא הזמנות תשלום.
-        </p>
+      {visible.length === 0 ? (
+        <div className={styles.empty}>
+          <p>הוסיפו אורחים ידנית. זו רשימת ההזמנה, לא הזמנות תשלום.</p>
+        </div>
       ) : (
-        <ul className="mt-4 flex flex-col gap-2">
-          {guests.map((guest) => {
+        <ul className={styles.stack}>
+          {visible.map((guest) => {
             const inviteUrl = absoluteInviteUrl(guest.invitePath ?? "");
             const waUrl = whatsappInviteUrl({
               phone: guest.phone,
@@ -128,26 +139,23 @@ export default function HostGuestList({
             });
 
             return (
-              <li
-                key={guest.id}
-                className="flex flex-col gap-3 rounded-2xl border border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
-              >
-                <div className="min-w-0">
-                  <p className="font-semibold text-foreground" dir="auto">
+              <li key={guest.id} className={styles.guest}>
+                <div>
+                  <p className={styles.guestName} dir="auto">
                     {guest.name}
                   </p>
-                  <p className="mt-0.5 text-sm text-muted" dir="ltr">
+                  <p className={styles.phone} dir="ltr">
                     {guest.phone}
                   </p>
                 </div>
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                <div className={styles.guestActions}>
                   {guest.invitePath ? (
                     <>
                       <button
                         type="button"
                         disabled={saving || disabled}
                         onClick={() => copyInviteLink(guest.invitePath ?? "")}
-                        className="inline-flex min-h-[44px] items-center justify-center rounded-full px-3 text-center text-sm font-semibold text-foreground disabled:text-muted"
+                        className={styles.secondary}
                       >
                         העתק קישור אישי
                       </button>
@@ -156,19 +164,17 @@ export default function HostGuestList({
                           href={waUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex min-h-[44px] items-center justify-center rounded-full px-3 text-center text-sm font-semibold text-brand"
+                          className={styles.secondary}
                         >
                           שלח ב-WhatsApp
                         </a>
                       ) : null}
                       {waUrl && disabled ? (
-                        <span className="inline-flex min-h-[44px] items-center justify-center rounded-full px-3 text-center text-sm font-semibold text-muted">
-                          שלח ב-WhatsApp
-                        </span>
+                        <span className={styles.secondary}>שלח ב-WhatsApp</span>
                       ) : null}
                     </>
                   ) : (
-                    <p className="text-sm text-muted sm:col-span-2">
+                    <p className={styles.help}>
                       הקישור שנשלח עדיין תקף, אבל לא ניתן להציג אותו שוב.
                     </p>
                   )}
@@ -176,7 +182,7 @@ export default function HostGuestList({
                     type="button"
                     disabled={saving || disabled}
                     onClick={() => removeGuest(guest.id)}
-                    className="inline-flex min-h-[44px] items-center justify-center rounded-full px-3 text-center text-sm font-semibold text-brand disabled:text-muted"
+                    className={styles.secondary}
                   >
                     הסרה
                   </button>
@@ -187,34 +193,34 @@ export default function HostGuestList({
         </ul>
       )}
 
-      <form onSubmit={addGuest} className="mt-5 flex flex-col gap-3">
-        <label className="flex flex-col gap-2">
-          <span className="text-sm font-semibold text-foreground">שם האורח</span>
+      <form onSubmit={addGuest} className={styles.form}>
+        <label className={styles.field}>
+          <span>שם האורח</span>
           <input
             value={name}
             onChange={(event) => setName(event.target.value)}
             dir="auto"
             disabled={disabled}
-            className={fieldClass}
+            className={styles.input}
           />
         </label>
-        <label className="flex flex-col gap-2">
-          <span className="text-sm font-semibold text-foreground">מספר טלפון</span>
+        <label className={styles.field}>
+          <span>מספר טלפון</span>
           <input
             type="tel"
             value={phone}
             onChange={(event) => setPhone(event.target.value)}
-            className={fieldClass}
+            className={styles.input}
             dir="ltr"
             disabled={disabled}
           />
         </label>
-        {error ? <p className="text-center text-sm text-brand">{error}</p> : null}
-        <button
-          type="submit"
-          disabled={saving || disabled}
-          className="inline-flex h-12 w-full items-center justify-center rounded-full bg-brand px-6 text-base font-semibold text-white hover:bg-brand-hover disabled:cursor-not-allowed disabled:bg-brand/40"
-        >
+        {error ? (
+          <p className={styles.error} role="alert">
+            {error}
+          </p>
+        ) : null}
+        <button type="submit" disabled={saving || disabled} className={styles.primary}>
           הוספת אורח
         </button>
       </form>
