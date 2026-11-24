@@ -13,9 +13,14 @@ import {
   saveGuestDetails,
 } from "@/lib/guest-draft";
 import { savePendingGuestOrder } from "@/lib/orders/client";
+import LegalCollectionNotice from "@/components/legal/collection-notice";
 import styles from "../flagship.module.css";
 
-export default function GuestDetailsForm() {
+export default function GuestDetailsForm({
+  legalDrafts = false,
+}: {
+  legalDrafts?: boolean;
+}) {
   const router = useRouter();
   const slug = fromRouteParam(useParams<{ slug: string }>().slug);
   const [name, setName] = useState("");
@@ -195,6 +200,7 @@ export default function GuestDetailsForm() {
           </span>
         ) : null}
       </label>
+      <LegalCollectionNotice enabled={legalDrafts} kind="guest" />
       <label className={styles.check}>
         <input
           type="checkbox"

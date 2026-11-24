@@ -7,6 +7,7 @@ import { userFacingMessage } from "@/app/design/user-error";
 import { absoluteAppUrl } from "@/lib/app-url";
 import type { EventGuest } from "@/lib/host/guest-fields";
 import { whatsappInviteUrl } from "@/lib/invite/whatsapp";
+import LegalCollectionNotice from "@/components/legal/collection-notice";
 
 type HostGuestListProps = {
   eventId: string;
@@ -14,6 +15,7 @@ type HostGuestListProps = {
   origin: string;
   guests: EventGuest[];
   disabled?: boolean;
+  legalDrafts?: boolean;
 };
 
 export default function HostGuestList({
@@ -22,6 +24,7 @@ export default function HostGuestList({
   origin,
   guests,
   disabled = false,
+  legalDrafts = false,
 }: HostGuestListProps) {
   const router = useRouter();
   const [name, setName] = useState("");
@@ -193,6 +196,7 @@ export default function HostGuestList({
         </ul>
       )}
 
+      <LegalCollectionNotice enabled={legalDrafts} kind="host" className={styles.help} />
       <form onSubmit={addGuest} className={styles.form}>
         <label className={styles.field}>
           <span>שם האורח</span>

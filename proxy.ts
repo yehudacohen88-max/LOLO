@@ -7,18 +7,30 @@ import {
   safeNextPath,
 } from "@/lib/beta/gate";
 import { isGuestDirectAccess } from "@/lib/beta/guest-access";
+import { legalDraftPathHidden, legalDraftsEnabledFromEnv } from "@/lib/legal/flag";
 
 function destination(request: NextRequest) {
   return safeNextPath(`${request.nextUrl.pathname}${request.nextUrl.search}`);
 }
 
 export async function proxy(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+  if (legalDraftPathHidden(pathname, legalDraftsEnabledFromEnv())) {
+    return new NextResponse("העמוד לא נמצא", {
+      status: 404,
+      headers: {
+        "content-type": "text/plain; charset=utf-8",
+        "X-Robots-Tag": "noindex, nofollow",
+        "Cache-Control": "no-store",
+      },
+    });
+  }
+
   const mode = betaGateModeFromEnv();
   if (mode === "open") {
     return NextResponse.next();
   }
 
-  const { pathname } = request.nextUrl;
   if (/[A-Z]/.test(pathname)) {
     const lowered = pathname.toLowerCase();
     if (isGuestDirectAccess(lowered, request.method)) {

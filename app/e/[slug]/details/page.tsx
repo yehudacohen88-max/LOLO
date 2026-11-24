@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { FlowPage } from "../flow-page";
+import { legalDraftsEnabledFromEnv } from "@/lib/legal/flag";
 import GuestDetailsForm from "./guest-details-form";
 
 export const metadata: Metadata = {
@@ -13,7 +14,7 @@ export default function GuestDetailsPage() {
       title="למי נגיד תודה?"
       lede="השם והפרטים נשמרים אצל המארח, כדי שידע ממי המתנה."
     >
-      <GuestDetailsForm />
+      <GuestDetailsForm legalDrafts={legalDraftsEnabledFromEnv()} />
     </FlowPage>
   );
 }

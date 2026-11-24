@@ -25,6 +25,7 @@ Next.js 16 (App Router), React 19, TypeScript, Supabase, Tailwind CSS 4, Vercel.
 - `BETA_ACCESS_SECRET`
 - `NEXT_PUBLIC_APP_URL` (אופציונלי)
 - `PAYMENT_PROVIDER` (אופציונלי. ריק = תשלום הדגמה)
+- `LEGAL_DRAFTS_ENABLED` (אופציונלי. כבוי אם לא הוגדר. מציג טיוטות משפטיות והודעות איסוף)
 
 ## בסיס הנתונים
 
@@ -69,6 +70,7 @@ npm run verify:sessions
 npm run verify:checkout
 npm run verify:vouchers
 npm run verify:settlements
+npm run verify:legal
 npm run test:e2e
 node scripts/hash-demo-access.mjs
 ```
