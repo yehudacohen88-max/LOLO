@@ -6,6 +6,7 @@ import {
   GUEST_EVENT_FIELDS,
   mapGuestEvent,
 } from "../lib/events/guest-shape";
+import { PRODUCTION_SUPABASE_REF } from "./local-db-order.mjs";
 
 const sql = fs.readFileSync(new URL("../supabase/events-anon-read.sql", import.meta.url), "utf8");
 
@@ -86,16 +87,37 @@ describe("event and gift privacy", () => {
   it("checks the live anonymous catalog after the sql is applied", {
     skip: process.env.LOLO_VERIFY_ANON_LOCK === "1" ? false : "run after applying events-anon-read.sql",
   }, async () => {
-    const env = fs.readFileSync(new URL("../.env.local", import.meta.url), "utf8");
-    const value = (name: string) =>
-      env
-        .split(/\r?\n/)
-        .find((line) => line.startsWith(`${name}=`))
-        ?.slice(name.length + 1)
-        ?.trim() ?? "";
+    const value = (name: string) => {
+      const fromProcess = process.env[name]?.trim() ?? "";
+      if (fromProcess) {
+        return fromProcess;
+      }
+      const file = new URL("../.env.local", import.meta.url);
+      if (!fs.existsSync(file)) {
+        return "";
+      }
+      return (
+        fs
+          .readFileSync(file, "utf8")
+          .split(/\r?\n/)
+          .find((line) => line.startsWith(`${name}=`))
+          ?.slice(name.length + 1)
+          ?.trim() ?? ""
+      );
+    };
     const url = value("NEXT_PUBLIC_SUPABASE_URL").replace(/\/+$/, "");
     const anon = value("NEXT_PUBLIC_SUPABASE_ANON_KEY");
     assert.ok(url && anon);
+    assert.equal(
+      url.toLowerCase().includes(PRODUCTION_SUPABASE_REF),
+      false,
+      "refusing to query the Production Supabase host",
+    );
+    const host = new URL(url).hostname;
+    assert.ok(
+      host === "127.0.0.1" || host === "localhost" || host === "::1",
+      "anonymous catalog check runs only against the local database",
+    );
 
     for (const table of ["events", "event_gifts"]) {
       const response = await fetch(`${url}/rest/v1/${table}?select=id&limit=1`, {

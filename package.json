@@ -17,7 +17,13 @@
     "verify:images": "node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/register-test-hooks.mjs --test scripts/verify-image-library.ts",
     "verify:sessions": "node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/register-test-hooks.mjs --test scripts/verify-session-separation.ts scripts/verify-login-ip.ts",
     "verify:host-images": "node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/register-test-hooks.mjs --test scripts/verify-host-images.ts scripts/verify-host-isolation.ts scripts/verify-upload-security.ts scripts/verify-login-ip.ts",
-    "test:e2e": "npm run build && playwright test"
+    "test:e2e": "npm run build && playwright test",
+    "db:local": "node scripts/local-db.mjs start --profile ci",
+    "db:reset": "node scripts/local-db.mjs reset",
+    "db:seed": "node scripts/local-db.mjs seed",
+    "verify:audit": "node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/register-test-hooks.mjs --test scripts/verify-audit.ts",
+    "verify:ci": "node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/register-test-hooks.mjs --test scripts/verify-ci-guard.ts",
+    "verify:local-db": "node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/register-test-hooks.mjs --test scripts/verify-local-db.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.114.0",
