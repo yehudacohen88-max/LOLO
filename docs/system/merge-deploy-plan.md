@@ -8,6 +8,7 @@ Hard limits for the person who runs this later:
 - Post-deploy checks are read-only.
 - Do not change Vercel env, firewall, or domains in these stages. `BETA_ACCESS_ENABLED`, `LEGAL_DRAFTS_ENABLED`, and `SETTLEMENTS_ENABLED` stay unset or false. `PAYMENT_PROVIDER` stays `demo` until a separate vendor decision.
 - Do not apply `supabase/demo-seed.sql`, `supabase/fix-public-read.sql`, or `supabase/demo-cleanup.sql` to Production.
+- Do not schedule `supabase/events-anon-read.sql` as a new Production migration. The 24 Nov 2026 read already has its end state. It stays in the local and CI order only.
 - Do not uncomment the write block in `supabase/pilot-isolate-test-data.sql`.
 - Stop at the first failed pre-check or post-check. Do not start the next stage.
 
@@ -19,7 +20,13 @@ Current tips before this plan (2026-11-24): `main` is `bf8527ac810e3e9a4908bff54
 
 Apply `supabase/pilot-demo-voucher-guard.sql` before the deploy that first includes #29. That is stage 1. Do not merge #38 (or deploy a tree that contains #38) if that file is not already in Production. A deploy of #38 without the guard SQL fails closed: demo issue returns `voucher_demo_blocked` instead of issuing a demo-only voucher.
 
-The guard file depends on `supabase/vouchers.sql` and the order columns from `supabase/demo-checkout.sql`, which this plan treats as already applied. It does not depend on `payments-attempts.sql`. The allow-list ships empty, so existing paid rows do not become real money.
+The guard file depends on `supabase/vouchers.sql` and the order columns from `supabase/demo-checkout.sql`. The 24 Nov 2026 read shows those tables, columns, and the `vouchers_guard_issue` trigger are already in Production. The guard file replaces `vouchers_guard_issue()` with `create or replace function` and does not drop the trigger. Do not drop that trigger before applying the file. It does not depend on `payments-attempts.sql`. The allow-list ships empty, so existing paid rows do not become real money.
+
+## Events and gifts
+
+The same read found RLS on, and no policies, on `events` and `event_gifts`. In this repo `schema.sql` creates `Public can read events` and `Public can read event gifts`, and `events-server-write.sql` leaves those two policies. `events-anon-read.sql` drops them. The fetched structure is already that end state, so the file is not a pending Production step. A local rebuild still runs it, because `schema.sql` opens the policies. `fix-public-read.sql` would put them back. Do not run it.
+
+Guest, host, and funding reads use the service role. No new SQL file adds a policy on `events` or `event_gifts`. The replica applied the new files twice and both tables still had zero policies.
 
 ## Stage 0 — before any merge
 
@@ -27,6 +34,7 @@ Pre-checks:
 
 - `main` is still `bf8527a`. If it moved, stop and rebuild the integration branch.
 - Draft #41 CI is green on both local-database jobs, including the Playwright smoke on the `full` profile.
+- The 24 Nov 2026 read already shows the eleven current public tables, RLS on, no policies on `events` or `event_gifts`, `Public can read active stores` as the only store policy, one ALL deny policy on each other listed table, and `vouchers_guard_issue` present. New tables were absent. If a later read shows `Public can read events`, stop.
 - Read-only: confirm Production does not already have `payment_provider_is_real`. If it does, stop and do not re-apply the guard blindly.
 - Vercel Production env still has no live payment provider, beta gate closed, legal drafts off, settlements flag unset.
 

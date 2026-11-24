@@ -2,78 +2,63 @@
 
 Date: 2026-11-24. Local Docker only. Draft PR #41. Do not merge.
 
-No connection was opened to the hosted project `fafvveudrlovaozazkny`. No production credential was read or written. No production row was copied. The baseline is reconstructed from the SQL files this repo already treats as applied.
+No connection was opened to the hosted project `fafvveudrlovaozazkny` from this branch. No production credential was read or written. No production row was copied. The structure below is the read-only public-schema report fetched on 24 Nov 2026, checked by rebuilding it from this repo's SQL.
 
-## What was assumed to already be in Production
+## What the read showed
 
-`docs/system/gap-map.md` and `scripts/local-db-order.mjs` treat README steps 1–12 as the schema already installed, and treat `supabase/events-anon-read.sql` as the file that closed anonymous reads of events and gifts. Those 13 files are the baseline:
+RLS is enabled on every public table. The tables are `events`, `event_gifts`, `orders`, `order_items`, `event_host_access`, `event_guests`, `stores`, `platform_settings`, `vouchers`, `redemptions`, and `store_redemption_access`.
 
-1. `supabase/schema.sql`
-2. `supabase/events-server-write.sql`
-3. `supabase/orders.sql`
-4. `supabase/host-access-code.sql`
-5. `supabase/event-guests.sql`
-6. `supabase/invite-tokens.sql`
-7. `supabase/stores.sql`
-8. `supabase/stores-admin-fields.sql`
-9. `supabase/event-gifts-store.sql`
-10. `supabase/custom-gifts.sql`
-11. `supabase/demo-checkout.sql`
-12. `supabase/vouchers.sql`
-13. `supabase/events-anon-read.sql`
+`stores` has one policy, `Public can read active stores` (SELECT). `event_guests`, `event_host_access`, `order_items`, `orders`, `platform_settings`, `redemptions`, `store_redemption_access`, and `vouchers` each have one ALL policy for `anon` and `authenticated` that denies direct access. `events` and `event_gifts` have no policies.
 
-`schema.sql` is first-install. It was applied once, on the empty local database. It was not part of the second apply. Re-running it after `events-anon-read.sql` can reopen anonymous reads, so the idempotency pass does not include it.
+These non-internal triggers exist: `orders_set_updated_at`, `order_items_match_event`, `stores_set_updated_at`, `platform_settings_set_updated_at`, `vouchers_set_updated_at`, `redemptions_set_updated_at`, `vouchers_guard_issue`, `redemptions_guard_update`, `vouchers_block_delete`, `redemptions_block_delete`.
 
-This baseline was not confirmed by a schema dump. If Production is missing `events-anon-read.sql`, or if it has a table or column that steps 1–12 do not create, this replica does not show that. A read-only check that would close the gap, without any write credential:
+`stores.pilot_isolated` is absent. None of the new tables exist (`payment_attempts`, `host_identities`, `notification_messages`, `documents`, `settlements`, `audit_events`, `support_notes`, `pilot_feedback`, and the rest).
 
-- Policies on `public.events` and `public.event_gifts`: anonymous `SELECT` should be absent after `events-anon-read.sql`.
-- `to_regclass` for `payment_attempts`, `payment_refunds`, `host_identities`, `notification_messages`, `documents`, `settlements`, `audit_events`, and `pilot_feedback` should be null if those files are still unapplied.
-- `stores.pilot_isolated` should be absent. The isolate file's write block is still a comment.
+Column names match the lists in the 24 Nov 2026 report. `events.event_date` and `events.event_time` are text. `events.money_amounts` is `integer[]`. `vouchers` has no `demo_only` column yet.
 
-Do not fetch that with a service-role or database-password connection from this branch.
+## How that differs from the previous baseline
+
+The previous replica also started from README steps 1–12 plus `supabase/events-anon-read.sql`. That file list is unchanged. The reason for the last file is now the opposite of the first guess.
+
+`supabase/schema.sql` creates `Public can read events` and `Public can read event gifts`. `supabase/events-server-write.sql` drops the public INSERT policies and revokes anon writes, and it leaves those two SELECT policies in place. `supabase/events-anon-read.sql` is the file that drops the two SELECT policies. Skipping it would leave policies the read did not find. The zero-policy shape is the end state of `events-anon-read.sql`, so the replica still applies that file as part of the baseline.
+
+`scripts/sql-prod-replica.mjs` applies those 13 files, then refuses to continue unless tables, RLS, policy names and commands, non-internal trigger names, and column names match the read. That check passed on 24 Nov 2026 before any synthetic row and before any new file.
+
+## Does the app need anon reads of events?
+
+No. `getSupabaseBrowserClient` is not called. Guest, host, order, and funding reads use the service role, which bypasses RLS. A missing anon policy does not change those server reads.
+
+No file in the new set creates a policy on `events` or `event_gifts`. After both applies, those two tables still have zero policies. Anon, `authenticated`, and `public` also have no table grants on them in the finished local database.
+
+`events-anon-read.sql` does not belong in the Production apply list as a new migration. The fetched structure is already its end state. Running it again only repeats `drop policy if exists` and `revoke select`. Keep it in the local and CI order, because a database built from `schema.sql` opens the read policies and has to close them again. Do not run `supabase/fix-public-read.sql`. That file puts the public read and insert policies back.
+
+## `vouchers_guard_issue`
+
+The trigger is already installed by `supabase/vouchers.sql` (`before insert or update`, row level, calling `vouchers_guard_issue()`). `supabase/pilot-demo-voucher-guard.sql` does not drop or recreate that trigger. It replaces the function with `create or replace function`.
+
+The replacement adds `demo_only` to the columns an update may not change. On insert, a row with `demo_only` returns before the paid-pool check. A monetary insert still compares `voucher_paid_amount` with `voucher_committed_amount`. The second apply of the guard file succeeded, and the trigger name was still present.
+
+The live function body was not in the structure read. This comparison is against `supabase/vouchers.sql`, which is the file that creates the trigger. The guard file overwrites the body either way. A byte-level diff of the current function would need read-only definitions for `vouchers_guard_issue()`, `issue_gift_voucher`, `redeem_voucher`, `cancel_voucher`, `voucher_paid_amount`, and `voucher_committed_amount`. Those definitions are not required to apply the file.
 
 ## What was applied on top
 
-`node scripts/sql-prod-replica.mjs` drops and recreates `public` inside the already-running loopback container. It does not call `supabase db reset`. It then:
+`node scripts/sql-prod-replica.mjs` drops and recreates `public` inside the running loopback container. It does not call `supabase db reset`. It then:
 
-1. Applies the 13 baseline files.
-2. Inserts `scripts/sql-prod-replica-fixture.sql` (invented rows only, labeled `נתונים לדוגמה`).
-3. Applies every other file in `profiles.full`, in that order, except the 13 baseline files.
+1. Applies the 13 baseline files and checks them against the read.
+2. Inserts `scripts/sql-prod-replica-fixture.sql` (invented rows only, labeled `נתונים לדוגמה`). The fixture store slug is `demo-schema-replica`, so the demo seed still creates `demo-ofanaim`.
+3. Applies every other file in `profiles.full`, in that order.
 4. Applies that same new-file list a second time.
 
-The new files, in apply order, are:
+`schema.sql` and `events-anon-read.sql` are not in the second pass. Re-running `schema.sql` would reopen the read policies.
 
-- `supabase/payments-attempts.sql`
-- `supabase/voucher-term-defaults.sql`
-- `supabase/pilot-demo-voucher-guard.sql`
-- `supabase/host-identity.sql`
-- `supabase/support-notes.sql`
-- `supabase/notifications-and-documents.sql`
-- `supabase/pilot-feedback.sql`
-- `supabase/settlements.sql`
-- `supabase/settlement-exclude-demo.sql`
-- `supabase/audit-events.sql`
-- `scripts/audit-demo-vouchers.sql` (SELECT only)
-- `supabase/readonly/test-data-inventory.sql` (SELECT only)
-- `supabase/pilot-isolate-test-data.sql` (SELECT only; the write block stays commented and ends in `ROLLBACK`)
-- `supabase/demo-seed.sql`
-
-On the normal install order, `events-anon-read.sql` is step 20, after `host-identity.sql`. On this replica it is applied with the baseline, before the new files. `host-identity.sql` adds columns and does not restore anonymous `SELECT`. The anonymous catalog stays closed. The second pass does not re-apply the baseline.
-
-The fixture store slug is `demo-schema-replica` so `demo-seed.sql` does not adopt it. The seed only attaches to a store whose slug does not start with `demo-`. With that slug, the seed still creates `demo-ofanaim` and the demo shop code. The fixture event slug is `schema-replica-sample`. Phones, names, and amounts in the fixture are invented.
-
-## Result
-
-Both applies finished with `ON_ERROR_STOP=1`. The second apply did not error. Policies and triggers in those files already use `DROP ... IF EXISTS`, and the template insert uses `ON CONFLICT DO NOTHING`.
-
-The script then required every value in this report to be true:
+Both new-file passes finished with `ON_ERROR_STOP=1`. The script then required this report:
 
 ```json
-{"payment_attempts":true,"payment_refunds":true,"host_identities":true,"notification_messages":true,"documents":true,"settlements":true,"audit_events":true,"pilot_feedback":true,"fixture_event":true,"demo_event":true,"isolate_column_absent":true,"guard_function":true}
+{"payment_attempts":true,"payment_refunds":true,"host_identities":true,"notification_messages":true,"documents":true,"settlements":true,"audit_events":true,"pilot_feedback":true,"fixture_event":true,"demo_event":true,"isolate_column_absent":true,"guard_function":true,"events_policies":0,"event_gift_policies":0,"guard_trigger":true}
 ```
 
-`isolate_column_absent` is the rollback check. There is no down-migration file. `stores.pilot_isolated` was not created. The commented `BEGIN` / `ROLLBACK` block in `pilot-isolate-test-data.sql` was not executed. Rollback of the new tables on this disposable database is the drop described per file in `docs/system/sql-apply-order.md`. Those drops were not run against any hosted database.
+`node scripts/run-verify.mjs` with `LOLO_LOCAL_DB=1` and `LOLO_LOCAL_PROFILE=full` on that database: 300 passed, 0 failed.
 
-`node scripts/run-verify.mjs` with `LOLO_LOCAL_DB=1` and `LOLO_LOCAL_PROFILE=full` was run on this replica before the UI smoke. Result: 300 passed, 0 failed. The later UI run called `demo-seed.sql` again; the seed returns immediately when `demo-bat-mitzvah-noa` already exists.
+`npx playwright test -c playwright.local.config.ts` on the same database: 5 passed, 0 failed (home and host create, guest demo checkout through `שולם בהדגמה`, host edit and simulated recovery, admin lists, store desk refusing the demo voucher).
 
 `supabase/fix-public-read.sql` and `supabase/demo-cleanup.sql` were not applied.
