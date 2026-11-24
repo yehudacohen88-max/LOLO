@@ -32,7 +32,7 @@ Redirect that stdout yourself if you want a file. `.env*` is gitignored. Do not 
 
 ## Apply order
 
-The order below is the `full` profile. The default `ci` profile is the same list without the settlements file and without the demo seed. Removing those two leaves the audit file immediately after the anonymous-read file. The source of truth is `profiles` in `scripts/local-db-order.mjs`. `npm run verify:ci` fails if this list drifts.
+The order below is the `full` profile. The default `ci` profile is the same list without the settlements file, the demo-exclusion file, and the demo seed. The source of truth is `profiles` in `scripts/local-db-order.mjs`. `npm run verify:ci` fails if this list drifts. The backticks in this section are the full profile, then the two files CI does not apply.
 
 1. `supabase/schema.sql`
 2. `supabase/events-server-write.sql`
@@ -46,18 +46,31 @@ The order below is the `full` profile. The default `ci` profile is the same list
 10. `supabase/custom-gifts.sql`
 11. `supabase/demo-checkout.sql`
 12. `supabase/vouchers.sql`
-13. `supabase/events-anon-read.sql`
-14. `supabase/settlements.sql`
-15. `supabase/audit-events.sql`
-16. `supabase/demo-seed.sql`
+13. `supabase/payments-attempts.sql`
+14. `supabase/voucher-term-defaults.sql`
+15. `supabase/pilot-demo-voucher-guard.sql`
+16. `supabase/host-identity.sql`
+17. `supabase/support-notes.sql`
+18. `supabase/notifications-and-documents.sql`
+19. `supabase/pilot-feedback.sql`
+20. `supabase/events-anon-read.sql`
+21. `supabase/settlements.sql`
+22. `supabase/settlement-exclude-demo.sql`
+23. `supabase/audit-events.sql`
+24. `scripts/audit-demo-vouchers.sql`
+25. `supabase/readonly/test-data-inventory.sql`
+26. `supabase/pilot-isolate-test-data.sql`
+27. `supabase/demo-seed.sql`
 
-Steps 1–12 match the README install order. Step 13 closes anonymous reads of events and gifts. The README runs that file once in Production after the server reads events. The local database always has that server code, so CI applies it in the same run as `schema.sql`. Re-running `schema.sql` by itself would open anonymous reads again; the script only applies it as part of this list, which ends that run with step 13.
+Steps 1–12 match the README install order. Step 20 closes anonymous reads of events and gifts, after the host-identity columns. The local database always has the server that reads events, so CI applies that file in the same run as the first install file. Re-running the first file by itself would open anonymous reads again; the script only applies it as part of this list.
 
-Step 14 is omitted from the default CI job so that job matches Production, where settlements are not applied. The second CI job and `npm run db:reset` opt in.
+Steps 21 and 22 are omitted from the default CI job so that job matches Production, where settlements are not applied. The second CI job and `npm run db:reset` opt in. Step 22 must follow both the settlements file and the pilot demo-voucher guard.
 
-Step 15 is applied on every local database. It is not applied to Production until a person runs it in the SQL editor. See `docs/security/audit-log.md`.
+Step 23 is applied on every local database. It is not applied to Production until a person runs it in the SQL editor. See `docs/security/audit-log.md`.
 
-Step 16 is local test data. It is not part of deploy. It runs only in the `full` profile, after settlements, because the seed file requires that schema. Login details for the demo rows stay in `docs/DEMO.md`.
+Steps 24–26 are read-only. The isolate file's write block stays commented and ends in ROLLBACK, so CI runs only its SELECT statements.
+
+Step 27 is local test data. It is not part of deploy. It runs only in the `full` profile, last, so the guarded voucher function is already installed and the seed does not redeem demo money. Login details stay in `docs/DEMO.md`.
 
 ## Not applied
 
@@ -66,6 +79,6 @@ Step 16 is local test data. It is not part of deploy. It runs only in the `full`
 | `supabase/fix-public-read.sql` | Obsolete. Do not run. It restores anonymous reads of events and gifts. |
 | `supabase/demo-cleanup.sql` | Manual local cleanup. It deletes demo rows. It is not an install step. |
 
-Commented SQL in `docs/upload-rate-limit-proposal.md` is not a file under `supabase/` and is not applied.
+Commented SQL in `docs/upload-rate-limit-proposal.md` is not a database file and is not applied.
 
-`npm run verify:ci` checks that every `supabase/**/*.sql` file is either in a profile or in this skip list.
+`npm run verify:ci` checks that every SQL file under `supabase/` is either in a profile or in this skip list.

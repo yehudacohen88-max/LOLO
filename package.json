@@ -28,7 +28,8 @@
     "db:seed": "node scripts/local-db.mjs seed",
     "verify:audit": "node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/register-test-hooks.mjs --test scripts/verify-audit.ts",
     "verify:ci": "node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/register-test-hooks.mjs --test scripts/verify-ci-guard.ts",
-    "verify:local-db": "node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/register-test-hooks.mjs --test scripts/verify-local-db.ts"
+    "verify:local-db": "node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/register-test-hooks.mjs --test scripts/verify-local-db.ts",
+    "verify:integration": "node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/register-test-hooks.mjs --test scripts/verify-integration-db.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.114.0",
