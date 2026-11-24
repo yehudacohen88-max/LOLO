@@ -1,4 +1,5 @@
 import type { StoredOrder } from "@/lib/orders/types";
+import { paymentIdempotencyKey } from "./idempotency";
 import type {
   CheckoutQuote,
   PaymentOutcome,
@@ -36,7 +37,11 @@ export async function startGuestCheckout(
   const response = await fetch("/api/payments/start", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ orderId, accessToken }),
+    body: JSON.stringify({
+      orderId,
+      accessToken,
+      idempotencyKey: paymentIdempotencyKey(orderId, "start"),
+    }),
   });
   if (!response.ok) {
     throw new Error(await readError(response, "לא ניתן להתחיל את התשלום."));
@@ -52,10 +57,37 @@ export async function confirmGuestCheckout(
   const response = await fetch("/api/payments/confirm", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ orderId, accessToken, outcome }),
+    body: JSON.stringify({
+      orderId,
+      accessToken,
+      outcome,
+      idempotencyKey: paymentIdempotencyKey(
+        orderId,
+        outcome === "success" ? "confirm-success" : "confirm-failure",
+      ),
+    }),
   });
   if (!response.ok) {
     throw new Error(await readError(response, "אישור התשלום נכשל."));
+  }
+  return (await response.json()) as StoredOrder;
+}
+
+export async function cancelGuestCheckout(
+  orderId: string,
+  accessToken: string,
+): Promise<StoredOrder> {
+  const response = await fetch("/api/payments/cancel", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      orderId,
+      accessToken,
+      idempotencyKey: paymentIdempotencyKey(orderId, "cancel"),
+    }),
+  });
+  if (!response.ok) {
+    throw new Error(await readError(response, "לא ניתן לבטל את ההזמנה."));
   }
   return (await response.json()) as StoredOrder;
 }

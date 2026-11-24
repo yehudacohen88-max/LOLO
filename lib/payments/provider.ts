@@ -1,56 +1,20 @@
 import "server-only";
-import type { StoredOrder } from "@/lib/orders/types";
-import { SERVICE_UNAVAILABLE_MESSAGE } from "@/lib/security/required-secret";
-import { demoPaymentProvider } from "./demo-provider";
+import type { PaymentProvider } from "./contract";
+import { demoPaymentProvider, nonePaymentProvider } from "./demo-provider";
+import { createLiveProviderStub } from "./live-stub";
 import { resolveProviderKind } from "./selection";
-import type { PaymentOutcome } from "./types";
 
 /**
  * Server-side payment boundary.
  *
- * startPayment prepares checkout and must not mark an order paid.
- * Only the demo provider confirms from the guest's browser, and only after
- * the order access token is checked. It never collects a card number.
- *
- * A live Israeli provider plugs in later as another implementation:
- * 1. Add a provider object with startPayment that returns a checkoutUrl.
- * 2. Register its name below.
- * 3. Add a webhook route that verifies the provider's signature and then
- *    calls markOrderPaid. Do not trust a browser call for live capture.
- * 4. Set PAYMENT_PROVIDER to that name.
- *
- * Until a live provider is configured, demo is active. That needs no new
- * env var on Vercel. PAYMENT_PROVIDER=none keeps orders pending.
- * An unknown name refuses to run, so it cannot be mistaken for demo or for
- * real money.
+ * PAYMENT_PROVIDER defaults to demo. Demo never moves real money.
+ * "none" keeps orders pending. Any other name returns a stub that fails
+ * closed: there is no live PSP implementation in this package.
+ * A future provider must be added to REAL_PROVIDER_ALLOWLIST and replace
+ * the stub. Until then its name is not real money and its methods throw.
  */
 
-export type ProviderStart = {
-  status: "ready" | "paid" | "unavailable";
-  checkoutUrl?: string;
-};
-
-export type PaymentProvider = {
-  name: string;
-  isDemo: boolean;
-  startPayment: (order: StoredOrder) => Promise<ProviderStart>;
-  confirmDemoPayment?: (input: {
-    orderId: string;
-    accessToken: string;
-    outcome: PaymentOutcome;
-  }) => Promise<StoredOrder>;
-};
-
-const nonePaymentProvider: PaymentProvider = {
-  name: "none",
-  isDemo: false,
-  async startPayment(order) {
-    if (order.paymentStatus === "paid") {
-      return { status: "paid" };
-    }
-    return { status: "unavailable" };
-  },
-};
+const loggedLive = new Set<string>();
 
 export function getPaymentProvider(): PaymentProvider {
   const kind = resolveProviderKind(process.env.PAYMENT_PROVIDER);
@@ -61,18 +25,20 @@ export function getPaymentProvider(): PaymentProvider {
     return nonePaymentProvider;
   }
 
-  console.error(
-    "[LOLO] PAYMENT_PROVIDER is set, but that live provider is not implemented yet.",
-    { provider: process.env.PAYMENT_PROVIDER?.trim().toLowerCase() },
-  );
-  const unavailable = new Error(SERVICE_UNAVAILABLE_MESSAGE);
-  unavailable.name = "ServiceUnavailableError";
-  throw unavailable;
+  const name = process.env.PAYMENT_PROVIDER?.trim().toLowerCase() || "unconfigured";
+  if (!loggedLive.has(name)) {
+    loggedLive.add(name);
+    console.error(
+      "[LOLO] PAYMENT_PROVIDER is set, but that live provider is not implemented yet.",
+      { provider: name },
+    );
+  }
+  return createLiveProviderStub(name);
 }
 
 export function getDemoPaymentProvider() {
   const provider = getPaymentProvider();
-  if (!provider.isDemo || !provider.confirmDemoPayment) {
+  if (!provider.isDemo) {
     return null;
   }
   return provider;

@@ -25,6 +25,7 @@ Next.js 16 (App Router), React 19, TypeScript, Supabase, Tailwind CSS 4, Vercel.
 - `BETA_ACCESS_SECRET`
 - `NEXT_PUBLIC_APP_URL` (אופציונלי)
 - `PAYMENT_PROVIDER` (אופציונלי. ריק = תשלום הדגמה)
+- `PAYMENT_WEBHOOK_SECRET` (אופציונלי. בלי ערך, עדכון תשלום מדומה נדחה)
 
 ## בסיס הנתונים
 
@@ -47,6 +48,8 @@ Next.js 16 (App Router), React 19, TypeScript, Supabase, Tailwind CSS 4, Vercel.
 11. `supabase/demo-checkout.sql`
 12. `supabase/vouchers.sql`
 13. `supabase/settlements.sql`
+
+אחרי אישור, ולא לפני כן, מריצים גם את `supabase/payments-attempts.sql` (אחרי `demo-checkout.sql`). הקובץ מוסיף `payment_attempts` ו־`payment_refunds` ומשאיר את מדיניות ההחזרים ריקה. עד אז התשלום נכשל עם "רישום התשלומים עדיין לא הופעל." לא מריצים אותו על Production מתוך הקוד.
 
 אחרי שהאפליקציה שרצה בפרודקשן קוראת אירוע דרך השרת, מריצים פעם אחת את `supabase/events-anon-read.sql`. הוא סוגר קריאה אנונימית לאירועים ולמתנות, ולא מוחק שורות. לא מריצים אותו לפני שהקוד הזה חי באתר.
 

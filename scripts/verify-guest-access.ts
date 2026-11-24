@@ -74,6 +74,9 @@ describe("guest direct access allowlist", () => {
     ["POST", "/api/checkout/quote"],
     ["POST", "/api/payments/start"],
     ["POST", "/api/payments/confirm"],
+    ["POST", "/api/payments/cancel"],
+    ["POST", "/api/payments/refund"],
+    ["POST", "/api/payments/webhook"],
     ["GET", "/api/invite/identity"],
   ];
 
@@ -100,6 +103,9 @@ describe("guest direct access allowlist", () => {
     ["GET", "/api/stores"],
     ["GET", "/api/checkout/quote"],
     ["GET", "/api/payments/confirm"],
+    ["GET", "/api/payments/webhook"],
+    ["GET", "/api/payments/cancel"],
+    ["GET", "/api/payments/refund"],
     ["POST", "/api/invite/identity"],
     ["GET", "/e/demo-event/extra"],
     ["GET", "/e/../admin"],
