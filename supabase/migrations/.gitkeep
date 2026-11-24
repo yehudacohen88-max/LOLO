@@ -1,0 +1,4 @@
+# This directory is intentionally empty.
+# LOLO SQL files stay in supabase/*.sql and are applied to local Docker by
+# scripts/local-db.mjs. Putting them here would let `supabase db push` send
+# them to a linked hosted database.
