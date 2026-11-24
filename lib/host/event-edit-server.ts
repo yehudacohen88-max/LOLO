@@ -184,11 +184,15 @@ export async function editHostEvent(eventId: string, patch: Record<string, unkno
   if (!planned.ok) {
     throw new Error(planned.error);
   }
-  await writeEventEdit(eventId, planned.plan);
+  await writeEventEdit(eventId, planned.plan, current.gifts);
   return { slug: current.slug };
 }
 
-async function writeEventEdit(eventId: string, plan: EventEditPlan) {
+async function writeEventEdit(
+  eventId: string,
+  plan: EventEditPlan,
+  currentGifts: EventEditGift[],
+) {
   const supabase = getSupabaseServiceClient();
   const details = plan.details;
   const eventPatch: Record<string, string> = {
@@ -215,11 +219,20 @@ async function writeEventEdit(eventId: string, plan: EventEditPlan) {
     return;
   }
 
-  const names = await storeNames(
-    plan.gifts.map((gift) => gift.storeId).filter((id): id is string => Boolean(id)),
-  );
+  const previousStore = new Map(currentGifts.map((gift) => [gift.id, gift.storeId]));
+  const changedStoreIds = [
+    ...new Set(
+      plan.gifts
+        .filter((gift) => Boolean(gift.storeId) && previousStore.get(gift.id) !== gift.storeId)
+        .map((gift) => gift.storeId as string),
+    ),
+  ];
+  const names = await storeNames(changedStoreIds);
   for (const gift of plan.gifts) {
-    if (gift.storeId && !names.get(gift.storeId)) {
+    if (!gift.storeId || previousStore.get(gift.id) === gift.storeId) {
+      continue;
+    }
+    if (!names.get(gift.storeId)) {
       throw new Error("החנות שנבחרה אינה פעילה.");
     }
   }
@@ -235,17 +248,20 @@ async function writeEventEdit(eventId: string, plan: EventEditPlan) {
   }
 
   for (const gift of plan.gifts) {
-    const row = {
+    const keepStore = Boolean(gift.storeId) && previousStore.get(gift.id) === gift.storeId;
+    const row: Record<string, unknown> = {
       title: gift.title,
       description: gift.description,
       target_amount: gift.targetAmount,
       icon: gift.icon,
       image_url: gift.imageUrl,
-      store_id: gift.storeId,
-      store_name: gift.storeId ? (names.get(gift.storeId) ?? "").slice(0, 120) : "",
       priority: gift.priority,
       active: gift.active,
     };
+    if (!keepStore) {
+      row.store_id = gift.storeId;
+      row.store_name = gift.storeId ? (names.get(gift.storeId) ?? "").slice(0, 120) : "";
+    }
     if (gift.isNew) {
       const inserted = await supabase.from("event_gifts").insert({
         id: gift.id,

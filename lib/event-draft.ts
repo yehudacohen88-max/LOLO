@@ -181,7 +181,11 @@ export function resetEventCreationDraft() {
 
   window.localStorage.removeItem(EVENT_DRAFT_KEY);
   clearDraftGifts();
-  window.dispatchEvent(new Event("lolo-draft"));
+  // Listeners update other components. Dispatching during render warns and
+  // can drop the update, so the notice waits until this render finishes.
+  queueMicrotask(() => {
+    window.dispatchEvent(new Event("lolo-draft"));
+  });
 }
 
 export function getVideoPreviewUrl() {
