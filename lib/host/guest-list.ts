@@ -2,6 +2,8 @@ import "server-only";
 import { cookies } from "next/headers";
 import { getSupabaseServiceClient } from "@/lib/supabase/server";
 import { parseGuestInput, type EventGuest } from "@/lib/host/guest-fields";
+import { readStoredSessionVersion } from "@/lib/host/access-version";
+import { hostSessionVersionMatches } from "@/lib/host/session-version";
 import {
   HOST_SESSION_COOKIE,
   readHostSessionToken,
@@ -32,6 +34,10 @@ export async function requireHostEventSession(eventId: string) {
   const jar = await cookies();
   const session = readHostSessionToken(jar.get(HOST_SESSION_COOKIE)?.value);
   if (!session || session.eventId !== eventId) {
+    return null;
+  }
+  const stored = await readStoredSessionVersion(eventId);
+  if (!hostSessionVersionMatches(session, stored)) {
     return null;
   }
   return session;

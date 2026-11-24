@@ -11,7 +11,10 @@ import type {
 } from "@/lib/host/dashboard";
 import { DEMO_MONEY_LABEL, hostMoneyPresentation } from "@/lib/vouchers/demo-funding";
 import CopyGuestLink from "./copy-guest-link";
+import HostEventEditor from "./host-event-editor";
 import HostGuestList from "./host-guest-list";
+import HostIdentityLink from "./host-identity-link";
+import HostVoucherBalances from "./host-voucher-balances";
 import IssueVoucherPanel from "./issue-voucher-panel";
 
 function formatMoney(amount: number) {
@@ -137,6 +140,11 @@ export default function HostDashboard({
             <LoloMark />
           </Link>
           <p className={styles.kicker}>ניהול האירוע</p>
+          {sample ? null : (
+            <p className={styles.help}>
+              <Link href="/host/events">האירועים שלי</Link>
+            </p>
+          )}
           <h1 className={styles.eventTitle} dir="auto">
             {data.title || "האירוע"}
           </h1>
@@ -196,8 +204,10 @@ export default function HostDashboard({
         <nav className={styles.nav} aria-label="ניווט בניהול">
           <a href="#host-summary">סיכום</a>
           <a href="#host-overview">סקירה</a>
+          <a href="#host-edit">עריכה</a>
           <a href="#host-gifts">מתנות</a>
           <a href="#host-orders">הזמנות</a>
+          <a href="#host-balances">יתרות</a>
           <a href="#host-finance">כספים</a>
           <a href="#host-guests">מוזמנים</a>
         </nav>
@@ -242,6 +252,12 @@ export default function HostDashboard({
             </div>
           </div>
         </section>
+        {sample ? null : (
+          <>
+            <HostEventEditor data={data} />
+            <HostIdentityLink eventId={data.eventId} channel={data.recoveryChannel} />
+          </>
+        )}
       </div>
 
       <div className={styles.layout}>
@@ -317,6 +333,7 @@ export default function HostDashboard({
 
         <section className={styles.card} id="host-orders" data-host-shot="orders">
           <h2>הזמנות אורחים</h2>
+          <p className={styles.help}>הסכומים, הברכות והסטטוס נטענים מהשרת.</p>
           {data.orders.length === 0 ? (
             <div className={styles.empty}>
               <p>אין הזמנות עדיין. כשאורחים יבחרו מתנות, ההזמנות יופיעו כאן.</p>
@@ -343,7 +360,7 @@ export default function HostDashboard({
                     </div>
                   ) : null}
                   {order.greetingText ? (
-                    <p className={styles.help}>{order.greetingText}</p>
+                    <p className={styles.help}>ברכה: {order.greetingText}</p>
                   ) : null}
                 </li>
               ))}
@@ -384,12 +401,15 @@ export default function HostDashboard({
           </div>
         </section>
 
+        {sample ? null : <HostVoucherBalances eventId={data.eventId} />}
+
         <div className={styles.wide}>
           <HostGuestList
             eventId={data.eventId}
             eventTitle={data.title}
             origin={origin}
             guests={data.invitedGuests}
+            invitationGreeting={data.invitationGreeting ?? ""}
             disabled={locked}
             legalDrafts={legalDrafts}
           />

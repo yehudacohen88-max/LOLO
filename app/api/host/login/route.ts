@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { hostAccessCodeMatches } from "@/lib/host/access-code";
+import { isMissingColumn } from "@/lib/host/schema-error";
 import { slugFromHostIdentifier } from "@/lib/host/identifier";
 import {
   createHostSessionToken,
@@ -60,15 +61,36 @@ export async function POST(request: Request) {
       .eq("slug", slug)
       .maybeSingle();
 
-    const { data: access } = event
+    const access = event
       ? await supabase
           .from("event_host_access")
-          .select("code_hash")
+          .select("code_hash, session_version")
           .eq("event_id", event.id)
           .maybeSingle()
-      : { data: null };
+      : { data: null, error: null };
 
-    const hash = access?.code_hash ?? "";
+    let hash = "";
+    let sessionVersion: number | "legacy" = "legacy";
+    if (access.error && isMissingColumn(access.error, "session_version") && event) {
+      const plain = await supabase
+        .from("event_host_access")
+        .select("code_hash")
+        .eq("event_id", event.id)
+        .maybeSingle();
+      if (plain.error) {
+        throw plain.error;
+      }
+      hash = plain.data?.code_hash ?? "";
+    } else if (access.error) {
+      throw access.error;
+    } else {
+      hash = access.data?.code_hash ?? "";
+      if (access.data) {
+        const version = Number(access.data.session_version);
+        sessionVersion = Number.isInteger(version) && version >= 0 ? version : 0;
+      }
+    }
+
     const matches = await hostAccessCodeMatches(accessCode, hash);
 
     if (!event || !hash || !matches) {
@@ -76,7 +98,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: GENERIC_ERROR }, { status: 401 });
     }
 
-    const token = createHostSessionToken(event.id);
+    const token =
+      sessionVersion === "legacy"
+        ? createHostSessionToken(event.id)
+        : createHostSessionToken(event.id, sessionVersion);
     const jar = await cookies();
     jar.set(HOST_SESSION_COOKIE, token, hostSessionCookieOptions());
     clearLoginFailures("host", ip);

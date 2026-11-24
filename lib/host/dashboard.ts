@@ -1,4 +1,5 @@
 import "server-only";
+import { loadRecoveryChannel } from "@/lib/host/identity-server";
 import { allocateVoucherPools, isSimulatedPayment, sumPaidPools } from "@/lib/vouchers/demo-funding";
 import { calculateEventFunding } from "@/lib/funding/calculate";
 import { listEventGuests } from "@/lib/host/guest-list";
@@ -48,12 +49,23 @@ export type HostDashboardOrder = {
   simulatedPayment?: boolean;
 };
 
+export type HostRecoveryChannel =
+  | { state: "unavailable" }
+  | { state: "open" }
+  | { state: "linked"; maskedEmail: string };
+
 export type HostDashboardData = {
   eventId: string;
   title: string;
   eventType: string;
   eventDate: string;
+  eventTime: string;
   hostName: string;
+  venueName: string;
+  address: string;
+  message: string;
+  invitationGreeting: string | null;
+  recoveryChannel: HostRecoveryChannel;
   slug: string;
   coverImage: string;
   guestPath: string;
@@ -179,7 +191,9 @@ export async function getHostDashboardData(
   const supabase = getSupabaseServiceClient();
   const { data: event, error: eventError } = await supabase
     .from("events")
-    .select("id, slug, title, host_name, event_type, event_date, cover_image")
+    .select(
+      "id, slug, title, host_name, event_type, event_date, event_time, venue_name, address, message, cover_image",
+    )
     .eq("id", eventId)
     .maybeSingle();
 
@@ -297,12 +311,35 @@ export async function getHostDashboardData(
     };
   });
 
+  const greeting = await supabase
+    .from("events")
+    .select("invitation_greeting")
+    .eq("id", eventId)
+    .maybeSingle();
+  const invitationGreeting = greeting.error
+    ? null
+    : String(greeting.data?.invitation_greeting ?? "");
+  let recoveryChannel: HostRecoveryChannel = { state: "unavailable" };
+  try {
+    recoveryChannel = await loadRecoveryChannel(eventId);
+  } catch (error) {
+    console.error("[LOLO] host recovery channel failed", {
+      message: error instanceof Error ? error.message : "unknown",
+    });
+  }
+
   return {
     eventId: event.id,
     title: String(event.title || ""),
     eventType: String(event.event_type || ""),
     eventDate: String(event.event_date || ""),
+    eventTime: String(event.event_time || ""),
     hostName: String(event.host_name || ""),
+    venueName: String(event.venue_name || ""),
+    address: String(event.address || ""),
+    message: String(event.message || ""),
+    invitationGreeting,
+    recoveryChannel,
     slug: String(event.slug || ""),
     coverImage: String(event.cover_image || ""),
     guestPath: guestEventPath(String(event.slug || "")),

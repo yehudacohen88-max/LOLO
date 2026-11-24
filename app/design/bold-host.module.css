@@ -196,6 +196,15 @@
   color: #3e524c;
 }
 
+.textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.preserve {
+  white-space: pre-wrap;
+}
+
 .primary,
 .secondary {
   display: inline-flex;

@@ -96,7 +96,11 @@ export async function createEvent(
 }
 
 export async function updateEvent(event: StoredEvent): Promise<StoredEvent> {
-  return createEvent(event, []);
+  throw new Error(
+    event.id
+      ? "עריכת אירוע שפורסם נעשית ממסך הניהול."
+      : "עריכת אירוע שפורסם נעשית ממסך הניהול.",
+  );
 }
 
 export function getLastCreatedSlug() {
