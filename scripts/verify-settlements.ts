@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
 import { SettlementLedger } from "../lib/settlements/ledger";
 import {
@@ -9,8 +10,21 @@ import {
   sumMoney,
 } from "../lib/settlements/money";
 import { buildFinanceOverview, buildStoreBalances } from "../lib/settlements/overview";
+import { parseSettlementPolicyInput } from "../lib/settlements/policy-input";
+import { resolvePaymentTermsDays } from "../lib/settlements/policy";
+import { manualPayoutProvider } from "../lib/settlements/payout";
+import { buildReconciliation, reconciliationBalances } from "../lib/settlements/reconcile";
+import { DEMO_SECTION_LABEL, settlementReportCsv } from "../lib/settlements/report-csv";
+import { SETTLEMENT_ROUNDING_RULE } from "../lib/settlements/rounding";
+import { buildStatement, statementReconciles, type StatementSource } from "../lib/settlements/statement";
 
-const CASES: Array<[number, number | null, number, number]> = [
+const POLICY = {
+  rounding: SETTLEMENT_ROUNDING_RULE,
+  fallbackCommissionPercent: null as number | null,
+  fallbackPaymentTermsDays: null as number | null,
+};
+
+const CASES: Array<[number, number, number, number]> = [
   [1000, 8, 80, 920],
   [10.01, 8, 0.8, 9.21],
   [33.33, 8, 2.67, 30.66],
@@ -18,7 +32,6 @@ const CASES: Array<[number, number | null, number, number]> = [
   [0.01, 50, 0.01, 0],
   [19.99, 12.5, 2.5, 17.49],
   [100, 0, 0, 100],
-  [100, null, 0, 100],
   [50, 100, 50, 0],
   [850, 8.33, 70.81, 779.19],
   [999.99, 2.5, 25, 974.99],
@@ -27,7 +40,7 @@ const CASES: Array<[number, number | null, number, number]> = [
 
 describe("commission rounding", () => {
   it("splits 1,000 at 8% into 80 for LOLO and 920 for the store", () => {
-    const split = splitCommission(1000, 8);
+    const split = splitCommission(1000, 8, POLICY.rounding);
     assert.equal(split.grossAmount, 1000);
     assert.equal(split.commissionAmount, 80);
     assert.equal(split.payableAmount, 920);
@@ -36,7 +49,7 @@ describe("commission rounding", () => {
 
   it("rounds odd amounts half up to the agora and keeps payable + commission = gross", () => {
     for (const [gross, percent, commission, payable] of CASES) {
-      const split = splitCommission(gross, percent);
+      const split = splitCommission(gross, percent, POLICY.rounding);
       assert.equal(split.commissionAmount, commission, `${gross} at ${percent}%`);
       assert.equal(split.payableAmount, payable, `${gross} at ${percent}%`);
       assert.equal(
@@ -46,8 +59,15 @@ describe("commission rounding", () => {
       assert.ok(split.commissionAmount >= 0);
       assert.ok(split.payableAmount >= 0);
     }
-    assert.equal(splitCommission(100, null).commissionSpecified, false);
-    assert.equal(splitCommission(100, 0).commissionSpecified, true);
+    assert.throws(
+      () => splitCommission(100, null, POLICY.rounding),
+      /settlement_commission_unspecified/,
+    );
+    assert.equal(splitCommission(100, 0, POLICY.rounding).commissionSpecified, true);
+    assert.throws(
+      () => splitCommission(100, 8, null),
+      /settlement_rounding_unspecified/,
+    );
   });
 });
 
@@ -55,10 +75,17 @@ describe("due dates use snapshotted payment terms", () => {
   it("adds payment terms to the redemption time, and the batch is due at the earliest line", () => {
     const early = settlementDueAt("2026-10-01T00:00:00.000Z", 30);
     const sooner = settlementDueAt("2026-10-20T00:00:00.000Z", 0);
-    const missing = settlementDueAt("2026-10-01T00:00:00.000Z", null);
+    const explicitNow = settlementDueAt(
+      "2026-10-01T00:00:00.000Z",
+      resolvePaymentTermsDays(null, { ...POLICY, fallbackPaymentTermsDays: 0 }).days,
+    );
     assert.equal(early, "2026-10-31T00:00:00.000Z");
     assert.equal(sooner, "2026-10-20T00:00:00.000Z");
-    assert.equal(missing, "2026-10-01T00:00:00.000Z");
+    assert.equal(explicitNow, "2026-10-01T00:00:00.000Z");
+    assert.throws(
+      () => settlementDueAt("2026-10-01T00:00:00.000Z", null),
+      /settlement_terms_unspecified/,
+    );
     assert.equal(earliestDueAt([early, sooner]), sooner);
     assert.equal(
       isSettlementOverdue("PENDING", early, Date.parse("2026-11-01T00:00:00.000Z")),
@@ -108,7 +135,7 @@ describe("settlement batches", () => {
   }
 
   it("never puts one redemption in two settlements, even when creation races", async () => {
-    const ledger = new SettlementLedger();
+    const ledger = new SettlementLedger(POLICY);
     seed(ledger);
     const [first, second] = await Promise.all([
       ledger.create(store, "key-a"),
@@ -135,7 +162,7 @@ describe("settlement batches", () => {
   });
 
   it("keeps payable + commission = gross and sets the due date from the earliest redemption", async () => {
-    const ledger = new SettlementLedger();
+    const ledger = new SettlementLedger(POLICY);
     seed(ledger);
     const created = await ledger.create(store, "batch-1");
     assert.equal(created.ok, true);
@@ -158,7 +185,7 @@ describe("settlement batches", () => {
   });
 
   it("marks a settlement paid once and leaves the first payment record in place", async () => {
-    const ledger = new SettlementLedger();
+    const ledger = new SettlementLedger(POLICY);
     seed(ledger);
     const created = await ledger.create(store, "batch-paid");
     assert.equal(created.ok, true);
@@ -198,7 +225,7 @@ describe("settlement batches", () => {
   });
 
   it("releases redemptions when a pending settlement is cancelled, then allows one new batch", async () => {
-    const ledger = new SettlementLedger();
+    const ledger = new SettlementLedger(POLICY);
     seed(ledger);
     const created = await ledger.create(store, "batch-cancel");
     assert.equal(created.ok, true);
@@ -260,6 +287,7 @@ describe("LOLO revenue keeps guest fees out of the store payable", () => {
         },
       ],
       now: Date.parse("2026-10-07T00:00:00.000Z"),
+      policy: POLICY,
     });
 
     assert.equal(overview.paidContribution, 1010.01);
@@ -284,6 +312,7 @@ describe("LOLO revenue keeps guest fees out of the store payable", () => {
         { storeId: "store-1", status: "PENDING", payableAmount: 9.21 },
         { storeId: "store-1", status: "PAID", payableAmount: 100 },
       ],
+      POLICY,
     );
     assert.equal(balances.length, 1);
     assert.equal(balances[0]?.unsettledPayable, 920);
@@ -293,3 +322,305 @@ describe("LOLO revenue keeps guest fees out of the store payable", () => {
     assert.equal(balances[0]?.paidPayable, 100);
   });
 });
+
+describe("demo redemptions stay out of a batch", () => {
+  it("leaves a demo redemption UNSETTLED and out of the payable total", async () => {
+    const ledger = new SettlementLedger(POLICY);
+    ledger.addRedemption({
+      id: "demo-redemption",
+      storeId: "store-1",
+      voucherId: "voucher-demo",
+      fullyRedeemed: true,
+      gross: 400,
+      commissionPercent: null,
+      paymentTermsDays: null,
+      redeemedAt: "2026-10-01T00:00:00.000Z",
+      demoOnly: true,
+    });
+    ledger.addRedemption({
+      id: "real-redemption",
+      storeId: "store-1",
+      voucherId: "voucher-real",
+      fullyRedeemed: true,
+      gross: 1000,
+      commissionPercent: 8,
+      paymentTermsDays: 30,
+      redeemedAt: "2026-10-01T00:00:00.000Z",
+    });
+
+    const created = await ledger.create("store-1", "batch-demo");
+    assert.equal(created.ok, true);
+    if (!created.ok) {
+      return;
+    }
+    assert.deepEqual(
+      created.settlement.lines.map((line) => line.redemptionId),
+      ["real-redemption"],
+    );
+    assert.equal(created.settlement.grossAmount, 1000);
+    assert.equal(created.settlement.commissionAmount, 80);
+    assert.equal(created.settlement.payableAmount, 920);
+    assert.equal(
+      sumMoney([created.settlement.commissionAmount, created.settlement.payableAmount]),
+      created.settlement.grossAmount,
+    );
+    assert.equal(ledger.redemptionStatus("demo-redemption"), "UNSETTLED");
+    assert.equal(ledger.redemptionStatus("real-redemption"), "SETTLEMENT_PENDING");
+
+    const onlyDemo = new SettlementLedger(POLICY);
+    onlyDemo.addRedemption({
+      id: "demo-only",
+      storeId: "store-1",
+      voucherId: "voucher-demo",
+      fullyRedeemed: true,
+      gross: 50,
+      commissionPercent: 8,
+      paymentTermsDays: 0,
+      redeemedAt: "2026-10-02T00:00:00.000Z",
+      demoOnly: true,
+    });
+    const skipped = await onlyDemo.create("store-1", "batch-only-demo");
+    assert.deepEqual(skipped, { ok: false, reason: "none" });
+    assert.equal(onlyDemo.redemptionStatus("demo-only"), "UNSETTLED");
+    assert.equal(onlyDemo.settlements.length, 0);
+  });
+});
+
+describe("null commission is refused", () => {
+  it("does not treat a missing snapshot as 0% and does not open a batch", async () => {
+    const ledger = new SettlementLedger(POLICY);
+    ledger.addRedemption({
+      id: "missing-commission",
+      storeId: "store-1",
+      voucherId: "voucher-1",
+      fullyRedeemed: true,
+      gross: 1000,
+      commissionPercent: null,
+      paymentTermsDays: 30,
+      redeemedAt: "2026-10-01T00:00:00.000Z",
+    });
+    await assert.rejects(() => ledger.create("store-1", "batch-null"), /settlement_commission_unspecified/);
+    assert.equal(ledger.settlements.length, 0);
+    assert.equal(ledger.redemptionStatus("missing-commission"), "UNSETTLED");
+  });
+
+  it("uses an explicit platform default and still reconciles the total", async () => {
+    const ledger = new SettlementLedger({
+      ...POLICY,
+      fallbackCommissionPercent: 8,
+      fallbackPaymentTermsDays: 30,
+    });
+    ledger.addRedemption({
+      id: "fallback-commission",
+      storeId: "store-1",
+      voucherId: "voucher-1",
+      fullyRedeemed: true,
+      gross: 1000,
+      commissionPercent: null,
+      paymentTermsDays: null,
+      redeemedAt: "2026-10-01T00:00:00.000Z",
+    });
+    const created = await ledger.create("store-1", "batch-fallback");
+    assert.equal(created.ok, true);
+    if (!created.ok) {
+      return;
+    }
+    assert.equal(created.settlement.commissionAmount, 80);
+    assert.equal(created.settlement.payableAmount, 920);
+    assert.equal(created.settlement.dueAt, "2026-10-31T00:00:00.000Z");
+    assert.equal(
+      sumMoney([created.settlement.commissionAmount, created.settlement.payableAmount]),
+      created.settlement.grossAmount,
+    );
+  });
+
+  it("does not turn an empty settings field into 0%", () => {
+    const parsed = parseSettlementPolicyInput({
+      defaultCommissionPercent: "",
+      defaultPaymentTermsDays: "",
+      moneyRounding: "",
+    });
+    assert.equal(parsed.fallbackCommissionPercent, null);
+    assert.equal(parsed.fallbackPaymentTermsDays, null);
+    assert.equal(parsed.rounding, null);
+    assert.throws(
+      () => parseSettlementPolicyInput({ moneyRounding: "half_up" }),
+      /כלל העיגול/,
+    );
+  });
+});
+
+describe("statement totals reconcile and demo is labeled", () => {
+  const sources: StatementSource[] = [
+    {
+      id: "real",
+      storeId: "store-1",
+      storeName: "חנות",
+      gross: 1000,
+      commissionPercent: 8,
+      paymentTermsDays: 30,
+      redeemedAt: "2026-10-01T00:00:00.000Z",
+      voucherCode: "REAL",
+      giftTitle: "מתנה",
+      eventTitle: "אירוע",
+      demoOnly: false,
+      settlementId: "settlement-1",
+      settlementStatus: "SETTLED",
+      paidAt: "2026-11-01T00:00:00.000Z",
+      paymentReference: "transfer-1",
+      paymentMethod: "bank_transfer",
+      stored: {
+        commissionPercent: 8,
+        commissionSpecified: true,
+        commissionAmount: 80,
+        payableAmount: 920,
+        paymentTermsDays: 30,
+        termsSpecified: true,
+        dueAt: "2026-10-31T00:00:00.000Z",
+      },
+    },
+    {
+      id: "demo",
+      storeId: "store-1",
+      storeName: "חנות",
+      gross: 400,
+      commissionPercent: null,
+      paymentTermsDays: null,
+      redeemedAt: "2026-10-02T00:00:00.000Z",
+      voucherCode: "DEMO",
+      giftTitle: "הדגמה",
+      eventTitle: "אירוע",
+      demoOnly: true,
+      settlementId: null,
+      settlementStatus: "UNSETTLED",
+      paidAt: null,
+      paymentReference: null,
+      paymentMethod: null,
+      stored: null,
+    },
+    {
+      id: "missing",
+      storeId: "store-1",
+      storeName: "חנות",
+      gross: 50,
+      commissionPercent: null,
+      paymentTermsDays: 0,
+      redeemedAt: "2026-10-03T00:00:00.000Z",
+      voucherCode: "NONE",
+      giftTitle: "בלי עמלה",
+      eventTitle: "אירוע",
+      demoOnly: false,
+      settlementId: null,
+      settlementStatus: "UNSETTLED",
+      paidAt: null,
+      paymentReference: null,
+      paymentMethod: null,
+      stored: null,
+    },
+  ];
+
+  it("keeps demo and a null commission out of the payable total", () => {
+    const statement = buildStatement(sources, POLICY);
+    assert.equal(statementReconciles(statement.totals), true);
+    assert.equal(statement.totals.payableGross, 1000);
+    assert.equal(statement.totals.payableCommission, 80);
+    assert.equal(statement.totals.payableAmount, 920);
+    assert.equal(statement.totals.demoGross, 400);
+    assert.equal(statement.totals.demoCount, 1);
+    assert.equal(statement.totals.blockedCount, 1);
+    assert.equal(statement.rows.find((row) => row.id === "demo")?.section, "demo");
+    assert.equal(statement.rows.find((row) => row.id === "demo")?.payableAmount, null);
+    assert.equal(statement.rows.find((row) => row.id === "missing")?.section, "blocked");
+
+    const report = buildReconciliation(statement.rows, [
+      {
+        id: "settlement-1",
+        storeId: "store-1",
+        storeName: "חנות",
+        status: "PAID",
+        grossAmount: 1000,
+        commissionAmount: 80,
+        payableAmount: 920,
+        paymentReference: "transfer-1",
+        lineRedemptionIds: ["real"],
+      },
+    ]);
+    assert.equal(reconciliationBalances(report), true);
+    assert.equal(report.markedPaid, 920);
+    assert.equal(report.settledFromLines, 920);
+    assert.equal(report.expectedOutstanding, 0);
+    assert.equal(report.discrepancies.some((item) => item.kind === "amount"), false);
+    assert.equal(report.discrepancies.some((item) => item.kind === "blocked"), true);
+
+    const csv = settlementReportCsv(statement.rows);
+    assert.match(csv, new RegExp(DEMO_SECTION_LABEL));
+    assert.match(csv, /DEMO/);
+    assert.doesNotMatch(csv, /DEMO,[\s\S]*400,8,/);
+  });
+
+  it("reports a discrepancy when marked-paid does not match the lines", () => {
+    const statement = buildStatement(sources.filter((source) => source.id === "real"), POLICY);
+    const report = buildReconciliation(statement.rows, [
+      {
+        id: "settlement-1",
+        storeId: "store-1",
+        storeName: "חנות",
+        status: "PAID",
+        grossAmount: 1000,
+        commissionAmount: 80,
+        payableAmount: 900,
+        paymentReference: null,
+        lineRedemptionIds: ["real"],
+      },
+    ]);
+    assert.equal(reconciliationBalances(report), false);
+    assert.equal(report.markedPaid, 900);
+    assert.equal(report.settledFromLines, 920);
+    assert.equal(report.discrepancies.some((item) => item.kind === "amount"), true);
+    assert.equal(report.discrepancies.some((item) => item.kind === "reference"), true);
+  });
+});
+
+describe("manual payout provider", () => {
+  it("records the operator mark and does not call the network", async () => {
+    const calls: string[] = [];
+    const original = globalThis.fetch;
+    globalThis.fetch = async () => {
+      calls.push("fetch");
+      throw new Error("payout provider called the network");
+    };
+    try {
+      const receipt = await manualPayoutProvider.recordOperatorMark({
+        settlementId: "settlement-1",
+        reference: "transfer-1",
+        method: "manual",
+      });
+      assert.equal(manualPayoutProvider.movesMoney, false);
+      assert.equal(receipt.recorded, true);
+      assert.equal(receipt.movedMoney, false);
+      assert.equal(receipt.externalCall, false);
+      assert.equal(calls.length, 0);
+    } finally {
+      globalThis.fetch = original;
+    }
+  });
+});
+
+describe("settlement SQL excludes demo and refuses a null commission", () => {
+  const sql = readFileSync(new URL("../supabase/settlement-exclude-demo.sql", import.meta.url), "utf8");
+
+  it("matches the shared rounding rule and does not invent a rate", () => {
+    assert.match(sql, new RegExp(SETTLEMENT_ROUNDING_RULE));
+    assert.match(sql, /v\.demo_only is not true/);
+    assert.match(sql, /settlement_demo_excluded/);
+    assert.match(sql, /settlement_commission_unspecified/);
+    assert.match(sql, /settlement_terms_unspecified/);
+    assert.match(sql, /settlement_rounding_unspecified/);
+    assert.match(sql, /create or replace function public\.create_store_settlement/);
+    assert.doesNotMatch(sql, /coalesce\(\s*p_percent\s*,\s*0\s*\)/);
+    assert.doesNotMatch(sql, /coalesce\(\s*redemption\.commission_percent_snapshot\s*,\s*0\s*\)/);
+    assert.doesNotMatch(sql, /coalesce\(\s*redemption\.payment_terms_days_snapshot\s*,\s*0\s*\)/);
+    assert.doesNotMatch(sql, /add column if not exists demo_only/);
+  });
+});
+

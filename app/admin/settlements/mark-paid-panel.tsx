@@ -46,7 +46,8 @@ export default function MarkPaidPanel({
     <section className="rounded-3xl border border-border bg-white p-5">
       <h2 className="text-lg font-bold">סימון כשולם</h2>
       <p className="mt-2 text-sm leading-relaxed text-muted">
-        הסכום לתשלום לבית העסק הוא {payableLabel}. בגרסת ההדגמה התשלום מתועד כאן ואינו העברה בנקאית.
+        הסכום לתשלום לבית העסק הוא {payableLabel}. הסימון נשמר כפעולה של מפעיל, עם אסמכתה אם יש. לא
+        נשלחת בקשה לספק תשלומים ולא זז כסף.
       </p>
       <label className="mt-4 flex flex-col gap-2 text-sm font-semibold">
         אופן התשלום

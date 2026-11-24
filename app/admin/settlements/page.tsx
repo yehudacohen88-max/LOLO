@@ -4,7 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { getAdminSession } from "@/lib/admin/session";
 import { settlementsEnabled } from "@/lib/settlements/availability";
 import { formatGiftAmount } from "@/lib/guest-draft";
-import { settlementBatchLabel } from "@/lib/settlements/labels";
+import { DEMO_REDEMPTION_LABEL, settlementBatchLabel } from "@/lib/settlements/labels";
 import { SETTLEMENT_SCHEMA_MESSAGE } from "@/lib/settlements/messages";
 import { listSettlements, listStoreBalances } from "@/lib/settlements/repository";
 import { SETTLEMENT_STATUSES, type SettlementStatus } from "@/lib/settlements/types";
@@ -80,10 +80,23 @@ export default async function AdminSettlementsPage({ searchParams }: PageProps) 
       </header>
 
       <p className="mt-4 max-w-3xl text-sm leading-relaxed text-muted">
-        העמלה מעוגלת לאגורה הקרובה. חצי אגורה ומעלה מעוגלת כלפי מעלה, והיתרה היא הסכום לבית העסק.
-        תאריך היעד הוא מועד המימוש ועוד ימי התשלום שנשמרו באותו מימוש. כשיש כמה מימושים, היעד הוא
-        המועד המוקדם ביותר. דמי השירות מאורחים אינם חלק מהסכום לבית העסק.
+        העמלה מחושבת מהאחוז שנשמר במימוש. אם לא נשמר אחוז, משתמשים בברירת המחדל מההגדרות. בלי אף אחד
+        מהם אי אפשר ליצור התחשבנות, ואין המרה שקטה ל־0%. כלל העיגול הוא זה שנשמר בהגדרות. כשהכלל הוא
+        חצי הרחק מאפס, חצי אגורה ומעלה מעוגלת כלפי מעלה, והיתרה היא הסכום לבית העסק. תאריך היעד הוא
+        מועד המימוש ועוד ימי התשלום שנשמרו, או ברירת המחדל מההגדרות. מימוש של שובר הדגמה נשאר מחוץ
+        להתחשבנות ומסומן בנפרד. דמי השירות מאורחים אינם חלק מהסכום לבית העסק.
       </p>
+      <div className="mt-4 flex flex-wrap gap-4 text-sm font-semibold">
+        <Link href="/admin/settlements/report" className="text-brand">
+          דוח
+        </Link>
+        <Link href="/admin/settlements/reconciliation" className="text-brand">
+          התאמה
+        </Link>
+        <a href="/api/admin/settlements/report" className="text-brand">
+          הורדת CSV
+        </a>
+      </div>
 
       {loadError ? <p className="mt-6 text-sm text-brand">{loadError}</p> : null}
 
@@ -125,10 +138,22 @@ export default async function AdminSettlementsPage({ searchParams }: PageProps) 
                       ? ` · עמלה ${formatGiftAmount(balance.unsettledCommission)}`
                       : ""}
                   </p>
+                  {balance.demoCount > 0 ? (
+                    <p className="mt-2 text-sm text-muted">
+                      {DEMO_REDEMPTION_LABEL}: {formatGiftAmount(balance.demoGross)} (
+                      {balance.demoCount.toLocaleString("he-IL")})
+                    </p>
+                  ) : null}
+                  {balance.unpricedCount > 0 ? (
+                    <p className="mt-2 text-sm text-brand">
+                      {balance.unpricedCount.toLocaleString("he-IL")} מימושים בלי אחוז עמלה או בלי
+                      כלל עיגול. אי אפשר ליצור התחשבנות עד שיוגדרו.
+                    </p>
+                  ) : null}
                   <div className="mt-4">
                     <CreateSettlementButton
                       storeId={balance.storeId}
-                      disabled={balance.unsettledCount === 0}
+                      disabled={balance.unsettledCount === 0 || balance.unpricedCount > 0}
                     />
                   </div>
                 </li>

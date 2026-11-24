@@ -9,8 +9,8 @@ export class SettlementActionError extends Error {
 }
 
 export class SettlementSchemaMissingError extends Error {
-  constructor() {
-    super(SETTLEMENT_SCHEMA_MESSAGE);
+  constructor(message = SETTLEMENT_SCHEMA_MESSAGE) {
+    super(message);
     this.name = "SettlementSchemaMissingError";
   }
 }
@@ -44,6 +44,22 @@ const MESSAGES: Record<string, { text: string; status: number }> = {
   settlement_line_immutable: { text: "אי אפשר לשנות שורת התחשבנות.", status: 400 },
   settlement_delete_blocked: { text: "אי אפשר למחוק התחשבנות.", status: 400 },
   settlement_immutable: { text: "אי אפשר לשנות את סכומי ההתחשבנות.", status: 400 },
+  settlement_commission_unspecified: {
+    text: "אין אחוז עמלה למימוש, ואין ברירת מחדל בהגדרות.",
+    status: 409,
+  },
+  settlement_terms_unspecified: {
+    text: "אין ימי תשלום למימוש, ואין ברירת מחדל בהגדרות.",
+    status: 409,
+  },
+  settlement_rounding_unspecified: {
+    text: "כלל העיגול לא הוגדר בהגדרות.",
+    status: 409,
+  },
+  settlement_demo_excluded: {
+    text: "מימוש מהדגמה לא נכנס להתחשבנות.",
+    status: 409,
+  },
 };
 
 export function settlementErrorCode(message: string) {
@@ -76,5 +92,27 @@ export function isMissingSettlementSchema(error: { code?: string; message?: stri
     return false;
   }
   const message = (error.message ?? "").toLowerCase();
-  return message.includes("settlement") || message.includes("redemption");
+  return (
+    message.includes("settlement") ||
+    message.includes("redemption") ||
+    message.includes("demo_only") ||
+    message.includes("money_rounding") ||
+    message.includes("default_commission_percent") ||
+    message.includes("default_payment_terms_days")
+  );
+}
+
+export function isMissingOptionalSettlementColumn(
+  error: { code?: string; message?: string } | null,
+  column: string,
+) {
+  if (!error) {
+    return false;
+  }
+  const code = error.code ?? "";
+  const known = code === "42703" || code === "PGRST204" || code === "PGRST205";
+  if (!known) {
+    return false;
+  }
+  return (error.message ?? "").toLowerCase().includes(column.toLowerCase());
 }

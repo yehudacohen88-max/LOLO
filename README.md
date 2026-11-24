@@ -48,12 +48,13 @@ Next.js 16 (App Router), React 19, TypeScript, Supabase, Tailwind CSS 4, Vercel.
 11. `supabase/demo-checkout.sql`
 12. `supabase/vouchers.sql`
 13. `supabase/settlements.sql` — לא הורץ ב־Production של הפיילוט. לא מריצים אותו עד אישור. המסכים וה־API של ההתחשבנות סגורים כל עוד `SETTLEMENTS_ENABLED` לא הוגדר במפורש ל־`true`.
+14. `supabase/settlement-exclude-demo.sql` — רק אחרי `settlements.sql` ואחרי `pilot-demo-voucher-guard.sql` (הקובץ שמגדיר את `vouchers.demo_only`, לא בפיילוט הזה). מחליף את `create_store_settlement` כך שמימוש של שובר `demo_only` לא נכנס להתחשבנות. לא מריצים עד אישור, ולא מריצים על Production מהפריסה.
 
 אחרי שהאפליקציה שרצה בפרודקשן קוראת אירוע דרך השרת, מריצים פעם אחת את `supabase/events-anon-read.sql`. הוא סוגר קריאה אנונימית לאירועים ולמתנות, ולא מוחק שורות. לא מריצים אותו לפני שהקוד הזה חי באתר.
 
 אירוע הדגמה, אופציונלי ולא הורס נתונים קיימים:
 
-14. `supabase/demo-seed.sql`
+15. `supabase/demo-seed.sql`
 
 מחיקה של שורות ההדגמה בלבד: `supabase/demo-cleanup.sql`. פרטי הכניסה והמסלול: `docs/DEMO.md`.
 
@@ -61,6 +62,7 @@ Next.js 16 (App Router), React 19, TypeScript, Supabase, Tailwind CSS 4, Vercel.
 
 - `supabase/pilot-feedback.sql` — טבלת משוב. בלי הטבלה, `/feedback` נשאר סגור.
 - `supabase/pilot-isolate-test-data.sql` — הצעת בידוד. החלק שכותב בהערה ומסתיים ב־`ROLLBACK`.
+- `supabase/settlement-exclude-demo.sql` — אחרי `settlements.sql` ואחרי `pilot-demo-voucher-guard.sql`. לא מריצים לפני שניהם.
 
 `supabase/readonly/test-data-inventory.sql` הוא `SELECT` בלבד. רשימת החנויות והאירועים: `docs/pilot/test-data-inventory.md`.
 
