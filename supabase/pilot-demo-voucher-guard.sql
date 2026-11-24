@@ -9,9 +9,11 @@
 -- rejects the same calls even if they come from the service role directly.
 -- anon and authenticated still cannot execute these functions.
 --
--- A paid order counts as real money only when payment_provider is a non-empty
--- name other than "demo" and payment_reference does not start with "demo-".
--- Null, blank, and demo providers are simulated. Demo vouchers are labeled
+-- A paid order counts as real money only when payment_provider_is_real
+-- returns true and payment_reference does not start with "demo-".
+-- payment_provider_is_real stays false until a live provider is reviewed.
+-- "demo" and "none" are never real. Every other name is simulated too,
+-- including a name that is merely not "demo". Demo vouchers are labeled
 -- in the app and cannot be redeemed.
 
 alter table public.vouchers
@@ -19,6 +21,40 @@ alter table public.vouchers
 
 comment on column public.vouchers.demo_only is
   'True when the voucher was funded only by a demo or simulated payment. It has no monetary value and cannot be redeemed.';
+
+-- Empty on purpose. A reviewed provider is inserted here, not inferred from
+-- "anything except demo". "demo" and "none" cannot be inserted.
+create table if not exists public.payment_provider_allowlist (
+  provider text primary key,
+  constraint payment_provider_allowlist_name check (
+    provider = lower(provider)
+    and char_length(provider) > 0
+    and provider <> 'demo'
+    and provider <> 'none'
+  )
+);
+
+alter table public.payment_provider_allowlist enable row level security;
+revoke all on table public.payment_provider_allowlist from public, anon, authenticated;
+
+create or replace function public.payment_provider_is_real(p_provider text)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1
+    from public.payment_provider_allowlist
+    where provider = lower(btrim(coalesce(p_provider, '')))
+  );
+$$;
+
+comment on function public.payment_provider_is_real(text) is
+  'True only for a name stored in payment_provider_allowlist. That table ships empty.';
+comment on table public.payment_provider_allowlist is
+  'Providers that may count as real money. Ships empty. demo and none are rejected.';
 
 create or replace function public.voucher_paid_amount(p_gift_id uuid, p_event_id uuid)
 returns numeric
@@ -34,9 +70,7 @@ as $$
     and o.event_id = p_event_id
     and o.payment_status = 'paid'
     and oi.amount > 0
-    and o.payment_provider is not null
-    and btrim(o.payment_provider) <> ''
-    and lower(btrim(o.payment_provider)) <> 'demo'
+    and public.payment_provider_is_real(o.payment_provider)
     and coalesce(o.payment_reference, '') not like 'demo-%';
 $$;
 
@@ -54,11 +88,9 @@ as $$
     and o.event_id = p_event_id
     and o.payment_status = 'paid'
     and oi.amount > 0
-    and (
-      o.payment_provider is null
-      or btrim(o.payment_provider) = ''
-      or lower(btrim(o.payment_provider)) = 'demo'
-      or coalesce(o.payment_reference, '') like 'demo-%'
+    and not (
+      public.payment_provider_is_real(o.payment_provider)
+      and coalesce(o.payment_reference, '') not like 'demo-%'
     );
 $$;
 
@@ -571,6 +603,7 @@ begin
     join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'public'
       and p.proname in (
+        'payment_provider_is_real',
         'voucher_paid_amount',
         'voucher_simulated_amount',
         'voucher_committed_amount',

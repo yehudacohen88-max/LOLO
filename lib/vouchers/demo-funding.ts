@@ -1,5 +1,5 @@
 import { roundMoney } from "@/lib/money";
-import { isAllowListedRealProvider, REAL_PROVIDER_ALLOWLIST } from "@/lib/payments/allowlist";
+import { activeRealProviderAllowlist, isAllowListedRealProvider } from "@/lib/payments/allowlist";
 
 /** Exact label for a voucher that must not be treated as money. */
 export const DEMO_VOUCHER_LABEL = "שובר הדגמה – ללא ערך כספי";
@@ -30,7 +30,7 @@ export type VoucherPoolSlice = {
  */
 export function isSimulatedPayment(
   slice: PaidSlice,
-  allowlist: readonly string[] = REAL_PROVIDER_ALLOWLIST,
+  allowlist: readonly string[] = activeRealProviderAllowlist(),
 ) {
   if (slice.paymentStatus !== "paid") {
     return false;
