@@ -8,7 +8,13 @@ import {
   listAdminStores,
 } from "@/lib/admin/stores";
 import { roundMoney } from "@/lib/money";
+import { manualPayoutProvider } from "@/lib/settlements/payout";
 import { buildFinanceOverview, buildStoreBalances } from "@/lib/settlements/overview";
+import {
+  loadOverviewRedemptions,
+  readSettlementPolicy,
+  settlementRoundingForOverview,
+} from "@/lib/settlements/reports";
 import {
   isMissingSettlementSchema,
   settlementErrorCode,
@@ -96,10 +102,17 @@ function throwSettlementDbError(error: DbError): never {
     console.error("[LOLO] settlement", { code: error.code, message: error.message });
   }
   if (isMissingSettlementSchema(error)) {
+    const missingDemo = (error.message ?? "").toLowerCase().includes("demo_only");
     console.error(
-      "[LOLO] Settlement schema is missing. Run supabase/settlements.sql after supabase/vouchers.sql.",
+      missingDemo
+        ? "[LOLO] Settlement needs vouchers.demo_only. Apply pilot-demo-voucher-guard.sql before settlement-exclude-demo.sql."
+        : "[LOLO] Settlement schema is missing. Run supabase/settlements.sql after supabase/vouchers.sql.",
     );
-    throw new SettlementSchemaMissingError();
+    throw new SettlementSchemaMissingError(
+      missingDemo
+        ? "ההתחשבנות עדיין לא הופעלה. קודם מחילים את קובץ שומר ההדגמה, ואז את קובץ ההחרגה."
+        : undefined,
+    );
   }
   const code = settlementErrorCode(error.message);
   if (code) {
@@ -261,15 +274,17 @@ export async function getSettlement(id: string): Promise<SettlementDetail | null
 export async function listStoreBalances() {
   assertSettlementsEnabled();
   const supabase = getSupabaseServiceClient();
+  const policy = await readSettlementPolicy();
   const stores = await listAdminStores();
   const redemptions = await fetchPages<{
     store_id: string;
     amount: number | string;
     commission_percent_snapshot: number | string | null;
+    vouchers: { demo_only?: boolean | null } | { demo_only?: boolean | null }[] | null;
   }>((from, to) =>
     supabase
       .from("redemptions")
-      .select("store_id, amount, commission_percent_snapshot")
+      .select("store_id, amount, commission_percent_snapshot, vouchers!inner(demo_only)")
       .eq("settlement_status", "UNSETTLED")
       .order("id", { ascending: true })
       .range(from, to),
@@ -289,19 +304,24 @@ export async function listStoreBalances() {
 
   return buildStoreBalances(
     stores.map((store) => ({ id: store.id, name: store.name })),
-    redemptions.map((row) => ({
-      storeId: row.store_id,
-      amount: money(row.amount),
-      commissionPercent:
-        row.commission_percent_snapshot == null || row.commission_percent_snapshot === ""
-          ? null
-          : Number(row.commission_percent_snapshot),
-    })),
+    redemptions.map((row) => {
+      const voucher = Array.isArray(row.vouchers) ? row.vouchers[0] : row.vouchers;
+      return {
+        storeId: row.store_id,
+        amount: money(row.amount),
+        commissionPercent:
+          row.commission_percent_snapshot == null || row.commission_percent_snapshot === ""
+            ? null
+            : Number(row.commission_percent_snapshot),
+        demoOnly: voucher?.demo_only === true,
+      };
+    }),
     settlements.map((row) => ({
       storeId: row.store_id,
       status: row.status,
       payableAmount: money(row.payable_amount),
     })),
+    policy,
   );
 }
 
@@ -347,6 +367,14 @@ export async function markSettlementPaid(
   method: SettlementMethod | null,
 ) {
   assertSettlementsEnabled();
+  const recorded = await manualPayoutProvider.recordOperatorMark({
+    settlementId,
+    reference,
+    method,
+  });
+  if (recorded.movedMoney || recorded.externalCall) {
+    throw new SettlementActionError("סימון התשלום לא הושלם.");
+  }
   const supabase = getSupabaseServiceClient();
   const { data, error } = await supabase.rpc("mark_settlement_paid", {
     p_settlement_id: settlementId,
@@ -381,6 +409,9 @@ export async function getAdminFinanceOverview(now = Date.now()) {
   ]);
 
   let settlementsReady = settlementsEnabled();
+  const storedPolicy = await readSettlementPolicy();
+  const policy = settlementRoundingForOverview(storedPolicy, settlementsReady);
+  let demoClassificationReady = true;
   let paidOrders: {
     total_amount: number | string | null;
     fee_amount: number | string | null;
@@ -390,6 +421,7 @@ export async function getAdminFinanceOverview(now = Date.now()) {
     amount: number | string;
     commission_percent_snapshot: number | string | null;
     settlement_status: string;
+    demoOnly: boolean;
   }[] = [];
   let settlementRows: {
     id: string;
@@ -417,13 +449,9 @@ export async function getAdminFinanceOverview(now = Date.now()) {
         .order("id", { ascending: true })
         .range(from, to),
     );
-    redemptions = await fetchPages((from, to) =>
-      supabase
-        .from("redemptions")
-        .select("amount, commission_percent_snapshot, settlement_status")
-        .order("id", { ascending: true })
-        .range(from, to),
-    );
+    const loadedRedemptions = await loadOverviewRedemptions();
+    redemptions = loadedRedemptions.rows;
+    demoClassificationReady = loadedRedemptions.demoColumnReady;
     if (settlementsReady) {
       settlementRows = await fetchPages((from, to) =>
         supabase
@@ -462,6 +490,7 @@ export async function getAdminFinanceOverview(now = Date.now()) {
           ? null
           : Number(row.commission_percent_snapshot),
       settlementStatus: row.settlement_status,
+      demoOnly: row.demoOnly,
     })),
     settlements: settlementsReady
       ? settlementRows.map((row) => ({
@@ -474,11 +503,16 @@ export async function getAdminFinanceOverview(now = Date.now()) {
           payableAmount: money(row.payable_amount),
         }))
       : [],
+    policy:
+      settlementsReady && !demoClassificationReady
+        ? { ...policy, rounding: null }
+        : policy,
     now,
   });
 
   return {
     settlementsReady,
+    demoClassificationReady,
     overview: built.overview,
     overdue: built.overdue,
   };

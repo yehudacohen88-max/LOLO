@@ -9,21 +9,21 @@ export function settlementBatchLabel(status: string) {
 }
 
 export function lineCommissionLabel(percent: number, specified: boolean) {
-  if (!specified) {
-    return "לא הוגדרה (0%)";
-  }
   const text = percent.toLocaleString("he-IL", {
     maximumFractionDigits: 2,
   });
+  if (!specified) {
+    return `ברירת מחדל (${text}%)`;
+  }
   return `${text}%`;
 }
 
 export function lineTermsLabel(days: number, specified: boolean) {
+  const base = days === 0 ? "מיידי" : `${days.toLocaleString("he-IL")} יום`;
   if (!specified) {
-    return "לא הוגדרו (מיידי)";
+    return `ברירת מחדל (${base})`;
   }
-  if (days === 0) {
-    return "מיידי";
-  }
-  return `${days.toLocaleString("he-IL")} יום`;
+  return base;
 }
+
+export const DEMO_REDEMPTION_LABEL = "הדגמה — לא לתשלום";
