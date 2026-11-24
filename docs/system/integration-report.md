@@ -4,7 +4,7 @@ Draft only. Do not merge this branch into `main`.
 
 - Integration branch: `cursor/integration-premerge`
 - Base: `main` at `bf8527ac810e3e9a4908bff54a36f5f20cc623d0` (merge of #27). Fetched again before this report; `main` had not moved.
-- Draft PR: opened from this branch into `main` with title `DO NOT MERGE: pre-merge integration`. The URL is recorded below after GitHub creates it.
+- Draft PR: https://github.com/yehudacohen88-max/LOLO/pull/41 titled `DO NOT MERGE: pre-merge integration`.
 - Hosted Supabase project `fafvveudrlovaozazkny` was not queried and was not written. No `.env` file was committed. The beta gate was not opened. No PR was merged.
 
 ## Pull requests against current main
@@ -112,7 +112,16 @@ Finding, not a charge: `isDemoMoney` and `orderDemoFlag` still describe an unkno
 
 ## CI
 
-GitHub checks on the draft PR: pending in this commit. The workflow is `.github/workflows/ci.yml`, pull_request only, two jobs (`ci` profile and `full` profile), no GitHub secrets, no hosted Supabase URL. This section is updated after the checks finish.
+GitHub Actions run https://github.com/yehudacohen88-max/LOLO/actions/runs/45377050810 on code commit `24de65c`. Both jobs passed:
+
+| Job | Result | Time |
+| --- | --- | --- |
+| local database without settlements | pass | 3m3s |
+| local database with settlements and demo seed | pass | 2m34s |
+
+The workflow is pull_request only, reads no GitHub secrets, and does not set a hosted Supabase URL. The Vercel preview deployment for that commit completed. No write test was run against the preview, because Preview uses the hosted project.
+
+This report commit does not change runtime behavior. It records that result.
 
 ## Recommended merge order into main
 
