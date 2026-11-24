@@ -4,6 +4,8 @@ Ordered list of every SQL file in this repo. The machine-readable copy is `scrip
 
 There is no down-migration file in the repo. Rollback is the steps under each file. Re-running a file is safe where the header says so; it does not undo data.
 
+`scripts/local-db.mjs` skips a listed file that is not in the current checkout and applies it once that file is on the branch. Pull request #32 does not contain every file yet. After the other feature branches merge, the same list applies all 27 files.
+
 Profiles:
 
 - `ci` is steps 1–20 and 23–26. It is the default `npm run db:local` profile and the CI job "local database without settlements".

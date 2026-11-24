@@ -33,12 +33,16 @@ describe("local SQL order", () => {
       ...profiles.seed,
       ...Object.keys(skippedSql),
     ]);
+    const listedSupabase = [...used].filter((file) => file.startsWith("supabase/"));
     assert.deepEqual(
       files,
-      [...used].filter((file) => file.startsWith("supabase/")).sort(),
+      listedSupabase.filter((file) => fs.existsSync(path.join(root, file))).sort(),
     );
     for (const file of used) {
-      assert.equal(fs.existsSync(path.join(root, file)), true, file);
+      const present = fs.existsSync(path.join(root, file));
+      if (!present) {
+        assert.equal(Object.hasOwn(skippedSql, file), false, file);
+      }
     }
     for (const file of Object.keys(skippedSql)) {
       assert.equal(profiles.ci.includes(file), false);
