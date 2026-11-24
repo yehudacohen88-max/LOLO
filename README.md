@@ -65,6 +65,7 @@ Next.js 16 (App Router), React 19, TypeScript, Supabase, Tailwind CSS 4, Vercel.
 מחכים לאישור, ולא מריצים אותם בפיילוט:
 
 - `supabase/pilot-feedback.sql` — טבלת משוב. בלי הטבלה, `/feedback` נשאר סגור.
+- `supabase/support-notes.sql` — הערות תמיכה על הזמנה או אירוע. אחרי `schema.sql` ו־`orders.sql`. לא מריצים עד אישור. בלי הטבלה, שמירת הערה נשארת סגורה. יומן הפעולות אינו בקובץ הזה.
 - `supabase/pilot-isolate-test-data.sql` — הצעת בידוד. החלק שכותב בהערה ומסתיים ב־`ROLLBACK`.
 - `supabase/settlement-exclude-demo.sql` — אחרי `settlements.sql` ואחרי `pilot-demo-voucher-guard.sql`. לא מריצים לפני שניהם.
 

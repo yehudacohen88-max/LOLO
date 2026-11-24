@@ -19,7 +19,8 @@ function closedSettlementPage(pathname: string) {
     pathname === "/admin/settlements" ||
     pathname.startsWith("/admin/settlements/") ||
     pathname === "/store/settlements" ||
-    pathname.startsWith("/store/settlements/")
+    pathname.startsWith("/store/settlements/") ||
+    pathname === "/store/balance"
   );
 }
 

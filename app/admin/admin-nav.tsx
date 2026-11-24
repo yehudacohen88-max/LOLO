@@ -6,8 +6,15 @@ import { usePathname } from "next/navigation";
 const LINKS = [
   { href: "/admin", label: "לוח בקרה", exact: true },
   { href: "/admin/stores", label: "בתי עסק", exact: false },
+  { href: "/admin/events", label: "אירועים", exact: false },
+  { href: "/admin/orders", label: "הזמנות", exact: false },
+  { href: "/admin/guests", label: "אורחים", exact: false },
   { href: "/admin/vouchers", label: "שוברים", exact: false },
   { href: "/admin/redemptions", label: "מימושים", exact: false },
+  { href: "/admin/payments", label: "תשלומים", exact: false },
+  { href: "/admin/refunds", label: "החזרים", exact: false },
+  { href: "/admin/reports", label: "דוחות", exact: false },
+  { href: "/admin/audit", label: "יומן", exact: false },
   { href: "/admin/settlements", label: "התחשבנויות", exact: false },
   { href: "/admin/settings", label: "הגדרות", exact: false },
 ];

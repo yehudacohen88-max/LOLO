@@ -69,6 +69,7 @@ describe("settlement pages and links stay hidden", () => {
       "loadSettlementReport(",
     );
     firstGateBefore(read("../app/admin/settlements/report/page.tsx"), "loadSettlementReport(");
+    firstGateBefore(read("../app/store/balance/page.tsx"), "loadSettlementReport(");
     firstGateBefore(
       read("../app/admin/settlements/reconciliation/page.tsx"),
       "loadReconciliation(",

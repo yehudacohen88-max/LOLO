@@ -6,6 +6,7 @@ import { getStoreSession } from "@/lib/store/session";
 import { getStoreLabel } from "@/lib/vouchers/repository";
 import RedeemForm from "./redeem-form";
 import StoreLogoutButton from "./logout-button";
+import StoreDeskLinks from "../store-links";
 
 export const metadata: Metadata = {
   title: "מימוש שובר | LOLO",
@@ -42,12 +43,18 @@ export default async function StoreRedeemPage() {
         <div className="flex flex-col items-end gap-3">
           <StoreLogoutButton />
           {settlementsEnabled() ? (
-            <Link href="/store/settlements" className="text-sm font-semibold text-brand">
-              התחשבנויות
-            </Link>
+            <>
+              <Link href="/store/balance" className="text-sm font-semibold text-brand">
+                יתרה
+              </Link>
+              <Link href="/store/settlements" className="text-sm font-semibold text-brand">
+                התחשבנויות
+              </Link>
+            </>
           ) : null}
         </div>
       </header>
+      <StoreDeskLinks />
       <RedeemForm />
     </main>
   );
