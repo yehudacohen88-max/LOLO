@@ -13,10 +13,20 @@ import {
   type GuestContribution,
 } from "@/lib/guest-draft";
 import { clearGuestOrderRef, loadGuestOrderRef } from "@/lib/orders/guest-ref";
+import { requestGuestRefund } from "@/lib/orders/guest-refund";
+import {
+  guestCanCancel,
+  guestCanRequestRefund,
+  guestCancelLine,
+  guestPaymentStatusLabel,
+  guestRefundLine,
+  guestRefundRemaining,
+} from "@/lib/orders/guest-status";
 import { thankYouAfterLoad } from "@/lib/orders/thank-you-ref";
 import type { StoredOrder } from "@/lib/orders/types";
 import { cancelGuestCheckout } from "@/lib/payments/guest-client";
 import { resolveEventCover, resolveGiftImage, type ResolvedImage } from "@/lib/image-library";
+import { userFacingMessage } from "@/app/design/user-error";
 import { GiftFallback } from "../flagship-ui";
 import { JourneyFrame } from "../journey-photo";
 import { giftProgressCopy, participationLine } from "../progress-copy";
@@ -65,29 +75,7 @@ function statusText(read: OrderRead) {
   if (read.phase === "none") {
     return "עדיין אין אישור תשלום מהשרת.";
   }
-  if (read.order.paymentStatus === "paid" && read.order.paymentProvider === "demo") {
-    return "שולם בהדגמה";
-  }
-  if (read.order.paymentStatus === "paid") {
-    return "התשלום התקבל";
-  }
-  if (read.order.paymentStatus === "failed") {
-    return "התשלום לא הושלם";
-  }
-  if (read.order.paymentStatus === "cancelled") {
-    return "ההזמנה בוטלה";
-  }
-  return "ממתינים לתשלום";
-}
-
-function refundLine(order: StoredOrder | null) {
-  if (order?.refundStatus === "full") {
-    return "ההחזר נרשם. לא הועבר כסף אמיתי.";
-  }
-  if (order?.refundStatus === "partial") {
-    return "נרשם החזר חלקי. לא הועבר כסף אמיתי.";
-  }
-  return "";
+  return guestPaymentStatusLabel(read.order);
 }
 
 export default function ThankYouView() {
@@ -104,6 +92,10 @@ export default function ThankYouView() {
   const [shareNote, setShareNote] = useState("");
   const [cancelError, setCancelError] = useState("");
   const [cancelling, setCancelling] = useState(false);
+  const [refundError, setRefundError] = useState("");
+  const [refunding, setRefunding] = useState(false);
+  const [refundAmount, setRefundAmount] = useState("");
+  const refundKey = useRef("");
   const confirmedPaid = useRef(false);
 
   function eventUrl() {
@@ -259,8 +251,11 @@ export default function ThankYouView() {
   const order = orderRead.phase === "ready" ? orderRead.order : null;
   const paid = order?.paymentStatus === "paid";
   const failed = order?.paymentStatus === "failed";
-  const unpaid = order?.paymentStatus === "pending" || order?.paymentStatus === "failed";
-  const refundNote = refundLine(order);
+  const unpaid = order ? guestCanCancel(order) : false;
+  const refundNote = guestRefundLine(order);
+  const cancelNote = guestCancelLine(order);
+  const canRefund = order ? guestCanRequestRefund(order) : false;
+  const refundDefault = order ? String(guestRefundRemaining(order)) : "";
   const showReceiptAmounts = orderRead.phase === "ready";
   const giftLabel = contributions[0]?.giftName || heroGift || eventName || "המתנה";
   const shareText = eventName ? `בואו לחגוג: ${eventName}` : "בואו לחגוג ב-LOLO";
@@ -279,9 +274,54 @@ export default function ThankYouView() {
       const next = await cancelGuestCheckout(order.id, order.accessToken);
       setOrderRead({ phase: "ready", order: next });
     } catch (error) {
-      setCancelError(error instanceof Error ? error.message : "לא ניתן לבטל את ההזמנה.");
+      setCancelError(userFacingMessage(error, "לא ניתן לבטל את ההזמנה."));
     } finally {
       setCancelling(false);
+    }
+  }
+
+  async function reloadOrder() {
+    const next = await readServerOrder(slug);
+    if (next.phase === "ready") {
+      setOrderRead(next);
+      return true;
+    }
+    return false;
+  }
+
+  async function refundOrder(event: { preventDefault: () => void }) {
+    event.preventDefault();
+    if (!order || refunding || !canRefund) {
+      return;
+    }
+    const amount = Number(refundAmount || refundDefault);
+    if (!(amount > 0)) {
+      setRefundError("סכום ההחזר אינו תקין.");
+      return;
+    }
+    if (!refundKey.current) {
+      refundKey.current = crypto.randomUUID();
+    }
+    setRefunding(true);
+    setRefundError("");
+    try {
+      await requestGuestRefund({
+        orderId: order.id,
+        accessToken: order.accessToken,
+        amount,
+        idempotencyKey: refundKey.current,
+      });
+      const refreshed = await reloadOrder();
+      if (refreshed) {
+        refundKey.current = "";
+        setRefundAmount("");
+      } else {
+        setRefundError("ההחזר נרשם, אבל לא הצלחנו לרענן את הסטטוס.");
+      }
+    } catch (error) {
+      setRefundError(userFacingMessage(error, "לא ניתן לרשום את ההחזר."));
+    } finally {
+      setRefunding(false);
     }
   }
 
@@ -374,16 +414,52 @@ export default function ThankYouView() {
               {refundNote}
             </p>
           ) : null}
+          {typeof order?.refundedAmount === "number" && order.refundedAmount > 0 ? (
+            <p className={styles.quietLine} data-refund-amount="">
+              סכום שנרשם להחזר: {formatGiftAmount(order.refundedAmount)}. לא הועבר כסף אמיתי.
+            </p>
+          ) : null}
+          {cancelNote ? (
+            <p className={styles.quietLine} data-cancel-status="" role="status">
+              {cancelNote}
+            </p>
+          ) : null}
           {failed ? (
             <p className={styles.quietLine}>אפשר לחזור ולנסות שוב. לא בוצע חיוב.</p>
           ) : null}
+          {canRefund ? (
+            <form className={styles.stack} onSubmit={(event) => void refundOrder(event)}>
+              <p className={styles.quietLine}>
+                בקשת החזר בהדגמה. לא מועבר כסף אמיתי. אם מדיניות ההחזרים לא הוגדרה, הבקשה תידחה.
+              </p>
+              <label className={styles.field}>
+                <span className={styles.srOnly}>סכום להחזר</span>
+                <input
+                  inputMode="decimal"
+                  value={refundAmount || refundDefault}
+                  onChange={(event) => setRefundAmount(event.target.value)}
+                  aria-label="סכום להחזר"
+                />
+              </label>
+              <button type="submit" className={styles.ghost} disabled={refunding} data-refund-request="">
+                בקשת החזר
+              </button>
+            </form>
+          ) : null}
           {cancelError ? (
-            <p className={styles.fieldError} role="alert">
+            <p className={styles.fieldError} role="alert" data-cancel-error="">
               {cancelError}
             </p>
           ) : null}
+          {refundError ? (
+            <p className={styles.fieldError} role="alert" data-refund-error="">
+              {refundError}
+            </p>
+          ) : null}
           {orderRead.phase === "error" ? (
-            <p className={styles.quietLine}>אפשר לרענן ולנסות לקרוא את הסטטוס שוב.</p>
+            <p className={styles.fieldError} role="alert" data-order-error="">
+              לא הצלחנו לקרוא את סטטוס ההזמנה. אפשר לרענן ולנסות שוב.
+            </p>
           ) : null}
         </div>
         <div className={styles.shareRow}>

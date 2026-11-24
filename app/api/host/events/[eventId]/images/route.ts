@@ -1,7 +1,9 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { readStoredSessionVersion } from "@/lib/host/access-version";
 import { handleHostImagePatch } from "@/lib/host/event-images";
-import { HOST_SESSION_COOKIE } from "@/lib/host/session";
+import { HOST_SESSION_COOKIE, readHostSessionToken } from "@/lib/host/session";
+import { hostSessionVersionMatches } from "@/lib/host/session-version";
 import { caughtErrorBody } from "@/lib/security/required-secret";
 import { getSupabaseServiceClient } from "@/lib/supabase/server";
 
@@ -22,6 +24,13 @@ export async function PATCH(request: Request, context: RouteContext) {
   }
 
   try {
+    const session = readHostSessionToken(jar.get(HOST_SESSION_COOKIE)?.value);
+    if (session?.eventId === eventId) {
+      const stored = await readStoredSessionVersion(eventId);
+      if (!hostSessionVersionMatches(session, stored)) {
+        return NextResponse.json({ error: "אין הרשאה." }, { status: 401 });
+      }
+    }
     const result = await handleHostImagePatch({
       eventId,
       token: jar.get(HOST_SESSION_COOKIE)?.value,
