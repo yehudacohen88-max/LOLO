@@ -1,6 +1,11 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
+import {
+  REAL_PROVIDER_ALLOWLIST,
+  isAllowListedRealProvider,
+  setLocalRealProviderAllowlist,
+} from "../lib/payments/allowlist";
 import { guestCheckoutAllowed } from "../lib/guest-draft";
 import { guestItemsProblem } from "../lib/orders/guest-input";
 import {
@@ -268,5 +273,52 @@ describe("guest checkout cannot start at zero", () => {
     );
     assert.equal(greeting.includes("guestCheckoutAllowed"), true);
     assert.equal(greeting.includes("ממשיכים · {formatGiftAmount(total)}"), true);
+  });
+});
+
+describe("demo guard SQL does not treat an unknown provider as money", () => {
+  it("keeps payment_provider_allowlist empty and replays an issue key before planning", () => {
+    const sql = readFileSync(new URL("../supabase/pilot-demo-voucher-guard.sql", import.meta.url), "utf8");
+    assert.match(sql, /create table if not exists public\.payment_provider_allowlist/);
+    assert.match(sql, /provider <> 'demo'/);
+    assert.match(sql, /provider <> 'none'/);
+    assert.match(sql, /function public\.payment_provider_is_real/);
+    assert.match(sql, /public\.payment_provider_is_real\(o\.payment_provider\)/);
+    assert.doesNotMatch(sql, /name other than "demo"/);
+    const seed = readFileSync(new URL("../supabase/demo-seed.sql", import.meta.url), "utf8");
+    assert.match(seed, /voucher_demo_guard_version\(\)/);
+    const repository = readFileSync(new URL("../lib/vouchers/repository.ts", import.meta.url), "utf8");
+    const issue = repository.slice(repository.indexOf("export async function issueGiftVoucher"));
+    const replay = issue.indexOf("idempotency_key");
+    const plan = issue.indexOf("planFundedVoucherIssue");
+    assert.ok(replay > 0 && plan > replay);
+  });
+});
+
+describe("the real-provider allow-list stays empty outside the local database", () => {
+  it("widens classification only while LOLO_LOCAL_DB=1 and then restores it", () => {
+    const previous = process.env.LOLO_LOCAL_DB;
+    const fixture = { ...realPaid, paymentProvider: "fixture", paymentReference: "local-fixture" };
+    try {
+      delete process.env.LOLO_LOCAL_DB;
+      assert.throws(() => setLocalRealProviderAllowlist(["fixture"]), /LOLO_LOCAL_DB=1/);
+      assert.equal(isSimulatedPayment(fixture), true);
+      assert.deepEqual([...REAL_PROVIDER_ALLOWLIST], []);
+      process.env.LOLO_LOCAL_DB = "1";
+      setLocalRealProviderAllowlist(["demo", "fixture"]);
+      assert.equal(isAllowListedRealProvider("demo"), false);
+      assert.equal(isSimulatedPayment(demoPaid), true);
+      assert.equal(isSimulatedPayment(fixture), false);
+    } finally {
+      if (process.env.LOLO_LOCAL_DB === "1") {
+        setLocalRealProviderAllowlist(null);
+      }
+      if (previous === undefined) {
+        delete process.env.LOLO_LOCAL_DB;
+      } else {
+        process.env.LOLO_LOCAL_DB = previous;
+      }
+    }
+    assert.equal(isSimulatedPayment(fixture), true);
   });
 });
