@@ -10,6 +10,7 @@ import { voucherErrorMessage, VoucherActionError } from "@/lib/vouchers/messages
 import {
   confirmedTermsDiffer,
   issueGiftVoucher,
+  listEventVoucherBalances,
   resolveIssueStore,
 } from "@/lib/vouchers/repository";
 
@@ -18,6 +19,22 @@ export const dynamic = "force-dynamic";
 type RouteContext = {
   params: Promise<{ eventId: string }>;
 };
+
+export async function GET(_request: Request, context: RouteContext) {
+  const { eventId } = await context.params;
+  const jar = await cookies();
+  const session = readHostSessionToken(jar.get(HOST_SESSION_COOKIE)?.value);
+  if (!session || session.eventId !== eventId) {
+    return NextResponse.json({ error: "אין הרשאה." }, { status: 401 });
+  }
+
+  try {
+    const vouchers = await listEventVoucherBalances(eventId);
+    return NextResponse.json({ vouchers });
+  } catch (error) {
+    return jsonFromError(error, "לא ניתן לטעון את יתרות השוברים.");
+  }
+}
 
 export async function POST(request: Request, context: RouteContext) {
   const { eventId } = await context.params;

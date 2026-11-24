@@ -14,6 +14,7 @@ import {
   voucherShowsAsDemo,
   type VoucherPoolSlice,
 } from "@/lib/vouchers/demo-funding";
+import { buildVoucherBalance } from "@/lib/vouchers/balance";
 import { availableToIssue, committedVoucherAmount } from "@/lib/vouchers/ledger";
 import {
   generateVoucherCode,
@@ -23,9 +24,12 @@ import {
 import { isUuid, safeImageUrl } from "@/lib/vouchers/input";
 import {
   isMissingVoucherSchema,
+  isMissingVoucherTermColumns,
   voucherErrorCode,
   voucherErrorMessage,
   voucherErrorStatus,
+  VOUCHER_TERMS_NOT_CONFIGURED,
+  VOUCHER_TERMS_NOT_ENABLED,
   VoucherActionError,
   VoucherSchemaMissingError,
 } from "@/lib/vouchers/messages";
@@ -35,10 +39,17 @@ import {
   effectiveVoucherStatus,
   voucherCanRedeem,
 } from "@/lib/vouchers/status";
-import { resolveVoucherTerms, termsMatch, type VoucherTerms } from "@/lib/vouchers/terms";
+import {
+  resolveVoucherTerms,
+  termsMatch,
+  validityDaysFromSnapshot,
+  type PlatformVoucherDefaults,
+  type VoucherTerms,
+} from "@/lib/vouchers/terms";
 import type {
   AdminRedemption,
   AdminVoucherDetail,
+  EventVoucherBalance,
   HostGiftVoucher,
   StoreAccessStatus,
   StoreVoucherLookup,
@@ -255,15 +266,31 @@ function throwVoucherDbError(error: { message: string; code?: string }): never {
 
 function termsFromRow(row: VoucherRow): VoucherTerms {
   return {
-    validityDays: row.validity_days ?? 365,
+    validityDays: validityDaysFromSnapshot({
+      validityDays: row.validity_days,
+      issuedAt: row.issued_at,
+      expiresAt: row.expires_at,
+    }),
     allowPartialRedemption: row.allow_partial_redemption === true,
     allowCustomerTopup: row.allow_customer_topup === true,
-    redemptionMethod: row.redemption_method?.trim() || "הצגת השובר בחנות",
+    redemptionMethod: row.redemption_method?.trim() || "",
     validityIsDefault: row.validity_is_default === true,
     partialIsDefault: row.partial_is_default === true,
     topupIsDefault: row.topup_is_default === true,
     methodIsDefault: row.method_is_default === true,
   };
+}
+
+function balanceFrom(row: VoucherRow, redemptions: RedemptionRow[], now = Date.now()) {
+  return buildVoucherBalance({
+    voucherId: row.id,
+    amount: money(row.amount),
+    remainingAmount: money(row.remaining_amount),
+    status: row.status,
+    expiresAt: row.expires_at,
+    now,
+    redemptions: redemptions.map(redemptionView),
+  });
 }
 
 function listItem(row: VoucherRow, now: number): VoucherListItem {
@@ -332,22 +359,28 @@ async function cardFromRow(
   };
 }
 
-async function loadRedemptions(voucherId: string) {
-  if (!isUuid(voucherId)) {
+const REDEMPTION_COLUMNS =
+  "id, voucher_id, store_id, amount, redeemed_at, channel, reference, commission_percent_snapshot, payment_terms_days_snapshot, settlement_status";
+
+async function loadRedemptionsFor(voucherIds: string[]) {
+  const ids = voucherIds.filter((id) => isUuid(id));
+  if (ids.length === 0) {
     return [];
   }
   const supabase = getSupabaseServiceClient();
   const { data, error } = await supabase
     .from("redemptions")
-    .select(
-      "id, voucher_id, store_id, amount, redeemed_at, channel, reference, commission_percent_snapshot, payment_terms_days_snapshot, settlement_status",
-    )
-    .eq("voucher_id", voucherId)
+    .select(REDEMPTION_COLUMNS)
+    .in("voucher_id", ids)
     .order("redeemed_at", { ascending: true });
   if (error) {
     throwVoucherDbError(error);
   }
   return (data ?? []) as RedemptionRow[];
+}
+
+async function loadRedemptions(voucherId: string) {
+  return loadRedemptionsFor([voucherId]);
 }
 
 async function loadVoucherBy(column: "id" | "view_token" | "code_key", value: string) {
@@ -504,20 +537,23 @@ export async function lookupStoreVoucher(
   const now = Date.now();
   const status = effectiveVoucherStatus(asVoucherStatus(row.status), row.expires_at, now);
   const moneyView = await voucherMoney(row);
+  const redemptions = await loadRedemptions(row.id);
+  const balance = balanceFrom(row, redemptions, now);
   return {
     code: row.code,
     giftTitle: row.gift_title || "מתנה",
     eventTitle: row.event_title || "",
     storeName: row.store_name,
-    amount: money(row.amount),
-    remainingAmount: money(row.remaining_amount),
-    status,
+    amount: balance.amount,
+    remainingAmount: balance.remainingAmount,
+    status: balance.status,
     expiresAt: row.expires_at,
     terms: termsFromRow(row),
     canRedeem: voucherCanRedeem(status) && !moneyView.redeemBlocked,
     blockedReason: moneyView.redeemBlocked
       ? voucherErrorMessage("voucher_demo_blocked")
       : blockedReason(status),
+    balance,
   };
 }
 
@@ -547,6 +583,20 @@ export async function redeemVoucher(input: {
       voucherErrorStatus("voucher_demo_blocked"),
     );
   }
+  const now = Date.now();
+  const openStatus = effectiveVoucherStatus(asVoucherStatus(row.status), row.expires_at, now);
+  if (openStatus === "EXPIRED") {
+    throw new VoucherActionError(
+      voucherErrorMessage("voucher_expired"),
+      voucherErrorStatus("voucher_expired"),
+    );
+  }
+  if (!voucherCanRedeem(openStatus)) {
+    throw new VoucherActionError(
+      voucherErrorMessage("voucher_closed"),
+      voucherErrorStatus("voucher_closed"),
+    );
+  }
   const supabase = getSupabaseServiceClient();
   const { data, error } = await supabase.rpc("redeem_voucher", {
     p_store_id: input.storeId,
@@ -570,15 +620,25 @@ export async function redeemVoucher(input: {
   if (!payload?.voucherId) {
     throw new VoucherActionError("המימוש נכשל.");
   }
-  const status = effectiveVoucherStatus(
-    asVoucherStatus(String(payload.status ?? "")),
-    Date.now() + 60_000,
-  );
+  const voucherId = String(payload.voucherId);
+  const fresh = await loadVoucherBy("id", voucherId);
+  const redemptions = await loadRedemptions(voucherId);
+  const balance = fresh
+    ? balanceFrom(fresh, redemptions)
+    : buildVoucherBalance({
+        voucherId,
+        amount: money(row.amount),
+        remainingAmount: money(payload.remainingAmount),
+        status: String(payload.status ?? row.status),
+        expiresAt: row.expires_at,
+        redemptions: redemptions.map(redemptionView),
+      });
   return {
-    voucherId: String(payload.voucherId),
+    voucherId,
     amount: money(payload.amount),
-    remainingAmount: money(payload.remainingAmount),
-    status,
+    remainingAmount: balance.remainingAmount,
+    status: balance.status,
+    balance,
   };
 }
 
@@ -697,31 +757,139 @@ function toAdminRedemption(row: RedemptionRow, voucher: VoucherRow | null): Admi
   };
 }
 
-export async function listActiveVoucherStores(): Promise<VoucherStoreOption[]> {
+const PLATFORM_VOUCHER_DEFAULT_COLUMNS =
+  "voucher_default_validity_days, voucher_default_allow_partial, voucher_default_allow_topup, voucher_default_redemption_method";
+
+function optionalBoolean(value: unknown) {
+  return value === true || value === false ? value : null;
+}
+
+function optionalMethod(value: unknown) {
+  if (typeof value !== "string") {
+    return null;
+  }
+  const method = value.trim();
+  if (!method || method.length > 80) {
+    return null;
+  }
+  return method;
+}
+
+function optionalValidity(value: unknown) {
+  if (value == null || value === "") {
+    return null;
+  }
+  const number = typeof value === "number" ? value : Number(value);
+  return Number.isInteger(number) && number >= 1 && number <= 3650 ? number : null;
+}
+
+export async function readPlatformVoucherDefaults(): Promise<
+  { ready: true; defaults: PlatformVoucherDefaults } | { ready: false }
+> {
   const supabase = getSupabaseServiceClient();
   const { data, error } = await supabase
-    .from("stores")
-    .select(
-      "id, name, active, logo_url, voucher_validity_days, allow_partial_redemption, allow_customer_topup, voucher_redemption_method",
-    )
-    .eq("active", true)
-    .order("name", { ascending: true });
+    .from("platform_settings")
+    .select(PLATFORM_VOUCHER_DEFAULT_COLUMNS)
+    .eq("id", "default")
+    .maybeSingle();
   if (error) {
+    if (isMissingVoucherTermColumns(error)) {
+      return { ready: false };
+    }
     throwVoucherDbError(error);
   }
-  return ((data ?? []) as StoreOptionRow[])
+  const row = (data ?? {}) as {
+    voucher_default_validity_days?: number | string | null;
+    voucher_default_allow_partial?: boolean | null;
+    voucher_default_allow_topup?: boolean | null;
+    voucher_default_redemption_method?: string | null;
+  };
+  return {
+    ready: true,
+    defaults: {
+      validityDays: optionalValidity(row.voucher_default_validity_days),
+      allowPartialRedemption: optionalBoolean(row.voucher_default_allow_partial),
+      allowCustomerTopup: optionalBoolean(row.voucher_default_allow_topup),
+      redemptionMethod: optionalMethod(row.voucher_default_redemption_method),
+    },
+  };
+}
+
+function storeOption(
+  store: StoreOptionRow,
+  platform: { ready: true; defaults: PlatformVoucherDefaults } | { ready: false },
+): VoucherStoreOption {
+  const base = {
+    id: store.id,
+    name: store.name,
+    logoUrl: safeImageUrl(store.logo_url),
+  };
+  if (!platform.ready) {
+    return { ...base, terms: null, termsMessage: VOUCHER_TERMS_NOT_ENABLED };
+  }
+  const resolved = resolveVoucherTerms(
+    {
+      voucherValidityDays: store.voucher_validity_days,
+      allowPartialRedemption: store.allow_partial_redemption,
+      allowCustomerTopup: store.allow_customer_topup,
+      voucherRedemptionMethod: store.voucher_redemption_method,
+    },
+    platform.defaults,
+  );
+  if (!resolved.ok) {
+    return { ...base, terms: null, termsMessage: VOUCHER_TERMS_NOT_CONFIGURED };
+  }
+  return { ...base, terms: resolved.terms, termsMessage: null };
+}
+
+export async function listActiveVoucherStores(): Promise<VoucherStoreOption[]> {
+  const supabase = getSupabaseServiceClient();
+  const [platform, stores] = await Promise.all([
+    readPlatformVoucherDefaults(),
+    supabase
+      .from("stores")
+      .select(
+        "id, name, active, logo_url, voucher_validity_days, allow_partial_redemption, allow_customer_topup, voucher_redemption_method",
+      )
+      .eq("active", true)
+      .order("name", { ascending: true }),
+  ]);
+  if (stores.error) {
+    throwVoucherDbError(stores.error);
+  }
+  return ((stores.data ?? []) as StoreOptionRow[])
     .filter((store) => store.active === true)
-    .map((store) => ({
-      id: store.id,
-      name: store.name,
-      logoUrl: safeImageUrl(store.logo_url),
-      terms: resolveVoucherTerms({
-        voucherValidityDays: store.voucher_validity_days,
-        allowPartialRedemption: store.allow_partial_redemption,
-        allowCustomerTopup: store.allow_customer_topup,
-        voucherRedemptionMethod: store.voucher_redemption_method,
-      }),
-    }));
+    .map((store) => storeOption(store, platform));
+}
+
+export async function listEventVoucherBalances(eventId: string): Promise<EventVoucherBalance[]> {
+  const supabase = getSupabaseServiceClient();
+  const loaded = await supabase
+    .from("vouchers")
+    .select(
+      "id, event_id, gift_id, store_id, code, amount, remaining_amount, status, issued_at, expires_at, event_title, gift_title, store_name",
+    )
+    .eq("event_id", eventId)
+    .order("issued_at", { ascending: false });
+  if (loaded.error) {
+    throwVoucherDbError(loaded.error);
+  }
+  const rows = (loaded.data ?? []) as VoucherRow[];
+  const redemptions = await loadRedemptionsFor(rows.map((row) => row.id));
+  const now = Date.now();
+  return rows.map((row) => {
+    const balance = balanceFrom(
+      row,
+      redemptions.filter((redemption) => redemption.voucher_id === row.id),
+      now,
+    );
+    return {
+      ...balance,
+      giftId: row.gift_id,
+      giftTitle: row.gift_title || "מתנה",
+      storeName: row.store_name,
+    };
+  });
 }
 
 export async function loadEventVoucherRows(eventId: string) {
@@ -846,7 +1014,11 @@ export async function resolveIssueStore(
       400,
     );
   }
-  return store;
+  if (!store.terms) {
+    const message = store.termsMessage || VOUCHER_TERMS_NOT_CONFIGURED;
+    throw new VoucherActionError(message, message === VOUCHER_TERMS_NOT_ENABLED ? 503 : 409);
+  }
+  return { ...store, terms: store.terms };
 }
 
 export function confirmedTermsDiffer(

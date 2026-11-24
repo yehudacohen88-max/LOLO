@@ -25,6 +25,12 @@ export type LedgerVoucher = {
   idempotencyKey: string;
 };
 
+export type LedgerRedemption = {
+  id: string;
+  voucherId: string;
+  amount: number;
+};
+
 export type RedeemPlan =
   | { ok: true; remaining: number; status: VoucherStatus }
   | { ok: false; reason: "expired" | "closed" | "partial" | "amount" };
@@ -113,7 +119,10 @@ export function planVoucherRedeem(
 export class VoucherLedger {
   paid = 0;
   vouchers: LedgerVoucher[] = [];
+  /** Successful redeems only. The queue below is the in-memory row lock. */
+  redemptions: LedgerRedemption[] = [];
   private chain: Promise<void> = Promise.resolve();
+  private redemptionSequence = 0;
 
   setPaid(amount: number) {
     this.paid = roundMoney(amount);
@@ -152,6 +161,10 @@ export class VoucherLedger {
     });
   }
 
+  /**
+   * Mirrors `select … for update` in redeem_voucher. Overlapping calls run
+   * one after another, so a second redeem sees the first redemption.
+   */
   redeem(voucherId: string, amount: number | null, now: number) {
     return this.exclusive(() => {
       const voucher = this.vouchers.find((item) => item.id === voucherId);
@@ -169,8 +182,15 @@ export class VoucherLedger {
       if (!plan.ok) {
         return plan;
       }
+      const redeemedAmount = roundMoney(voucher.remaining - plan.remaining);
       voucher.remaining = plan.remaining;
       voucher.status = plan.status;
+      this.redemptionSequence += 1;
+      this.redemptions.push({
+        id: `redemption-${this.redemptionSequence}`,
+        voucherId,
+        amount: redeemedAmount,
+      });
       return { ok: true as const, voucher };
     });
   }

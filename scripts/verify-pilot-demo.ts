@@ -59,6 +59,32 @@ describe("demo funding is not money", () => {
     assert.equal(sumPaidPools([realPaid]).simulatedPaid, 350);
   });
 
+  it("refuses to redeem a demo-funded pool", () => {
+    assert.equal(isSimulatedPayment(demoPaid), true);
+    assert.deepEqual(
+      planFundedRedeem({
+        demoOnly: true,
+        voucherAmount: 200,
+        realPaid: 0,
+        simulatedPaid: 200,
+        monetaryCommitted: 0,
+        fundingKnown: true,
+      }),
+      { ok: false, reason: "demo" },
+    );
+    assert.deepEqual(
+      planFundedRedeem({
+        demoOnly: null,
+        voucherAmount: 200,
+        realPaid: 0,
+        simulatedPaid: 200,
+        monetaryCommitted: 200,
+        fundingKnown: true,
+      }),
+      { ok: false, reason: "demo" },
+    );
+  });
+
   it("blocks a monetary issue and a redeem when funding is demo", () => {
     const sums = sumPaidPools([demoPaid, { ...demoPaid, amount: 50, paymentStatus: "pending" }]);
     assert.deepEqual(sums, { realPaid: 0, simulatedPaid: 350 });

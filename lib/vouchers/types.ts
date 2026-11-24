@@ -5,7 +5,8 @@ export type VoucherStoreOption = {
   id: string;
   name: string;
   logoUrl: string | null;
-  terms: VoucherTerms;
+  terms: VoucherTerms | null;
+  termsMessage: string | null;
 };
 
 export type HostGiftVoucher = {
@@ -37,6 +38,16 @@ export type VoucherRedemptionView = {
   redeemedAt: string;
   channel: string;
   reference: string | null;
+};
+
+/** Per-voucher balance and redemption history. Expiry is the stored expires_at. */
+export type VoucherBalanceReadModel = {
+  voucherId: string;
+  amount: number;
+  remainingAmount: number;
+  status: VoucherStatus;
+  expiresAt: string;
+  redemptions: VoucherRedemptionView[];
 };
 
 export type AdminRedemption = {
@@ -87,6 +98,13 @@ export type StoreVoucherLookup = {
   terms: VoucherTerms;
   canRedeem: boolean;
   blockedReason: string | null;
+  balance: VoucherBalanceReadModel;
+};
+
+export type EventVoucherBalance = VoucherBalanceReadModel & {
+  giftId: string;
+  giftTitle: string;
+  storeName: string;
 };
 
 export type AdminVoucherDetail = {

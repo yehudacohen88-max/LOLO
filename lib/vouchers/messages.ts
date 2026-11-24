@@ -54,6 +54,22 @@ const MESSAGES: Record<string, { text: string; status: number }> = {
   voucher_store_required: { text: "יש לבחור בית עסק פעיל.", status: 400 },
 };
 
+export const VOUCHER_TERMS_NOT_ENABLED =
+  "ברירות המחדל של תנאי השובר עדיין לא הופעלו.";
+
+export const VOUCHER_TERMS_NOT_CONFIGURED =
+  "תנאי השובר לא הוגדרו, ולכן אי אפשר להנפיק אותו.";
+
+export function isMissingVoucherTermColumns(
+  error: { code?: string; message?: string } | null,
+) {
+  if (!error) {
+    return false;
+  }
+  const code = error.code ?? "";
+  return code === "42703" || code === "PGRST204" || code === "PGRST205" || code === "42P01";
+}
+
 export function voucherErrorCode(message: string) {
   return message.match(/voucher_[a-z0-9_]+/)?.[0] ?? "";
 }
