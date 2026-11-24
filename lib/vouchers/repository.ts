@@ -418,6 +418,24 @@ export async function issueGiftVoucher(input: {
   idempotencyKey: string;
   terms: VoucherTerms;
 }) {
+  const supabase = getSupabaseServiceClient();
+  const prior = await supabase
+    .from("vouchers")
+    .select("id, amount")
+    .eq("gift_id", input.giftId)
+    .eq("idempotency_key", input.idempotencyKey)
+    .maybeSingle();
+  if (prior.error) {
+    throwVoucherDbError(prior.error);
+  }
+  if (prior.data?.id) {
+    return {
+      id: String(prior.data.id),
+      amount: money(prior.data.amount),
+      idempotent: true,
+    };
+  }
+
   const funding = await loadGiftFunding(input.eventId, input.giftId);
   const existing = await loadEventVoucherRows(input.eventId);
   const guardReady = await demoGuardReady();
@@ -434,7 +452,6 @@ export async function issueGiftVoucher(input: {
     throw new VoucherActionError(voucherErrorMessage(code), voucherErrorStatus(code));
   }
 
-  const supabase = getSupabaseServiceClient();
   let lastError: { message: string; code?: string } | null = null;
 
   for (let attempt = 0; attempt < 3; attempt += 1) {
