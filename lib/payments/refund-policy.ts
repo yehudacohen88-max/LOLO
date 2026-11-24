@@ -62,7 +62,8 @@ export function decideRefund(input: {
   chargedAmount: number;
   alreadyRefunded: number;
   requestedAmount: number;
-  issuedVoucher: boolean;
+  /** True when a related voucher already has a redemption. An unredeemed voucher does not block. */
+  redeemedVoucher: boolean;
   paymentStatus: string;
 }): RefundDecision {
   if (!configured(input.policy)) {
@@ -85,7 +86,7 @@ export function decideRefund(input: {
   if (nowMs > paidAtMs + input.policy.windowDays * DAY_MS) {
     return { ok: false, message: REFUND_WINDOW_CLOSED };
   }
-  if (input.policy.blocksIssuedVoucher && input.issuedVoucher) {
+  if (input.policy.blocksIssuedVoucher && input.redeemedVoucher) {
     return { ok: false, message: REFUND_VOUCHER_BLOCKED };
   }
 

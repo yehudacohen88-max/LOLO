@@ -2,6 +2,7 @@ import "server-only";
 import { roundMoney } from "@/lib/money";
 import { getSupabaseServiceClient } from "@/lib/supabase/server";
 import { isMissingVoucherSchema } from "@/lib/vouchers/messages";
+import type { RefundVoucherSlice } from "@/lib/vouchers/refund-release";
 import type { StoredOrder } from "@/lib/orders/types";
 import { createDemoPaymentReference } from "./reference";
 import type { DemoRefundRecord } from "./demo-refund";
@@ -305,25 +306,55 @@ export async function insertRefund(record: DemoRefundRecord) {
   throw new Error("לא ניתן לרשום את ההחזר.");
 }
 
-export async function orderHasOpenVoucher(giftIds: string[]) {
+export async function loadRefundVoucherSlices(giftIds: string[]): Promise<RefundVoucherSlice[]> {
   if (giftIds.length === 0) {
-    return false;
+    return [];
   }
   const supabase = getSupabaseServiceClient();
-  const { data, error } = await supabase
+  const vouchers = await supabase
     .from("vouchers")
-    .select("id")
-    .in("gift_id", giftIds)
-    .in("status", ["ISSUED", "PARTIALLY_REDEEMED"])
-    .limit(1);
-  if (error) {
-    if (isMissingVoucherSchema(error)) {
+    .select("id, status, amount, remaining_amount")
+    .in("gift_id", giftIds);
+  if (vouchers.error) {
+    if (isMissingVoucherSchema(vouchers.error)) {
       throw new Error("לא ניתן לבדוק אם הונפק שובר, ולכן ההחזר נעצר.");
     }
-    console.error("[LOLO] voucher lookup for refund failed", dbError(error));
+    console.error("[LOLO] voucher lookup for refund failed", dbError(vouchers.error));
     throw new Error("לא ניתן לבדוק אם הונפק שובר, ולכן ההחזר נעצר.");
   }
-  return (data ?? []).length > 0;
+  const rows = (vouchers.data ?? []) as Array<{
+    id: string;
+    status: string;
+    amount: number | string;
+    remaining_amount: number | string;
+  }>;
+  const counts = new Map<string, number>();
+  if (rows.length > 0) {
+    const redemptions = await supabase
+      .from("redemptions")
+      .select("voucher_id")
+      .in(
+        "voucher_id",
+        rows.map((row) => row.id),
+      );
+    if (redemptions.error) {
+      if (isMissingVoucherSchema(redemptions.error)) {
+        throw new Error("לא ניתן לבדוק אם הונפק שובר, ולכן ההחזר נעצר.");
+      }
+      console.error("[LOLO] redemption lookup for refund failed", dbError(redemptions.error));
+      throw new Error("לא ניתן לבדוק אם הונפק שובר, ולכן ההחזר נעצר.");
+    }
+    for (const row of (redemptions.data ?? []) as Array<{ voucher_id: string }>) {
+      counts.set(row.voucher_id, (counts.get(row.voucher_id) ?? 0) + 1);
+    }
+  }
+  return rows.map((row) => ({
+    id: row.id,
+    status: row.status,
+    amount: roundMoney(Number(row.amount) || 0),
+    remainingAmount: roundMoney(Number(row.remaining_amount) || 0),
+    redemptionCount: counts.get(row.id) ?? 0,
+  }));
 }
 
 export async function attachRefundSummary(order: StoredOrder): Promise<StoredOrder> {

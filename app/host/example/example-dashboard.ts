@@ -62,6 +62,7 @@ export function exampleDashboardData(view: ExampleView = "sample"): HostDashboar
         name: "חנות אופניים - בדיקה",
         logoUrl: null,
         terms,
+        termsMessage: null,
       },
     ],
     gifts: empty

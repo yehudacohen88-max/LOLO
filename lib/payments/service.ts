@@ -11,13 +11,15 @@ import {
 } from "@/lib/orders/repository";
 import type { StoredOrder } from "@/lib/orders/types";
 import { getSupabaseServiceClient } from "@/lib/supabase/server";
+import { cancelVoucher } from "@/lib/vouchers/repository";
+import { planVoucherRefundRelease, refundCoversRemainder } from "@/lib/vouchers/refund-release";
 import { performDemoRefund, type DemoRefundRecord } from "./demo-refund";
 import { DEMO_PROVIDER_NAME } from "./demo-provider-name";
 import {
   attachRefundSummary,
   findRefund,
   insertRefund,
-  orderHasOpenVoucher,
+  loadRefundVoucherSlices,
   recordAttempt,
   recordSucceededCapture,
   sumRecordedRefunds,
@@ -247,10 +249,13 @@ export async function refundDemoOrder(input: {
     throw new Error(REFUND_DEMO_ONLY);
   }
   const policy = await readRefundPolicy();
-  const issuedVoucher =
-    policy.blocksIssuedVoucher === true
-      ? await orderHasOpenVoucher(order.items.map((item) => item.giftId))
-      : false;
+  const alreadyRefunded = await sumRecordedRefunds(order.id);
+  const slices = await loadRefundVoucherSlices(order.items.map((item) => item.giftId));
+  const release = planVoucherRefundRelease({
+    policyBlocksRedemptions: policy.blocksIssuedVoucher === true,
+    fullRefund: refundCoversRemainder(order.chargedAmount, alreadyRefunded, input.amount),
+    vouchers: slices,
+  });
   const existing = await findRefund(order.id, input.idempotencyKey);
   const planned = performDemoRefund({
     orderId: order.id,
@@ -265,13 +270,16 @@ export async function refundDemoOrder(input: {
     paymentReference: order.paymentReference,
     paidAt: order.paidAt,
     chargedAmount: order.chargedAmount,
-    alreadyRefunded: await sumRecordedRefunds(order.id),
-    issuedVoucher,
+    alreadyRefunded,
+    redeemedVoucher: release.block,
     existing,
     createReference: createDemoRefundReference,
   });
   if (planned.replayed) {
     return planned;
+  }
+  for (const voucherId of release.cancelIds) {
+    await cancelVoucher(voucherId);
   }
   const saved = await insertRefund(planned);
   return { ...saved, replayed: false };
