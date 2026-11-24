@@ -17,6 +17,7 @@ const LINKS = [
   { href: "/admin/audit", label: "יומן", exact: false },
   { href: "/admin/settlements", label: "התחשבנויות", exact: false },
   { href: "/admin/settings", label: "הגדרות", exact: false },
+  { href: "/admin/notifications", label: "הודעות", exact: false },
 ];
 
 export default function AdminNav({ showSettlements = false }: { showSettlements?: boolean }) {
