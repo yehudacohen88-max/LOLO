@@ -359,7 +359,7 @@ export async function upsertPendingOrder(
           guest_name: guestName,
           guest_phone: guestPhone,
           guest_email: guestEmail,
-          wants_confirmation: input.wantsConfirmation !== false,
+          wants_confirmation: input.wantsConfirmation === true,
           greeting_text: greetingText,
           total_amount: money.contributionAmount,
           fee_amount: money.feeAmount,
@@ -395,7 +395,7 @@ export async function upsertPendingOrder(
         guest_name: guestName,
         guest_phone: guestPhone,
         guest_email: guestEmail,
-        wants_confirmation: input.wantsConfirmation !== false,
+        wants_confirmation: input.wantsConfirmation === true,
         greeting_text: greetingText,
         total_amount: money.contributionAmount,
         fee_amount: money.feeAmount,
@@ -504,6 +504,9 @@ export async function markOrderPaid(
   const decision = decideMarkPaid(snapshotOf(current), attempt);
   if (decision.action === "reject") {
     throw new Error("לא ניתן לאשר את התשלום.");
+  }
+  if (decision.action === "mark_paid" && !(current.contributionAmount > 0)) {
+    throw new Error("עדיין לא נבחרה מתנה.");
   }
   if (decision.action === "already_paid") {
     return current;

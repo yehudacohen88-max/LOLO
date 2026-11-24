@@ -100,7 +100,7 @@ function journeyVisual(stored: NonNullable<Awaited<ReturnType<typeof getEventByS
     .filter((item) => item.active !== false)
     .sort((a, b) => a.priority - b.priority);
   const chosen = loadContributions(stored.slug)[0];
-  const gift = (chosen ? gifts.find((item) => item.id === chosen.giftId) : undefined) ?? gifts[0];
+  const gift = chosen ? gifts.find((item) => item.id === chosen.giftId) : undefined;
   const giftTitle = gift?.title || chosen?.giftName || "";
   return {
     hostName: stored.hostName,
@@ -110,12 +110,21 @@ function journeyVisual(stored: NonNullable<Awaited<ReturnType<typeof getEventByS
       title: stored.title,
       alt: stored.title,
     }),
-    gift: resolveGiftImage({
-      hostImageUrl: gift?.imageUrl || "",
-      title: giftTitle,
-      description: gift?.description || "",
-      alt: giftTitle,
-    }),
+    gift: gift
+      ? resolveGiftImage({
+          hostImageUrl: gift.imageUrl || "",
+          title: giftTitle,
+          description: gift.description || "",
+          alt: giftTitle,
+        })
+      : {
+          kind: "illustration",
+          src: "",
+          avif: "",
+          alt: "",
+          illustrative: false,
+          category: null,
+        },
   };
 }
 
@@ -239,7 +248,7 @@ export function FlowPage({
     return <GiftFallback compact />;
   }
   function renderChoice(amounts: boolean, labelled: boolean) {
-    const rows = parsed.items.length > 0 ? parsed.items : mark?.giftName ? [{ name: mark.giftName, amount: 0 }] : [];
+    const rows = parsed.items.filter((item) => item.amount > 0);
     return (
       <div className={styles.choiceCard} data-journey-choice="">
         {mark ? (

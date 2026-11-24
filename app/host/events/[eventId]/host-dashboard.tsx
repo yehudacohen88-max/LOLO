@@ -9,6 +9,7 @@ import type {
   HostDashboardGift,
   HostPaymentStatus,
 } from "@/lib/host/dashboard";
+import { DEMO_MONEY_LABEL, hostMoneyPresentation } from "@/lib/vouchers/demo-funding";
 import CopyGuestLink from "./copy-guest-link";
 import HostGuestList from "./host-guest-list";
 import IssueVoucherPanel from "./issue-voucher-panel";
@@ -49,7 +50,10 @@ function formatOrderDate(value: string) {
   });
 }
 
-function paymentLabel(status: HostPaymentStatus) {
+function paymentLabel(status: HostPaymentStatus, simulated = false) {
+  if (status === "paid" && simulated) {
+    return "שולם בהדגמה";
+  }
   if (status === "paid") {
     return "שולם";
   }
@@ -62,7 +66,10 @@ function paymentLabel(status: HostPaymentStatus) {
   return "ממתין לתשלום";
 }
 
-function paymentClass(status: HostPaymentStatus) {
+function paymentClass(status: HostPaymentStatus, simulated = false) {
+  if (status === "paid" && simulated) {
+    return styles.pending;
+  }
   if (status === "paid") {
     return styles.paid;
   }
@@ -116,6 +123,8 @@ export default function HostDashboard({
   const sample = Boolean(exampleNote);
   const locked = sample && !actionsEnabled;
   const progress = overallTarget(data.gifts);
+  const money = hostMoneyPresentation(data.realPaidAmount ?? data.paidAmount, data.simulatedPaidAmount ?? 0);
+  const simulatedOnly = money.tone === "simulated";
   const progressWidth = progress.percent == null ? 0 : Math.min(100, Math.max(0, progress.percent));
 
   return (
@@ -148,11 +157,12 @@ export default function HostDashboard({
           <h2>סיכום</h2>
           <div className={styles.summary}>
             <div className={styles.stat}>
-              <p>נאסף</p>
-              <strong>{formatMoney(data.paidAmount)}</strong>
+              <p>{simulatedOnly ? "בהדגמה" : "נאסף"}</p>
+              <strong>{formatMoney(simulatedOnly ? (data.simulatedPaidAmount ?? data.paidAmount) : data.paidAmount)}</strong>
+              {money.caption ? <p className={styles.help}>{money.caption}</p> : null}
             </div>
             <div className={styles.stat}>
-              <p>הזמנות ששולמו</p>
+              <p>{simulatedOnly ? "הזמנות הדגמה" : "הזמנות ששולמו"}</p>
               <strong>{data.paidOrderCount.toLocaleString("he-IL")}</strong>
             </div>
             <div className={`${styles.stat} ${styles.statPending}`}>
@@ -172,6 +182,7 @@ export default function HostDashboard({
                 {formatMoney(progress.raised)} מתוך {formatMoney(progress.target)}
                 {progress.percent > 100 ? " · היעד הושג ואף יותר" : ""}
               </p>
+              {money.caption ? <p className={styles.help}>{money.caption}</p> : null}
               <p className={styles.help}>האחוז מחושב ביחס ליעדי המתנות שהוגדרו בלבד.</p>
               <div className={styles.summaryBar} aria-hidden>
                 <span style={{ width: `${progressWidth}%` }} />
@@ -274,6 +285,9 @@ export default function HostDashboard({
                     showPending
                     prominent
                   />
+                  {(gift.simulatedPaidAmount ?? 0) > 0 ? (
+                    <p className={styles.help}>{DEMO_MONEY_LABEL}</p>
+                  ) : null}
                   <GiftTimeline
                     paid={gift.paidAmount > 0}
                     issued={gift.vouchers.some((voucher) => voucher.status !== "CANCELLED")}
@@ -311,13 +325,15 @@ export default function HostDashboard({
                 <li key={order.id} className={styles.order}>
                   <div className={styles.orderTop}>
                     <p className={styles.orderName}>{order.guestName || "אורח"}</p>
-                    <span className={`${styles.badge} ${paymentClass(order.paymentStatus)}`}>
-                      {paymentLabel(order.paymentStatus)}
+                    <span className={`${styles.badge} ${paymentClass(order.paymentStatus, order.simulatedPayment)}`}>
+                      {paymentLabel(order.paymentStatus, order.simulatedPayment)}
                     </span>
                   </div>
                   <p className={styles.help}>{formatOrderDate(order.createdAt)}</p>
                   <p className={styles.amount}>{formatMoney(order.totalAmount)}</p>
-                  <p className={styles.help}>השתתפות במתנה</p>
+                  <p className={styles.help}>
+                    {order.simulatedPayment ? DEMO_MONEY_LABEL : "השתתפות במתנה"}
+                  </p>
                   {order.guestPhone || order.guestEmail ? (
                     <div className={styles.help} dir="ltr">
                       {order.guestPhone ? <p>{order.guestPhone}</p> : null}
@@ -336,19 +352,23 @@ export default function HostDashboard({
         <section className={styles.card} id="host-finance" data-host-shot="finance">
           <h2>סקירה כספית</h2>
           <p className={styles.help}>
-            הסכום ששולם הוא השתתפות שאושרה למתנות. עמלת שירות אינה נספרת ליעד.
-            אפשר להנפיק שובר על הסכום ששולם גם לפני שהיעד הושלם, ותשלום שמגיע אחר כך נשאר פנוי לשובר נוסף.
-            מימוש בחנות אינו התחשבנות מול LOLO.
+            {simulatedOnly
+              ? `${DEMO_MONEY_LABEL}. הסכומים במסך הזה הם סימולציה ולא כסף שהתקבל.`
+              : "הסכום ששולם הוא השתתפות שאושרה למתנות. עמלת שירות אינה נספרת ליעד. אפשר להנפיק שובר על הסכום ששולם גם לפני שהיעד הושלם, ותשלום שמגיע אחר כך נשאר פנוי לשובר נוסף. מימוש בחנות אינו התחשבנות מול LOLO."}
+            {money.tone === "mixed" ? ` ${DEMO_MONEY_LABEL}.` : ""}
           </p>
           <div className={styles.stats}>
             <div className={styles.stat}>
-              <p>סכום ששולם בהצלחה</p>
-              <strong>{formatMoney(data.paidAmount)}</strong>
+              <p>{simulatedOnly ? "סכום בהדגמה" : "סכום ששולם בהצלחה"}</p>
+              <strong>{formatMoney(simulatedOnly ? (data.simulatedPaidAmount ?? data.paidAmount) : data.paidAmount)}</strong>
               <p>
                 {data.paidOrderCount === 0
                   ? "אין הזמנות ששולמו עדיין"
-                  : `${data.paidOrderCount} הזמנות ששולמו`}
+                  : simulatedOnly
+                    ? `${data.paidOrderCount} הזמנות הדגמה`
+                    : `${data.paidOrderCount} הזמנות ששולמו`}
               </p>
+              {money.caption ? <p className={styles.help}>{money.caption}</p> : null}
             </div>
             <div className={`${styles.stat} ${styles.statPending}`}>
               <p>סכום ממתין לתשלום</p>
