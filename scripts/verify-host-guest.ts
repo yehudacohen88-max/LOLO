@@ -202,6 +202,13 @@ describe("host recovery", () => {
 
     const start = readFileSync(new URL("../app/api/host/recovery/start/route.ts", import.meta.url), "utf8");
     assert.doesNotMatch(start, /accessCode|readSimulatedHostNotices/);
+    const outbox = readFileSync(
+      new URL("../app/api/host/recovery/local-outbox/route.ts", import.meta.url),
+      "utf8",
+    );
+    assert.match(outbox, /localDatabaseUiAllowed/);
+    assert.match(outbox, /status: 404/);
+    assert.doesNotMatch(outbox, /accessCode/);
   });
 
   it("burns a challenge after five mismatches and keeps the public error uniform", () => {

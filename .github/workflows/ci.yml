@@ -80,3 +80,16 @@ jobs:
           LOLO_LOCAL_PROFILE: ${{ matrix.profile }}
           LOLO_VERIFY_ANON_LOCK: "1"
         run: node scripts/run-verify.mjs
+
+      - name: Install the local-UI browser
+        if: matrix.profile == 'full'
+        run: npx playwright install --with-deps chromium
+
+      - name: Drive the app against the local database
+        if: matrix.profile == 'full'
+        env:
+          LOLO_LOCAL_DB: "1"
+          LOLO_LOCAL_PORT: "3100"
+          BETA_ACCESS_ENABLED: "false"
+          PAYMENT_PROVIDER: demo
+        run: npx playwright test -c playwright.local.config.ts
