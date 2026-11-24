@@ -80,7 +80,13 @@ export function isGuestDirectAccess(pathname: string, method: string) {
   if (pathname === "/api/checkout/quote") {
     return verb === "POST";
   }
-  if (pathname === "/api/payments/start" || pathname === "/api/payments/confirm") {
+  if (
+    pathname === "/api/payments/start" ||
+    pathname === "/api/payments/confirm" ||
+    pathname === "/api/payments/cancel" ||
+    pathname === "/api/payments/refund" ||
+    pathname === "/api/payments/webhook"
+  ) {
     return verb === "POST";
   }
   if (pathname === "/api/invite/identity") {

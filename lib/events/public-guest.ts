@@ -37,6 +37,8 @@ export const PUBLIC_ORDER_KEYS = [
   "paymentProvider",
   "paymentReference",
   "paidAt",
+  "refundedAmount",
+  "refundStatus",
   "accessToken",
   "items",
 ] as const;
@@ -146,6 +148,8 @@ export function toPublicOrder(order: StoredOrder): StoredOrder {
     paymentProvider: order.paymentProvider,
     paymentReference: order.paymentReference,
     paidAt: order.paidAt,
+    refundedAmount: order.refundedAmount ?? 0,
+    refundStatus: order.refundStatus ?? "none",
     accessToken: order.accessToken,
     items: order.items.map(publicItem),
   };

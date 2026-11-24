@@ -15,6 +15,7 @@ import {
 import { clearGuestOrderRef, loadGuestOrderRef } from "@/lib/orders/guest-ref";
 import { thankYouAfterLoad } from "@/lib/orders/thank-you-ref";
 import type { StoredOrder } from "@/lib/orders/types";
+import { cancelGuestCheckout } from "@/lib/payments/guest-client";
 import { resolveEventCover, resolveGiftImage, type ResolvedImage } from "@/lib/image-library";
 import { GiftFallback } from "../flagship-ui";
 import { JourneyFrame } from "../journey-photo";
@@ -79,6 +80,16 @@ function statusText(read: OrderRead) {
   return "ממתינים לתשלום";
 }
 
+function refundLine(order: StoredOrder | null) {
+  if (order?.refundStatus === "full") {
+    return "ההחזר נרשם. לא הועבר כסף אמיתי.";
+  }
+  if (order?.refundStatus === "partial") {
+    return "נרשם החזר חלקי. לא הועבר כסף אמיתי.";
+  }
+  return "";
+}
+
 export default function ThankYouView() {
   const slug = fromRouteParam(useParams<{ slug: string }>().slug);
   const [eventName, setEventName] = useState("");
@@ -91,6 +102,8 @@ export default function ThankYouView() {
   const [heroIsGift, setHeroIsGift] = useState(false);
   const [together, setTogether] = useState("");
   const [shareNote, setShareNote] = useState("");
+  const [cancelError, setCancelError] = useState("");
+  const [cancelling, setCancelling] = useState(false);
   const confirmedPaid = useRef(false);
 
   function eventUrl() {
@@ -246,6 +259,8 @@ export default function ThankYouView() {
   const order = orderRead.phase === "ready" ? orderRead.order : null;
   const paid = order?.paymentStatus === "paid";
   const failed = order?.paymentStatus === "failed";
+  const unpaid = order?.paymentStatus === "pending" || order?.paymentStatus === "failed";
+  const refundNote = refundLine(order);
   const showReceiptAmounts = orderRead.phase === "ready";
   const giftLabel = contributions[0]?.giftName || heroGift || eventName || "המתנה";
   const shareText = eventName ? `בואו לחגוג: ${eventName}` : "בואו לחגוג ב-LOLO";
@@ -253,6 +268,22 @@ export default function ThankYouView() {
     .split(" · ")
     .filter((part) => !part.includes("%"))
     .join(" · ");
+
+  async function cancelOrder() {
+    if (!order || cancelling || !unpaid) {
+      return;
+    }
+    setCancelling(true);
+    setCancelError("");
+    try {
+      const next = await cancelGuestCheckout(order.id, order.accessToken);
+      setOrderRead({ phase: "ready", order: next });
+    } catch (error) {
+      setCancelError(error instanceof Error ? error.message : "לא ניתן לבטל את ההזמנה.");
+    } finally {
+      setCancelling(false);
+    }
+  }
 
   async function shareEvent() {
     const payload = { title: eventName || "LOLO", text: shareText, url: eventUrl() };
@@ -338,8 +369,18 @@ export default function ThankYouView() {
           {paid ? (
             <p className={styles.quietLine}>ההשתתפות נוספה למתנה. תודה שחגגתם יחד.</p>
           ) : null}
+          {refundNote ? (
+            <p className={styles.quietLine} data-refund-status="" role="status">
+              {refundNote}
+            </p>
+          ) : null}
           {failed ? (
             <p className={styles.quietLine}>אפשר לחזור ולנסות שוב. לא בוצע חיוב.</p>
+          ) : null}
+          {cancelError ? (
+            <p className={styles.fieldError} role="alert">
+              {cancelError}
+            </p>
           ) : null}
           {orderRead.phase === "error" ? (
             <p className={styles.quietLine}>אפשר לרענן ולנסות לקרוא את הסטטוס שוב.</p>
@@ -371,6 +412,19 @@ export default function ThankYouView() {
           <button type="button" className={styles.ghost} data-journey-stage-quiet="" onClick={() => void copyLink()}>
             העתקת קישור
           </button>
+          {unpaid ? (
+            <button
+              type="button"
+              className={styles.ghost}
+              data-journey-stage-quiet=""
+              disabled={cancelling}
+              onClick={() => {
+                void cancelOrder();
+              }}
+            >
+              ביטול ההזמנה
+            </button>
+          ) : null}
           {failed ? (
             <Link href={guestEventPath(slug, "payment")} className={styles.ghost} data-journey-stage-quiet="">
               חזרה לתשלום

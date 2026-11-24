@@ -24,6 +24,11 @@ export type MarkFailedDecision =
   | { action: "mark_failed"; snapshot: PaymentSnapshot }
   | { action: "reject" };
 
+export type CancelDecision =
+  | { action: "already_cancelled"; snapshot: PaymentSnapshot }
+  | { action: "cancel"; snapshot: PaymentSnapshot }
+  | { action: "reject" };
+
 /**
  * Paying is idempotent. A second success keeps the original reference and paid_at.
  * Pending and failed orders can become paid. Cancelled orders cannot.
@@ -77,4 +82,21 @@ export function decideMarkFailed(
       paidAt: null,
     },
   };
+}
+
+/** Unpaid orders can be cancelled. A paid order stays paid until a refund. */
+export function decideCancel(current: PaymentSnapshot): CancelDecision {
+  if (current.paymentStatus === "cancelled") {
+    return { action: "already_cancelled", snapshot: current };
+  }
+  if (current.paymentStatus === "pending" || current.paymentStatus === "failed") {
+    return {
+      action: "cancel",
+      snapshot: {
+        ...current,
+        paymentStatus: "cancelled",
+      },
+    };
+  }
+  return { action: "reject" };
 }

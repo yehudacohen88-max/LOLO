@@ -46,8 +46,17 @@ describe("demo funding is not money", () => {
       isSimulatedPayment({ ...realPaid, paymentReference: "demo-slipped" }),
       true,
     );
-    assert.equal(isRealMoneyPayment(realPaid), true);
+    assert.equal(isSimulatedPayment(realPaid), true);
+    assert.equal(isRealMoneyPayment(realPaid), false);
+    assert.equal(isSimulatedPayment(realPaid, ["cardcom"]), false);
+    assert.equal(isRealMoneyPayment(realPaid, ["cardcom"]), true);
+    assert.equal(
+      isSimulatedPayment({ ...realPaid, paymentReference: "demo-slipped" }, ["cardcom"]),
+      true,
+    );
     assert.equal(isSimulatedPayment({ ...realPaid, paymentStatus: "pending" }), false);
+    assert.equal(sumPaidPools([realPaid]).realPaid, 0);
+    assert.equal(sumPaidPools([realPaid]).simulatedPaid, 350);
   });
 
   it("blocks a monetary issue and a redeem when funding is demo", () => {
@@ -127,7 +136,7 @@ describe("demo funding is not money", () => {
   });
 
   it("keeps a real-provider voucher issuable and redeemable", () => {
-    const sums = sumPaidPools([realPaid, demoPaid]);
+    const sums = sumPaidPools([realPaid, demoPaid], ["cardcom"]);
     assert.equal(sums.realPaid, 350);
     assert.equal(sums.simulatedPaid, 350);
 
