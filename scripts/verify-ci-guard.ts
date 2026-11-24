@@ -33,7 +33,17 @@ describe("local SQL order", () => {
       ...profiles.seed,
       ...Object.keys(skippedSql),
     ]);
-    assert.deepEqual(files, [...used].sort());
+    const listedSupabase = [...used].filter((file) => file.startsWith("supabase/"));
+    assert.deepEqual(
+      files,
+      listedSupabase.filter((file) => fs.existsSync(path.join(root, file))).sort(),
+    );
+    for (const file of used) {
+      const present = fs.existsSync(path.join(root, file));
+      if (!present) {
+        assert.equal(Object.hasOwn(skippedSql, file), false, file);
+      }
+    }
     for (const file of Object.keys(skippedSql)) {
       assert.equal(profiles.ci.includes(file), false);
       assert.equal(profiles.full.includes(file), false);
@@ -57,28 +67,59 @@ describe("local SQL order", () => {
       "supabase/demo-checkout.sql",
       "supabase/vouchers.sql",
     ]);
-    assert.equal(profiles.ci.at(-2), "supabase/events-anon-read.sql");
-    assert.equal(profiles.ci.at(-1), "supabase/audit-events.sql");
+    const fullOnly = [
+      "supabase/settlements.sql",
+      "supabase/settlement-exclude-demo.sql",
+      "supabase/demo-seed.sql",
+    ];
+    assert.deepEqual(
+      profiles.ci,
+      profiles.full.filter((file) => !fullOnly.includes(file)),
+    );
     assert.equal(profiles.ci.includes("supabase/settlements.sql"), false);
+    assert.equal(profiles.ci.includes("supabase/settlement-exclude-demo.sql"), false);
     assert.equal(profiles.ci.includes("supabase/demo-seed.sql"), false);
-    assert.deepEqual(profiles.full.slice(0, 13), [...profiles.ci.slice(0, 13)]);
-    assert.equal(profiles.full[13], "supabase/settlements.sql");
-    assert.equal(profiles.full.at(-2), "supabase/audit-events.sql");
+    assert.ok(
+      profiles.full.indexOf("supabase/pilot-demo-voucher-guard.sql") <
+        profiles.full.indexOf("supabase/settlement-exclude-demo.sql"),
+    );
+    assert.ok(
+      profiles.full.indexOf("supabase/settlements.sql") <
+        profiles.full.indexOf("supabase/settlement-exclude-demo.sql"),
+    );
+    assert.ok(
+      profiles.full.indexOf("supabase/settlement-exclude-demo.sql") <
+        profiles.full.indexOf("supabase/demo-seed.sql"),
+    );
+    assert.ok(
+      profiles.full.indexOf("supabase/events-anon-read.sql") <
+        profiles.full.indexOf("supabase/audit-events.sql"),
+    );
     assert.equal(profiles.full.at(-1), "supabase/demo-seed.sql");
     assert.deepEqual(profiles.seed, ["supabase/demo-seed.sql"]);
+    for (const file of [
+      "supabase/payments-attempts.sql",
+      "supabase/voucher-term-defaults.sql",
+      "supabase/pilot-demo-voucher-guard.sql",
+      "supabase/host-identity.sql",
+      "supabase/support-notes.sql",
+      "supabase/notifications-and-documents.sql",
+      "supabase/pilot-feedback.sql",
+      "scripts/audit-demo-vouchers.sql",
+      "supabase/readonly/test-data-inventory.sql",
+      "supabase/pilot-isolate-test-data.sql",
+    ]) {
+      assert.equal(profiles.ci.includes(file), true, file);
+      assert.equal(profiles.full.includes(file), true, file);
+    }
   });
 
   it("keeps the documented order in docs/security/local-database.md", () => {
     const doc = fs.readFileSync(path.join(root, "docs/security/local-database.md"), "utf8");
-    const documented = [...doc.matchAll(/`(supabase\/[a-z0-9-]+\.sql)`/g)].map((match) => match[1]);
-    assert.deepEqual(documented, [
-      ...profiles.ci.slice(0, 13),
-      "supabase/settlements.sql",
-      "supabase/audit-events.sql",
-      "supabase/demo-seed.sql",
-      "supabase/fix-public-read.sql",
-      "supabase/demo-cleanup.sql",
-    ]);
+    const documented = [
+      ...doc.matchAll(/`((?:supabase|scripts)\/[A-Za-z0-9_./-]+\.sql)`/g),
+    ].map((match) => match[1]);
+    assert.deepEqual(documented, [...profiles.full, ...Object.keys(skippedSql)]);
     assert.match(doc, /do not run/i);
     assert.match(doc, /127\.0\.0\.1/);
   });

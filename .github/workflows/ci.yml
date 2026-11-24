@@ -34,6 +34,7 @@ jobs:
       BETA_ACCESS_SECRET: ci-beta-access-secret
       IMAGE_UPLOAD_SECRET: ci-image-upload-secret
       PAYMENT_PROVIDER: demo
+      PAYMENT_WEBHOOK_SECRET: ci-webhook-secret
     steps:
       - name: Check out
         uses: actions/checkout@v4

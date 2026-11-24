@@ -211,8 +211,12 @@ function applyProfile(name) {
       fail(`Refusing to apply skipped file ${file}`);
     }
     const absolute = path.join(root, file);
-    if (!absolute.startsWith(`${root}${path.sep}`) || !existsSync(absolute)) {
-      fail(`Missing SQL file ${file}`);
+    if (!absolute.startsWith(`${root}${path.sep}`)) {
+      fail(`Refusing SQL path ${file}`);
+    }
+    if (!existsSync(absolute)) {
+      console.error(`Skipping ${file} (not in this checkout yet)`);
+      continue;
     }
     console.error(`Applying ${file}`);
     applyFile(absolute);

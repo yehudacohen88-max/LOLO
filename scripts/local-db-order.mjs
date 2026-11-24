@@ -21,18 +21,52 @@ const readmeSchema = [
   "supabase/vouchers.sql",
 ];
 
-const anonRead = "supabase/events-anon-read.sql";
-const auditEvents = "supabase/audit-events.sql";
+// Schema from the open PRs. Each file's prerequisites are already in readmeSchema
+// or earlier in this list. events-anon-read stays after every events change.
+const sharedAfterVouchers = [
+  "supabase/payments-attempts.sql",
+  "supabase/voucher-term-defaults.sql",
+  "supabase/pilot-demo-voucher-guard.sql",
+  "supabase/host-identity.sql",
+  "supabase/support-notes.sql",
+  "supabase/notifications-and-documents.sql",
+  "supabase/pilot-feedback.sql",
+  "supabase/events-anon-read.sql",
+];
+
+// Read-only checks. They run after the tables they select exist.
+// pilot-isolate-test-data.sql executes only its SELECT statements. The write
+// block stays inside a block comment and ends in ROLLBACK.
+const sharedReads = [
+  "supabase/audit-events.sql",
+  "scripts/audit-demo-vouchers.sql",
+  "supabase/readonly/test-data-inventory.sql",
+  "supabase/pilot-isolate-test-data.sql",
+];
+
 const settlements = "supabase/settlements.sql";
+const settlementExcludeDemo = "supabase/settlement-exclude-demo.sql";
 const demoSeed = "supabase/demo-seed.sql";
+
+const ci = [...readmeSchema, ...sharedAfterVouchers, ...sharedReads];
 
 export const profiles = {
   // Default CI job and `npm run db:local`. Settlements are not in Production,
-  // so this profile leaves that table absent. audit-events.sql is local-only
-  // until a person applies it in the SQL editor.
-  ci: [...readmeSchema, anonRead, auditEvents],
-  // Opt-in CI job and `npm run db:reset`. demo-seed.sql runs only here.
-  full: [...readmeSchema, anonRead, settlements, auditEvents, demoSeed],
+  // so this profile leaves that table absent. Every other SQL change is applied
+  // on the loopback database, including files whose headers say not to run them
+  // against Production.
+  ci,
+  // Opt-in CI job and `npm run db:reset`. Settlements, the demo exclusion, and
+  // the demo seed run only here. The seed is last so issue_gift_voucher is the
+  // guarded function and demo vouchers are not redeemed.
+  full: [
+    ...readmeSchema,
+    ...sharedAfterVouchers,
+    settlements,
+    settlementExcludeDemo,
+    ...sharedReads,
+    demoSeed,
+  ],
   // `npm run db:seed`. Requires the full profile already applied.
   seed: [demoSeed],
 };
