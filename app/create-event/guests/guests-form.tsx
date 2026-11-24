@@ -18,11 +18,16 @@ import {
   parseGuestExcelFile,
   type ExcelRowIssue,
 } from "@/lib/guests/excel";
+import LegalCollectionNotice from "@/components/legal/collection-notice";
 
 const fieldClass =
   "h-12 rounded-2xl border border-border bg-white px-4 text-base text-foreground outline-none placeholder:text-muted/70 focus:border-brand";
 
-export default function GuestsForm() {
+export default function GuestsForm({
+  legalDrafts = false,
+}: {
+  legalDrafts?: boolean;
+}) {
   const router = useRouter();
   const [ready, setReady] = useState(false);
   const [name, setName] = useState("");
@@ -188,6 +193,7 @@ export default function GuestsForm() {
 
   return (
     <div className="mt-10 flex flex-col gap-8">
+      <LegalCollectionNotice enabled={legalDrafts} kind="host" />
       <section>
         <h2 className="text-base font-bold text-foreground">הוספת אורח</h2>
         <form onSubmit={addGuest} className="mt-3 flex flex-col gap-3">

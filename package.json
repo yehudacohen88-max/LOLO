@@ -18,6 +18,7 @@
     "verify:images": "node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/register-test-hooks.mjs --test scripts/verify-image-library.ts",
     "verify:sessions": "node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/register-test-hooks.mjs --test scripts/verify-session-separation.ts scripts/verify-login-ip.ts",
     "verify:host-images": "node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/register-test-hooks.mjs --test scripts/verify-host-images.ts scripts/verify-host-isolation.ts scripts/verify-upload-security.ts scripts/verify-login-ip.ts",
+    "verify:legal": "node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/register-test-hooks.mjs --test scripts/verify-legal-drafts.ts",
     "test:e2e": "npm run build && playwright test"
   },
   "dependencies": {

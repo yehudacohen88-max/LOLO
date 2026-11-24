@@ -111,6 +111,7 @@ type HostDashboardProps = {
   origin: string;
   exampleNote?: string;
   actionsEnabled?: boolean;
+  legalDrafts?: boolean;
 };
 
 export default function HostDashboard({
@@ -119,6 +120,7 @@ export default function HostDashboard({
   origin,
   exampleNote,
   actionsEnabled = false,
+  legalDrafts = false,
 }: HostDashboardProps) {
   const sample = Boolean(exampleNote);
   const locked = sample && !actionsEnabled;
@@ -389,6 +391,7 @@ export default function HostDashboard({
             origin={origin}
             guests={data.invitedGuests}
             disabled={locked}
+            legalDrafts={legalDrafts}
           />
         </div>
       </div>

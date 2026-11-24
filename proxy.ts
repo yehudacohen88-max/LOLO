@@ -7,6 +7,7 @@ import {
   safeNextPath,
 } from "@/lib/beta/gate";
 import { isGuestDirectAccess } from "@/lib/beta/guest-access";
+import { legalDraftPathHidden, legalDraftsEnabledFromEnv } from "@/lib/legal/flag";
 import { settlementsEnabled } from "@/lib/settlements/availability";
 
 function destination(request: NextRequest) {
@@ -24,6 +25,16 @@ function closedSettlementPage(pathname: string) {
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  if (legalDraftPathHidden(pathname, legalDraftsEnabledFromEnv())) {
+    return new NextResponse("העמוד לא נמצא", {
+      status: 404,
+      headers: {
+        "content-type": "text/plain; charset=utf-8",
+        "X-Robots-Tag": "noindex, nofollow",
+        "Cache-Control": "no-store",
+      },
+    });
+  }
   if (!settlementsEnabled() && closedSettlementPage(pathname)) {
     const missing = request.nextUrl.clone();
     missing.pathname = "/settlements-unavailable";
