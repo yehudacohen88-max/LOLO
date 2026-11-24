@@ -34,12 +34,27 @@ async function loginHost(page: Page, slug: string, code: string) {
 
 async function loginAdmin(page: Page) {
   await page.goto("/admin");
-  if (await page.getByRole("heading", { name: "לוח בקרה" }).isVisible().catch(() => false)) {
-    return;
+  const dashboard = page.getByRole("heading", { name: "לוח בקרה" });
+  const password = page.getByLabel("קוד ניהול");
+  await expect(dashboard.or(password)).toBeVisible();
+  if (await password.isVisible()) {
+    await password.fill(adminPassword);
+    await page.getByRole("button", { name: "כניסה" }).click();
   }
-  await page.getByLabel("קוד ניהול").fill(adminPassword);
-  await page.getByRole("button", { name: "כניסה" }).click();
-  await expect(page.getByRole("heading", { name: "לוח בקרה" })).toBeVisible();
+  await expect(dashboard).toBeVisible();
+}
+
+async function ensureDemoStoreActive(page: Page) {
+  await loginAdmin(page);
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto("/admin/stores");
+  const demoStore = page.getByRole("row").filter({ hasText: "אופנים — הדגמה" });
+  await expect(demoStore).toBeVisible();
+  const activate = demoStore.getByRole("button", { name: "הפעלה" });
+  if (await activate.isVisible()) {
+    await activate.click();
+  }
+  await expect(demoStore.getByRole("button", { name: "השבתה" })).toBeVisible();
 }
 
 test("home, headers, and host create publish a local event", async ({ page }) => {
@@ -191,16 +206,11 @@ test("admin lists, settlement, audit, notifications, and documents", async ({ pa
   await expect(page.getByText("לא נשלחת הודעה אמיתית")).toBeVisible();
   await expect(page.getByRole("heading", { name: "מסמכים", exact: true })).toBeVisible();
 
-  await page.goto("/admin/stores");
-  const demoStore = page.locator("li:visible, tr:visible").filter({ hasText: "אופנים" }).first();
-  const activate = demoStore.getByRole("button", { name: "הפעלה" });
-  if (await activate.isVisible()) {
-    await activate.click();
-    await expect(demoStore.getByRole("button", { name: "השבתה" })).toBeVisible();
-  }
+  await ensureDemoStoreActive(page);
 });
 
 test("store desk refuses to redeem a demo voucher", async ({ page }) => {
+  await ensureDemoStoreActive(page);
   await page.goto("/store");
   await page.getByLabel("שם הכניסה של החנות").fill("demo-ofanaim");
   await page.getByLabel("קוד כניסה").fill("DEMO-SHOP-CODE");
