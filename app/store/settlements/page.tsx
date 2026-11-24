@@ -17,6 +17,7 @@ import { getStoreSession } from "@/lib/store/session";
 import { formatVoucherWhen } from "@/lib/vouchers/labels";
 import { getStoreLabel } from "@/lib/vouchers/repository";
 import StoreLogoutButton from "../redeem/logout-button";
+import StoreDeskLinks from "../store-links";
 
 export const metadata: Metadata = {
   title: "התחשבנויות | LOLO",
@@ -72,7 +73,11 @@ export default async function StoreSettlementsPage() {
         כאן רואים מה מגיע לבית העסק: הסכום שמומש פחות העמלה שנשמרה במימוש, או ברירת המחדל מההגדרות.
         מימושי הדגמה מוצגים לחוד ואינם נספרים לתשלום.
       </p>
+      <StoreDeskLinks />
       <div className="mt-4 flex flex-wrap gap-4">
+        <Link href="/store/balance" className="text-sm font-semibold text-brand">
+          יתרה
+        </Link>
         <Link href="/store/redeem" className="text-sm font-semibold text-brand">
           חזרה למימוש שוברים
         </Link>

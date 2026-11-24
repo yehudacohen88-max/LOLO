@@ -250,6 +250,24 @@ export default async function AdminHomePage() {
         >
           מימושים
         </Link>
+        <Link
+          href="/admin/events"
+          className="inline-flex h-12 items-center justify-center rounded-full border border-brand px-6 text-base font-semibold text-brand"
+        >
+          אירועים
+        </Link>
+        <Link
+          href="/admin/orders"
+          className="inline-flex h-12 items-center justify-center rounded-full border border-brand px-6 text-base font-semibold text-brand"
+        >
+          הזמנות
+        </Link>
+        <Link
+          href="/admin/reports"
+          className="inline-flex h-12 items-center justify-center rounded-full border border-brand px-6 text-base font-semibold text-brand"
+        >
+          דוחות
+        </Link>
       </div>
     </main>
   );
