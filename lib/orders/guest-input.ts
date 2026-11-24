@@ -61,6 +61,9 @@ export function guestItemsProblem(items: unknown) {
     }
     total += amount;
   }
+  if (!(total > 0)) {
+    return "עדיין לא נבחרה מתנה.";
+  }
   if (total > GUEST_MONEY_LIMITS.total) {
     return "הסכום גבוה מהמותר.";
   }

@@ -29,7 +29,7 @@ export async function savePendingGuestOrder(
       guestName: details.name,
       guestPhone: details.phone,
       guestEmail: details.email,
-      wantsConfirmation: details.wantReceipt,
+      wantsConfirmation: false,
       greetingText: greeting.text,
       items: contributions.map((item) => ({
         giftId: item.giftId,

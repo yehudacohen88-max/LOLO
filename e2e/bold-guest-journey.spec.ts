@@ -212,9 +212,7 @@ test("bold guest journey keeps contrast, frames, and a visible demo", async ({ p
             failures.push(`${name} ${width} updates consent is pre-checked`);
           }
         }
-        const receipt = page.getByRole("checkbox", { name: "אני רוצה לקבל אישור על המתנה" });
-        await expect(receipt).toBeVisible();
-        await expect(receipt).not.toBeChecked();
+        await expect(page.getByRole("checkbox", { name: "אני רוצה לקבל אישור על המתנה" })).toHaveCount(0);
       }
       if (name === "greeting" || name === "thanks") {
         const photo = page.locator("[data-journey-photo][data-image-source='host']:visible").first();
@@ -259,30 +257,17 @@ test("bold guest journey keeps contrast, frames, and a visible demo", async ({ p
   expect(failures, failures.join("\n")).toEqual([]);
 });
 
-test("gift confirmation starts unchecked and a saved draft is restored", async ({ page }) => {
+test("gift confirmation checkbox is not offered", async ({ page }) => {
   await installReadRoutes(page, true);
   await page.setViewportSize({ width: 390, height: 844 });
-  const box = page.getByRole("checkbox", { name: "אני רוצה לקבל אישור על המתנה" });
-
   await page.goto("/e/flagship-fixture/details");
-  await expect(box).toBeVisible();
-  await expect(box).not.toBeChecked();
-
-  await box.check();
-  await expect.poll(async () =>
-    page.evaluate(() => window.localStorage.getItem("lolo-guest-details:flagship-fixture")),
-  ).toContain('"wantReceipt":true');
-  await page.reload();
-  await expect(box).toBeChecked();
-
-  await page.evaluate(() => {
-    const key = "lolo-guest-details:flagship-fixture";
-    const saved = JSON.parse(window.localStorage.getItem(key) || "{}") as { wantReceipt?: boolean };
-    saved.wantReceipt = false;
-    window.localStorage.setItem(key, JSON.stringify(saved));
-  });
-  await page.reload();
-  await expect(box).not.toBeChecked();
+  await expect(page.getByRole("heading", { name: "למי נגיד תודה?" })).toBeVisible();
+  await expect(page.getByRole("checkbox", { name: "אני רוצה לקבל אישור על המתנה" })).toHaveCount(0);
+  const consent = page.getByRole("checkbox");
+  const consentCount = await consent.count();
+  for (let index = 0; index < consentCount; index += 1) {
+    await expect(consent.nth(index)).not.toBeChecked();
+  }
 });
 
 test("library photos fill a guest journey when the host did not upload any", async ({ page }) => {
