@@ -2,7 +2,7 @@
 
 LOLO's automated tests and `npm run db:*` use a Supabase stack in Docker on this machine. They do not connect to a hosted project. The scripts refuse to run when the database host is not `127.0.0.1` (or `localhost`) and when any environment value contains the Production project ref.
 
-`supabase/config.toml` is the local CLI config (`project_id = "lolo"`). `[db.migrations].schema_paths` and `[db.seed]` are empty so `supabase db push` and a hosted `supabase db reset --remote` have no LOLO files to send. SQL is applied only by `scripts/local-db.mjs`.
+`supabase/config.toml` is the local CLI config (`project_id = "lolo"`). `[db.migrations].schema_paths` and `[db.seed]` are empty so `supabase db push` and a hosted `supabase db reset --remote` have no LOLO files to send. SQL is applied only by `scripts/local-db.mjs`, which pipes each file into `psql` inside the local `supabase_db_*` container. `supabase db query` cannot run these files: it sends them as one prepared statement.
 
 ## Commands
 

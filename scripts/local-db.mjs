@@ -3,7 +3,7 @@
 // refuses any environment value that contains the Production project ref.
 
 import { spawnSync } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { PRODUCTION_SUPABASE_REF, profiles, skippedSql } from "./local-db-order.mjs";
@@ -143,6 +143,64 @@ function readProfile(argv, fallback) {
   return value;
 }
 
+function dbContainer() {
+  const result = spawnSync("docker", ["ps", "--format", "{{.Names}}\t{{.Image}}"], {
+    encoding: "utf8",
+  });
+  if (result.status !== 0) {
+    fail("Could not list Docker containers for the local Supabase database.");
+  }
+  const names = (result.stdout ?? "")
+    .split(/\r?\n/)
+    .map((line) => {
+      const [name, image] = line.split("\t");
+      return { name: (name ?? "").trim(), image: image ?? "" };
+    })
+    .filter((row) => row.name.startsWith("supabase_db_") && /supabase\/postgres/.test(row.image))
+    .map((row) => row.name);
+  const container = names.find((name) => name === "supabase_db_lolo") ?? names[0];
+  if (!container || !/^supabase_db_[A-Za-z0-9_.-]+$/.test(container)) {
+    fail("Could not find the local Supabase database container.");
+  }
+  return container;
+}
+
+function applyFile(absolute) {
+  // `supabase db query` sends the file as one prepared statement and rejects
+  // the multi-statement SQL files in this repo. psql inside the local
+  // database container runs the whole file. The container is the loopback
+  // stack only; this does not take a remote URL.
+  const container = dbContainer();
+  const result = spawnSync(
+    "docker",
+    [
+      "exec",
+      "-i",
+      "-e",
+      "PGCLIENTENCODING=UTF8",
+      container,
+      "psql",
+      "-U",
+      "postgres",
+      "-d",
+      "postgres",
+      "-v",
+      "ON_ERROR_STOP=1",
+      "-q",
+    ],
+    { input: readFileSync(absolute) },
+  );
+  if (result.error) {
+    fail(result.error.message);
+  }
+  if (result.status !== 0) {
+    if (result.stderr) {
+      process.stderr.write(result.stderr);
+    }
+    process.exit(result.status || 1);
+  }
+}
+
 function applyProfile(name) {
   const files = profiles[name];
   assertNoProductionEnv(process.env);
@@ -157,7 +215,7 @@ function applyProfile(name) {
       fail(`Missing SQL file ${file}`);
     }
     console.error(`Applying ${file}`);
-    run(["db", "query", "--file", absolute]);
+    applyFile(absolute);
   }
   console.error(`Applied local profile ${name} to the loopback database.`);
 }
@@ -212,15 +270,17 @@ function exportEnv() {
   const status = readStatus();
   assertLocalStatus(status);
   const api = status.API_URL ?? "";
-  const anon = status.ANON_KEY ?? "";
-  const service = status.SERVICE_ROLE_KEY ?? "";
+  const anonName = status.ANON_KEY ? "ANON_KEY" : "PUBLISHABLE_KEY";
+  const serviceName = status.SERVICE_ROLE_KEY ? "SERVICE_ROLE_KEY" : "SECRET_KEY";
+  const anon = status[anonName] ?? "";
+  const service = status[serviceName] ?? "";
   if (!api || !anon || !service) {
-    fail("Local status did not include API_URL, ANON_KEY, and SERVICE_ROLE_KEY.");
+    fail("Local status did not include a loopback API URL and local API keys.");
   }
   process.stdout.write(
     `NEXT_PUBLIC_SUPABASE_URL=${api}\nNEXT_PUBLIC_SUPABASE_ANON_KEY=${anon}\nSUPABASE_SERVICE_ROLE_KEY=${service}\n`,
   );
-  console.error("Wrote local loopback Supabase variables to stdout.");
+  console.error(`Wrote local loopback Supabase variables to stdout (${anonName}, ${serviceName}).`);
 }
 
 const argv = process.argv.slice(2);
