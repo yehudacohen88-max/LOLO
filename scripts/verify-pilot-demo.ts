@@ -235,3 +235,22 @@ describe("guest checkout cannot start at zero", () => {
     assert.equal(greeting.includes("ממשיכים · {formatGiftAmount(total)}"), true);
   });
 });
+
+describe("demo guard SQL does not treat an unknown provider as money", () => {
+  it("keeps payment_provider_allowlist empty and replays an issue key before planning", () => {
+    const sql = readFileSync(new URL("../supabase/pilot-demo-voucher-guard.sql", import.meta.url), "utf8");
+    assert.match(sql, /create table if not exists public\.payment_provider_allowlist/);
+    assert.match(sql, /provider <> 'demo'/);
+    assert.match(sql, /provider <> 'none'/);
+    assert.match(sql, /function public\.payment_provider_is_real/);
+    assert.match(sql, /public\.payment_provider_is_real\(o\.payment_provider\)/);
+    assert.doesNotMatch(sql, /name other than "demo"/);
+    const seed = readFileSync(new URL("../supabase/demo-seed.sql", import.meta.url), "utf8");
+    assert.match(seed, /voucher_demo_guard_version\(\)/);
+    const repository = readFileSync(new URL("../lib/vouchers/repository.ts", import.meta.url), "utf8");
+    const issue = repository.slice(repository.indexOf("export async function issueGiftVoucher"));
+    const replay = issue.indexOf("idempotency_key");
+    const plan = issue.indexOf("planFundedVoucherIssue");
+    assert.ok(replay > 0 && plan > replay);
+  });
+});
