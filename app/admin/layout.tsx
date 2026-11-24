@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { getAdminSession } from "@/lib/admin/session";
+import { settlementsEnabled } from "@/lib/settlements/availability";
 import AdminNav from "./admin-nav";
 import LogoutButton from "./logout-button";
 
@@ -17,7 +18,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
             </Link>
             {session ? <LogoutButton /> : <p className="text-sm font-semibold text-muted">ניהול פנימי</p>}
           </div>
-          {session ? <AdminNav /> : null}
+          {session ? <AdminNav showSettlements={settlementsEnabled()} /> : null}
         </div>
       </header>
       {children}

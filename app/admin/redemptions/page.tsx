@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getAdminSession } from "@/lib/admin/session";
+import { settlementsEnabled } from "@/lib/settlements/availability";
 import { listAdminStores } from "@/lib/admin/stores";
 import { formatGiftAmount } from "@/lib/guest-draft";
 import {
@@ -47,11 +48,16 @@ export default async function AdminRedemptionsPage({ searchParams }: PageProps) 
       <header>
         <h1 className="text-2xl font-bold sm:text-4xl">מימושים</h1>
         <p className="mt-2 text-base text-muted">
-          כל מימוש שנקלט בחנות או דרך הניהול.{" "}
-          <Link href="/admin/settlements" className="font-semibold text-brand">
-            יצירת התחשבנות
-          </Link>{" "}
-          אוספת את מה שטרם הוסדר.
+          כל מימוש שנקלט בחנות או דרך הניהול.
+          {settlementsEnabled() ? (
+            <>
+              {" "}
+              <Link href="/admin/settlements" className="font-semibold text-brand">
+                יצירת התחשבנות
+              </Link>{" "}
+              אוספת את מה שטרם הוסדר.
+            </>
+          ) : null}
         </p>
       </header>
       <form className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-end" method="get">

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { adminPasswordIsConfigured, getAdminSession } from "@/lib/admin/session";
 import { formatGiftAmount } from "@/lib/guest-draft";
+import { settlementsEnabled } from "@/lib/settlements/availability";
 import { SETTLEMENT_SCHEMA_MESSAGE } from "@/lib/settlements/messages";
 import { getAdminFinanceOverview } from "@/lib/settlements/repository";
 import { formatVoucherWhen } from "@/lib/vouchers/labels";
@@ -173,7 +174,7 @@ export default async function AdminHomePage() {
                 }
               />
             </div>
-            {snapshot?.settlementsReady && snapshot.overdue.length > 0 ? (
+            {settlementsEnabled() && snapshot?.settlementsReady && snapshot.overdue.length > 0 ? (
               <ul className="mt-4 flex flex-col gap-3">
                 {snapshot.overdue.slice(0, 6).map((item) => (
                   <li
@@ -202,12 +203,14 @@ export default async function AdminHomePage() {
       ) : null}
 
       <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-        <Link
-          href="/admin/settlements"
-          className="inline-flex h-12 items-center justify-center rounded-full bg-brand px-6 text-base font-semibold text-white"
-        >
-          התחשבנויות
-        </Link>
+        {settlementsEnabled() ? (
+          <Link
+            href="/admin/settlements"
+            className="inline-flex h-12 items-center justify-center rounded-full bg-brand px-6 text-base font-semibold text-white"
+          >
+            התחשבנויות
+          </Link>
+        ) : null}
         <Link
           href="/admin/stores"
           className="inline-flex h-12 items-center justify-center rounded-full border border-brand px-6 text-base font-semibold text-brand"

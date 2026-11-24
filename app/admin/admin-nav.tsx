@@ -12,12 +12,15 @@ const LINKS = [
   { href: "/admin/settings", label: "הגדרות", exact: false },
 ];
 
-export default function AdminNav() {
+export default function AdminNav({ showSettlements = false }: { showSettlements?: boolean }) {
   const pathname = usePathname();
+  const links = LINKS.filter(
+    (link) => showSettlements || link.href !== "/admin/settlements",
+  );
 
   return (
     <nav className="flex gap-2 overflow-x-auto pb-1">
-      {LINKS.map((link) => {
+      {links.map((link) => {
         const active = link.exact
           ? pathname === link.href
           : pathname === link.href || pathname.startsWith(`${link.href}/`);

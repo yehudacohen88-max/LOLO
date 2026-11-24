@@ -1,12 +1,17 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin/session";
-import { jsonFromSettlementError } from "@/lib/settlements/http";
+import { jsonFromSettlementError, settlementPilotUnavailable } from "@/lib/settlements/http";
 import { parseCreateSettlementInput } from "@/lib/settlements/input";
 import { createStoreSettlement } from "@/lib/settlements/repository";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
+  const closed = settlementPilotUnavailable();
+  if (closed) {
+    return closed;
+  }
+
   const session = await getAdminSession();
   if (!session) {
     return NextResponse.json({ error: "אין הרשאה." }, { status: 401 });

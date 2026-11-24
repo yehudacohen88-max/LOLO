@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import SettlementFigures from "@/components/settlement-figures";
 import { settlementLabel } from "@/lib/admin/store-fields";
 import { getAdminSession } from "@/lib/admin/session";
+import { settlementsEnabled } from "@/lib/settlements/availability";
 import { formatGiftAmount } from "@/lib/guest-draft";
 import { lineCommissionLabel, lineTermsLabel, settlementBatchLabel } from "@/lib/settlements/labels";
 import { getSettlement } from "@/lib/settlements/repository";
@@ -23,6 +24,10 @@ type PageProps = {
 };
 
 export default async function AdminSettlementDetailPage({ params }: PageProps) {
+  if (!settlementsEnabled()) {
+    notFound();
+  }
+
   const session = await getAdminSession();
   if (!session) {
     redirect("/admin");

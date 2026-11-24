@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { settlementsEnabled } from "@/lib/settlements/availability";
 import SettlementFigures from "@/components/settlement-figures";
 import { settlementLabel } from "@/lib/admin/store-fields";
 import { formatGiftAmount } from "@/lib/guest-draft";
@@ -20,6 +21,10 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function StoreSettlementsPage() {
+  if (!settlementsEnabled()) {
+    notFound();
+  }
+
   const session = await getStoreSession();
   if (!session) {
     redirect("/store");

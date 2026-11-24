@@ -25,6 +25,7 @@ Next.js 16 (App Router), React 19, TypeScript, Supabase, Tailwind CSS 4, Vercel.
 - `BETA_ACCESS_SECRET`
 - `NEXT_PUBLIC_APP_URL` (אופציונלי)
 - `PAYMENT_PROVIDER` (אופציונלי. ריק = תשלום הדגמה)
+- `SETTLEMENTS_ENABLED` (אופציונלי. ריק = התחשבנות סגורה)
 
 ## בסיס הנתונים
 
@@ -46,7 +47,7 @@ Next.js 16 (App Router), React 19, TypeScript, Supabase, Tailwind CSS 4, Vercel.
 10. `supabase/custom-gifts.sql`
 11. `supabase/demo-checkout.sql`
 12. `supabase/vouchers.sql`
-13. `supabase/settlements.sql`
+13. `supabase/settlements.sql` — לא הורץ ב־Production של הפיילוט. לא מריצים אותו עד אישור. המסכים וה־API של ההתחשבנות סגורים כל עוד `SETTLEMENTS_ENABLED` לא הוגדר במפורש ל־`true`.
 
 אחרי שהאפליקציה שרצה בפרודקשן קוראת אירוע דרך השרת, מריצים פעם אחת את `supabase/events-anon-read.sql`. הוא סוגר קריאה אנונימית לאירועים ולמתנות, ולא מוחק שורות. לא מריצים אותו לפני שהקוד הזה חי באתר.
 
@@ -55,6 +56,13 @@ Next.js 16 (App Router), React 19, TypeScript, Supabase, Tailwind CSS 4, Vercel.
 14. `supabase/demo-seed.sql`
 
 מחיקה של שורות ההדגמה בלבד: `supabase/demo-cleanup.sql`. פרטי הכניסה והמסלול: `docs/DEMO.md`.
+
+מחכים לאישור, ולא מריצים אותם בפיילוט:
+
+- `supabase/pilot-feedback.sql` — טבלת משוב. בלי הטבלה, `/feedback` נשאר סגור.
+- `supabase/pilot-isolate-test-data.sql` — הצעת בידוד. החלק שכותב בהערה ומסתיים ב־`ROLLBACK`.
+
+`supabase/readonly/test-data-inventory.sql` הוא `SELECT` בלבד. רשימת החנויות והאירועים: `docs/pilot/test-data-inventory.md`.
 
 ## פקודות
 
@@ -69,6 +77,7 @@ npm run verify:sessions
 npm run verify:checkout
 npm run verify:vouchers
 npm run verify:settlements
+npm run verify:pilot
 npm run test:e2e
 node scripts/hash-demo-access.mjs
 ```

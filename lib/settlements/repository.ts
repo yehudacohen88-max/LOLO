@@ -17,6 +17,7 @@ import {
   SettlementActionError,
   SettlementSchemaMissingError,
 } from "@/lib/settlements/messages";
+import { assertSettlementsEnabled, settlementsEnabled } from "@/lib/settlements/availability";
 import { isSettlementOverdue } from "@/lib/settlements/money";
 import {
   asSettlementStatus,
@@ -186,6 +187,7 @@ export async function listSettlements(filters: {
   status?: SettlementStatus | "overdue" | "";
   storeId?: string;
 }) {
+  assertSettlementsEnabled();
   const supabase = getSupabaseServiceClient();
   const now = Date.now();
   let query = supabase
@@ -234,6 +236,7 @@ async function linesForSettlements(settlementIds: string[]) {
 }
 
 export async function getSettlement(id: string): Promise<SettlementDetail | null> {
+  assertSettlementsEnabled();
   const supabase = getSupabaseServiceClient();
   const now = Date.now();
   const { data, error } = await supabase
@@ -256,6 +259,7 @@ export async function getSettlement(id: string): Promise<SettlementDetail | null
 }
 
 export async function listStoreBalances() {
+  assertSettlementsEnabled();
   const supabase = getSupabaseServiceClient();
   const stores = await listAdminStores();
   const redemptions = await fetchPages<{
@@ -302,6 +306,7 @@ export async function listStoreBalances() {
 }
 
 export async function listStoreSettlementDetails(storeId: string): Promise<SettlementDetail[]> {
+  assertSettlementsEnabled();
   const supabase = getSupabaseServiceClient();
   const now = Date.now();
   const { data, error } = await supabase
@@ -324,6 +329,7 @@ export async function listStoreSettlementDetails(storeId: string): Promise<Settl
 }
 
 export async function createStoreSettlement(storeId: string, idempotencyKey: string) {
+  assertSettlementsEnabled();
   const supabase = getSupabaseServiceClient();
   const { data, error } = await supabase.rpc("create_store_settlement", {
     p_store_id: storeId,
@@ -340,6 +346,7 @@ export async function markSettlementPaid(
   reference: string | null,
   method: SettlementMethod | null,
 ) {
+  assertSettlementsEnabled();
   const supabase = getSupabaseServiceClient();
   const { data, error } = await supabase.rpc("mark_settlement_paid", {
     p_settlement_id: settlementId,
@@ -353,6 +360,7 @@ export async function markSettlementPaid(
 }
 
 export async function cancelSettlement(settlementId: string) {
+  assertSettlementsEnabled();
   const supabase = getSupabaseServiceClient();
   const { data, error } = await supabase.rpc("cancel_settlement", {
     p_settlement_id: settlementId,
@@ -372,7 +380,7 @@ export async function getAdminFinanceOverview(now = Date.now()) {
     countGifts(),
   ]);
 
-  let settlementsReady = true;
+  let settlementsReady = settlementsEnabled();
   let paidOrders: {
     total_amount: number | string | null;
     fee_amount: number | string | null;
@@ -416,13 +424,15 @@ export async function getAdminFinanceOverview(now = Date.now()) {
         .order("id", { ascending: true })
         .range(from, to),
     );
-    settlementRows = await fetchPages((from, to) =>
-      supabase
-        .from("settlements")
-        .select("id, store_name, status, due_at, gross_amount, commission_amount, payable_amount")
-        .order("id", { ascending: true })
-        .range(from, to),
-    );
+    if (settlementsReady) {
+      settlementRows = await fetchPages((from, to) =>
+        supabase
+          .from("settlements")
+          .select("id, store_name, status, due_at, gross_amount, commission_amount, payable_amount")
+          .order("id", { ascending: true })
+          .range(from, to),
+      );
+    }
   } catch (error) {
     if (!(error instanceof SettlementSchemaMissingError)) {
       throw error;
