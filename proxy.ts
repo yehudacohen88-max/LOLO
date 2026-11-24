@@ -7,18 +7,34 @@ import {
   safeNextPath,
 } from "@/lib/beta/gate";
 import { isGuestDirectAccess } from "@/lib/beta/guest-access";
+import { settlementsEnabled } from "@/lib/settlements/availability";
 
 function destination(request: NextRequest) {
   return safeNextPath(`${request.nextUrl.pathname}${request.nextUrl.search}`);
 }
 
+function closedSettlementPage(pathname: string) {
+  return (
+    pathname === "/admin/settlements" ||
+    pathname.startsWith("/admin/settlements/") ||
+    pathname === "/store/settlements" ||
+    pathname.startsWith("/store/settlements/")
+  );
+}
+
 export async function proxy(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+  if (!settlementsEnabled() && closedSettlementPage(pathname)) {
+    const missing = request.nextUrl.clone();
+    missing.pathname = "/settlements-unavailable";
+    return NextResponse.rewrite(missing);
+  }
+
   const mode = betaGateModeFromEnv();
   if (mode === "open") {
     return NextResponse.next();
   }
 
-  const { pathname } = request.nextUrl;
   if (/[A-Z]/.test(pathname)) {
     const lowered = pathname.toLowerCase();
     if (isGuestDirectAccess(lowered, request.method)) {

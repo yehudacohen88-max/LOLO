@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { settlementsEnabled } from "@/lib/settlements/availability";
 import { getStoreSession } from "@/lib/store/session";
 import { getStoreLabel } from "@/lib/vouchers/repository";
 import RedeemForm from "./redeem-form";
@@ -40,9 +41,11 @@ export default async function StoreRedeemPage() {
         </div>
         <div className="flex flex-col items-end gap-3">
           <StoreLogoutButton />
-          <Link href="/store/settlements" className="text-sm font-semibold text-brand">
-            התחשבנויות
-          </Link>
+          {settlementsEnabled() ? (
+            <Link href="/store/settlements" className="text-sm font-semibold text-brand">
+              התחשבנויות
+            </Link>
+          ) : null}
         </div>
       </header>
       <RedeemForm />
