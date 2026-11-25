@@ -1,0 +1,4 @@
+# Created by the Supabase CLI on the developer machine. Not part of the app.
+.temp/
+.branches/
+.env
