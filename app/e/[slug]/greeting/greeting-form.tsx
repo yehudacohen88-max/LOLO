@@ -8,6 +8,7 @@ import {
   fileToDataUrl,
   formatGiftAmount,
   getContributionsTotal,
+  guestCheckoutAllowed,
   loadContributions,
   loadGuestGreeting,
   saveGuestGreeting,
@@ -168,7 +169,7 @@ export default function GuestGreetingForm() {
       onSubmit={(event) => {
         event.preventDefault();
         persistGreeting();
-        if (total <= 0) {
+        if (!guestCheckoutAllowed(total)) {
           setContinueError("עדיין לא נבחרה מתנה.");
           return;
         }
@@ -303,15 +304,17 @@ export default function GuestGreetingForm() {
       </section>
       ) : null}
 
-      {continueError ? (
+      {continueError || !guestCheckoutAllowed(total) ? (
         <p className={styles.fieldError} data-journey-error="" role="alert">
-          {continueError}
+          {continueError || "עדיין לא נבחרה מתנה."}
         </p>
       ) : null}
-      <button type="submit" className={styles.cta} data-journey-cta="">
-        ממשיכים · {formatGiftAmount(total)}
-      </button>
-      {text.trim() ? null : (
+      {guestCheckoutAllowed(total) ? (
+        <button type="submit" className={styles.cta} data-journey-cta="">
+          ממשיכים · {formatGiftAmount(total)}
+        </button>
+      ) : null}
+      {text.trim() || !guestCheckoutAllowed(total) ? null : (
         <button
           type="button"
           className={styles.ghost}
@@ -325,7 +328,7 @@ export default function GuestGreetingForm() {
               videoDataUrl,
               videoName,
             });
-            if (total <= 0) {
+            if (!guestCheckoutAllowed(total)) {
               setContinueError("עדיין לא נבחרה מתנה.");
               return;
             }

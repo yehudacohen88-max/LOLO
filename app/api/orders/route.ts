@@ -105,7 +105,7 @@ export async function POST(request: Request) {
       guestName: body.guestName ?? "",
       guestPhone: body.guestPhone ?? "",
       guestEmail: body.guestEmail ?? "",
-      wantsConfirmation: body.wantsConfirmation !== false,
+      wantsConfirmation: body.wantsConfirmation === true,
       greetingText: body.greetingText ?? "",
       items,
     });
