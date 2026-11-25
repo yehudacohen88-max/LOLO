@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import FriendlyStatus from "@/components/friendly-status";
 import VoucherCard from "@/components/voucher-card";
 import { appPublicOrigin, originFromProxyHeaders } from "@/lib/app-url";
+import { DEMO_VOUCHER_LABEL } from "@/lib/vouchers/demo-funding";
 import { getPublicVoucherCard } from "@/lib/vouchers/repository";
 
 export const metadata: Metadata = {
@@ -46,7 +47,9 @@ export default async function PublicVoucherPage({ params }: PageProps) {
 
   return (
     <main className="mx-auto flex w-full max-w-lg flex-1 flex-col px-5 py-8 sm:py-12">
-      <p className="no-print mb-6 text-center text-sm text-muted">שובר להצגה בחנות</p>
+      <p className="no-print mb-6 text-center text-sm text-muted">
+        {card.demoOnly ? DEMO_VOUCHER_LABEL : "שובר להצגה בחנות"}
+      </p>
       <VoucherCard model={card} />
     </main>
   );

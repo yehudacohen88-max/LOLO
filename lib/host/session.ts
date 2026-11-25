@@ -9,18 +9,22 @@ type HostSession = {
   typ: typeof TOKEN_TYP;
   eventId: string;
   exp: number;
+  sv?: number;
 };
 
 function encodePayload(payload: HostSession) {
   return Buffer.from(JSON.stringify(payload), "utf8").toString("base64url");
 }
 
-export function createHostSessionToken(eventId: string) {
+export function createHostSessionToken(eventId: string, sessionVersion?: number) {
   const payload: HostSession = {
     typ: TOKEN_TYP,
     eventId,
     exp: Date.now() + SESSION_HOURS * 60 * 60 * 1000,
   };
+  if (typeof sessionVersion === "number") {
+    payload.sv = sessionVersion;
+  }
   const encoded = encodePayload(payload);
   return `${encoded}.${signScopedPayload("HOST_SESSION_SECRET", TOKEN_TYP, encoded)}`;
 }
@@ -61,6 +65,9 @@ export function readHostSessionToken(token: string | undefined): HostSession | n
       typeof payload.exp !== "number" ||
       payload.exp < Date.now()
     ) {
+      return null;
+    }
+    if ("sv" in payload && (!Number.isInteger(payload.sv) || (payload.sv ?? -1) < 0)) {
       return null;
     }
     return payload;

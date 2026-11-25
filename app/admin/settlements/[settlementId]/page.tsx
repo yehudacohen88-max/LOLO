@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import SettlementFigures from "@/components/settlement-figures";
 import { settlementLabel } from "@/lib/admin/store-fields";
 import { getAdminSession } from "@/lib/admin/session";
+import { settlementsEnabled } from "@/lib/settlements/availability";
 import { formatGiftAmount } from "@/lib/guest-draft";
 import { lineCommissionLabel, lineTermsLabel, settlementBatchLabel } from "@/lib/settlements/labels";
 import { getSettlement } from "@/lib/settlements/repository";
@@ -23,6 +24,10 @@ type PageProps = {
 };
 
 export default async function AdminSettlementDetailPage({ params }: PageProps) {
+  if (!settlementsEnabled()) {
+    notFound();
+  }
+
   const session = await getAdminSession();
   if (!session) {
     redirect("/admin");
@@ -104,8 +109,8 @@ export default async function AdminSettlementDetailPage({ params }: PageProps) {
               <p className="mt-2 text-sm leading-relaxed text-muted">
                 סומן כשולם {settlement.paidAt ? formatVoucherWhen(settlement.paidAt) : ""}. אופן
                 התשלום: {settlementLabel(settlement.paymentMethod)}.
-                {settlement.paymentReference ? ` אסמכתה: ${settlement.paymentReference}.` : ""} בגרסת
-                ההדגמה זו אינה העברה בנקאית.
+                {settlement.paymentReference ? ` אסמכתה: ${settlement.paymentReference}.` : " לא נרשמה אסמכתה."}{" "}
+                זה רישום של מפעיל, לא תנועת כסף.
               </p>
             </section>
           ) : null}

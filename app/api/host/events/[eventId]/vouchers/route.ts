@@ -1,15 +1,18 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { readStoredSessionVersion } from "@/lib/host/access-version";
 import {
   HOST_SESSION_COOKIE,
   readHostSessionToken,
 } from "@/lib/host/session";
+import { hostSessionVersionMatches } from "@/lib/host/session-version";
 import { jsonFromError } from "@/lib/vouchers/http";
 import { parseIssueVoucherInput } from "@/lib/vouchers/input";
 import { voucherErrorMessage, VoucherActionError } from "@/lib/vouchers/messages";
 import {
   confirmedTermsDiffer,
   issueGiftVoucher,
+  listEventVoucherBalances,
   resolveIssueStore,
 } from "@/lib/vouchers/repository";
 
@@ -18,6 +21,26 @@ export const dynamic = "force-dynamic";
 type RouteContext = {
   params: Promise<{ eventId: string }>;
 };
+
+export async function GET(_request: Request, context: RouteContext) {
+  const { eventId } = await context.params;
+  const jar = await cookies();
+  const session = readHostSessionToken(jar.get(HOST_SESSION_COOKIE)?.value);
+  if (!session || session.eventId !== eventId) {
+    return NextResponse.json({ error: "אין הרשאה." }, { status: 401 });
+  }
+
+  try {
+    const stored = await readStoredSessionVersion(eventId);
+    if (!hostSessionVersionMatches(session, stored)) {
+      return NextResponse.json({ error: "אין הרשאה." }, { status: 401 });
+    }
+    const vouchers = await listEventVoucherBalances(eventId);
+    return NextResponse.json({ vouchers });
+  } catch (error) {
+    return jsonFromError(error, "לא ניתן לטעון את יתרות השוברים.");
+  }
+}
 
 export async function POST(request: Request, context: RouteContext) {
   const { eventId } = await context.params;
@@ -28,6 +51,10 @@ export async function POST(request: Request, context: RouteContext) {
   }
 
   try {
+    const stored = await readStoredSessionVersion(eventId);
+    if (!hostSessionVersionMatches(session, stored)) {
+      return NextResponse.json({ error: "אין הרשאה." }, { status: 401 });
+    }
     const input = parseIssueVoucherInput(await request.json());
     const store = await resolveIssueStore(eventId, input.giftId, input.storeId);
     if (confirmedTermsDiffer(input, store.terms)) {

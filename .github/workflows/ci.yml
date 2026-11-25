@@ -1,0 +1,106 @@
+name: CI
+
+# Pull requests only. This workflow does not read GitHub Actions secrets and
+# does not set a hosted Supabase URL. The database is local Docker.
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - profile: ci
+            name: local database without settlements
+          - profile: full
+            name: local database with settlements and demo seed
+    env:
+      HOST_SESSION_SECRET: ci-host-session-secret
+      INVITE_TOKEN_SECRET: ci-invite-token-secret
+      ADMIN_SESSION_SECRET: ci-admin-session-secret
+      STORE_SESSION_SECRET: ci-store-session-secret
+      LOLO_ADMIN_PASSWORD: ci-admin-password
+      BETA_ACCESS_SECRET: ci-beta-access-secret
+      IMAGE_UPLOAD_SECRET: ci-image-upload-secret
+      PAYMENT_PROVIDER: demo
+      PAYMENT_WEBHOOK_SECRET: ci-webhook-secret
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Refuse the Production Supabase host
+        run: node scripts/assert-no-production-supabase.mjs
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install the Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: 3.3.0
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Generate route types
+        run: npx next typegen
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Start local Supabase and apply SQL
+        run: node scripts/local-db.mjs start --profile "${{ matrix.profile }}"
+
+      - name: Export the loopback Supabase variables
+        run: node scripts/local-db.mjs export-env >> "$GITHUB_ENV"
+
+      - name: Refuse the Production Supabase host after local env
+        run: node scripts/assert-no-production-supabase.mjs
+
+      - name: Run verify scripts
+        env:
+          LOLO_LOCAL_DB: "1"
+          LOLO_LOCAL_PROFILE: ${{ matrix.profile }}
+          LOLO_VERIFY_ANON_LOCK: "1"
+        run: node scripts/run-verify.mjs
+
+      - name: Check whether the local UI exists on this branch
+        id: local_ui
+        if: matrix.profile == 'full'
+        run: |
+          if [ -f app/api/host/recovery/local-outbox/route.ts ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "Host recovery route is not on this branch yet. The browser step runs after that route is on the merge base."
+          fi
+
+      - name: Install the local-UI browser
+        if: matrix.profile == 'full' && steps.local_ui.outputs.ready == 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: Drive the app against the local database
+        if: matrix.profile == 'full' && steps.local_ui.outputs.ready == 'true'
+        env:
+          LOLO_LOCAL_DB: "1"
+          LOLO_LOCAL_PORT: "3100"
+          BETA_ACCESS_ENABLED: "false"
+          PAYMENT_PROVIDER: demo
+        run: npx playwright test -c playwright.local.config.ts

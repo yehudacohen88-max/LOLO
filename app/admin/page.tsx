@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { adminPasswordIsConfigured, getAdminSession } from "@/lib/admin/session";
 import { formatGiftAmount } from "@/lib/guest-draft";
+import { settlementsEnabled } from "@/lib/settlements/availability";
 import { SETTLEMENT_SCHEMA_MESSAGE } from "@/lib/settlements/messages";
 import { getAdminFinanceOverview } from "@/lib/settlements/repository";
 import { formatVoucherWhen } from "@/lib/vouchers/labels";
@@ -115,8 +116,12 @@ export default async function AdminHomePage() {
               />
               <StatCard
                 label="סכום שמומש"
-                value={formatGiftAmount(overview.redeemedAmount)}
-                hint={`${formatCount(overview.redeemedCount)} מימושים`}
+                value={overview.pricingReady ? formatGiftAmount(overview.redeemedAmount) : "—"}
+                hint={
+                  overview.pricingReady
+                    ? `${formatCount(overview.redeemedCount)} מימושים`
+                    : undefined
+                }
               />
             </div>
           </section>
@@ -130,11 +135,20 @@ export default async function AdminHomePage() {
             <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               <StatCard
                 label="הכנסות LOLO"
-                value={formatGiftAmount(overview.loloRevenue)}
-                hint={`${formatGiftAmount(overview.guestFeeRevenue)} דמי שירות + ${formatGiftAmount(overview.storeCommission)} עמלות`}
+                value={
+                  overview.pricingReady ? formatGiftAmount(overview.loloRevenue) : "—"
+                }
+                hint={
+                  overview.pricingReady
+                    ? `${formatGiftAmount(overview.guestFeeRevenue)} דמי שירות + ${formatGiftAmount(overview.storeCommission)} עמלות`
+                    : "העמלה מוצגת אחרי שכלל העיגול נשמר ושאפשר להפריד מימושי הדגמה."
+                }
                 emphasize
               />
-              <StatCard label="עמלות מבתי עסק" value={formatGiftAmount(overview.storeCommission)} />
+              <StatCard
+                label="עמלות מבתי עסק"
+                value={overview.pricingReady ? formatGiftAmount(overview.storeCommission) : "—"}
+              />
               <StatCard label="דמי שירות מאורחים" value={formatGiftAmount(overview.guestFeeRevenue)} />
             </div>
           </section>
@@ -145,7 +159,7 @@ export default async function AdminHomePage() {
               <StatCard
                 label="לתשלום לבתי עסק"
                 value={
-                  settlementMoney
+                  settlementMoney && overview.pricingReady
                     ? formatGiftAmount(settlementMoney.payableOutstanding)
                     : "—"
                 }
@@ -153,7 +167,9 @@ export default async function AdminHomePage() {
               />
               <StatCard
                 label="טרם הוסדר"
-                value={formatGiftAmount(overview.payableUnsettled)}
+                value={
+                  overview.pricingReady ? formatGiftAmount(overview.payableUnsettled) : "—"
+                }
               />
               <StatCard
                 label="ממתין לתשלום"
@@ -173,7 +189,19 @@ export default async function AdminHomePage() {
                 }
               />
             </div>
-            {snapshot?.settlementsReady && snapshot.overdue.length > 0 ? (
+            {overview.demoRedeemedCount > 0 ? (
+              <p className="mt-4 text-sm text-muted">
+                הדגמה — לא לתשלום: {formatGiftAmount(overview.demoRedeemedAmount)} (
+                {formatCount(overview.demoRedeemedCount)} מימושים)
+              </p>
+            ) : null}
+            {overview.unpricedCount > 0 ? (
+              <p className="mt-3 text-sm text-brand">
+                {formatCount(overview.unpricedCount)} מימושים בלי אחוז עמלה לא נכללו בתשלום לבית
+                העסק.
+              </p>
+            ) : null}
+            {settlementsEnabled() && snapshot?.settlementsReady && snapshot.overdue.length > 0 ? (
               <ul className="mt-4 flex flex-col gap-3">
                 {snapshot.overdue.slice(0, 6).map((item) => (
                   <li
@@ -202,12 +230,14 @@ export default async function AdminHomePage() {
       ) : null}
 
       <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-        <Link
-          href="/admin/settlements"
-          className="inline-flex h-12 items-center justify-center rounded-full bg-brand px-6 text-base font-semibold text-white"
-        >
-          התחשבנויות
-        </Link>
+        {settlementsEnabled() ? (
+          <Link
+            href="/admin/settlements"
+            className="inline-flex h-12 items-center justify-center rounded-full bg-brand px-6 text-base font-semibold text-white"
+          >
+            התחשבנויות
+          </Link>
+        ) : null}
         <Link
           href="/admin/stores"
           className="inline-flex h-12 items-center justify-center rounded-full border border-brand px-6 text-base font-semibold text-brand"
@@ -219,6 +249,24 @@ export default async function AdminHomePage() {
           className="inline-flex h-12 items-center justify-center rounded-full border border-brand px-6 text-base font-semibold text-brand"
         >
           מימושים
+        </Link>
+        <Link
+          href="/admin/events"
+          className="inline-flex h-12 items-center justify-center rounded-full border border-brand px-6 text-base font-semibold text-brand"
+        >
+          אירועים
+        </Link>
+        <Link
+          href="/admin/orders"
+          className="inline-flex h-12 items-center justify-center rounded-full border border-brand px-6 text-base font-semibold text-brand"
+        >
+          הזמנות
+        </Link>
+        <Link
+          href="/admin/reports"
+          className="inline-flex h-12 items-center justify-center rounded-full border border-brand px-6 text-base font-semibold text-brand"
+        >
+          דוחות
         </Link>
       </div>
     </main>

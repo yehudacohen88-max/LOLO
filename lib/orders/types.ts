@@ -37,6 +37,8 @@ export type StoredOrder = {
   paymentProvider: string | null;
   paymentReference: string | null;
   paidAt: string | null;
+  refundedAmount?: number;
+  refundStatus?: "none" | "partial" | "full";
   accessToken: string;
   items: StoredOrderItem[];
 };

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin/session";
-import { jsonFromSettlementError } from "@/lib/settlements/http";
+import { jsonFromSettlementError, settlementPilotUnavailable } from "@/lib/settlements/http";
 import { parsePaySettlementInput } from "@/lib/settlements/input";
 import { markSettlementPaid } from "@/lib/settlements/repository";
 import { isUuid } from "@/lib/vouchers/input";
@@ -12,6 +12,11 @@ type RouteContext = {
 };
 
 export async function POST(request: Request, context: RouteContext) {
+  const closed = settlementPilotUnavailable();
+  if (closed) {
+    return closed;
+  }
+
   const session = await getAdminSession();
   if (!session) {
     return NextResponse.json({ error: "אין הרשאה." }, { status: 401 });

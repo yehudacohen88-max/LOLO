@@ -6,6 +6,7 @@ import { guestEventPath } from "@/lib/events";
 import { fromRouteParam } from "@/lib/events/slug";
 import {
   getContributionsTotal,
+  guestCheckoutAllowed,
   isValidEmail,
   isValidPhone,
   loadContributions,
@@ -13,15 +14,19 @@ import {
   saveGuestDetails,
 } from "@/lib/guest-draft";
 import { savePendingGuestOrder } from "@/lib/orders/client";
+import LegalCollectionNotice from "@/components/legal/collection-notice";
 import styles from "../flagship.module.css";
 
-export default function GuestDetailsForm() {
+export default function GuestDetailsForm({
+  legalDrafts = false,
+}: {
+  legalDrafts?: boolean;
+}) {
   const router = useRouter();
   const slug = fromRouteParam(useParams<{ slug: string }>().slug);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
-  const [wantReceipt, setWantReceipt] = useState(false);
   const [errors, setErrors] = useState<{
     name?: string;
     phone?: string;
@@ -71,7 +76,6 @@ export default function GuestDetailsForm() {
       setName(name);
       setPhone(phone);
       setEmail(details.email);
-      setWantReceipt(details.wantReceipt);
       setReady(true);
     })();
 
@@ -88,9 +92,9 @@ export default function GuestDetailsForm() {
       name,
       phone,
       email,
-      wantReceipt,
+      wantReceipt: false,
     });
-  }, [ready, slug, name, phone, email, wantReceipt]);
+  }, [ready, slug, name, phone, email]);
 
   if (!ready) {
     return <p className={styles.quietLine}>טוענים את הפרטים...</p>;
@@ -120,7 +124,7 @@ export default function GuestDetailsForm() {
           return;
         }
 
-        if (getContributionsTotal(loadContributions(slug)) <= 0) {
+        if (!guestCheckoutAllowed(getContributionsTotal(loadContributions(slug)))) {
           setSaveError("עדיין לא נבחרה מתנה.");
           return;
         }
@@ -129,7 +133,7 @@ export default function GuestDetailsForm() {
           name: name.trim(),
           phone: phone.trim(),
           email: email.trim(),
-          wantReceipt,
+          wantReceipt: false,
         });
 
         try {
@@ -195,14 +199,7 @@ export default function GuestDetailsForm() {
           </span>
         ) : null}
       </label>
-      <label className={styles.check}>
-        <input
-          type="checkbox"
-          checked={wantReceipt}
-          onChange={(event) => setWantReceipt(event.target.checked)}
-        />
-        <span>אני רוצה לקבל אישור על המתנה</span>
-      </label>
+      <LegalCollectionNotice enabled={legalDrafts} kind="guest" />
       <p data-journey-reassure="">
         השם, הטלפון והאימייל נשמרים עם ההשתתפות אצל המארח. לא מזינים כאן פרטי אשראי.
       </p>

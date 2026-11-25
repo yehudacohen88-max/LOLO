@@ -1,40 +1,58 @@
 import "server-only";
-import { markOrderFailed, markOrderPaid } from "@/lib/orders/repository";
 import type { StoredOrder } from "@/lib/orders/types";
-import type { PaymentOutcome } from "./types";
-import { createDemoPaymentReference } from "./reference";
+import { verifyWebhookSignature } from "./webhook-signature";
+import { parseDemoWebhook } from "./events";
+import { refuseNonDemoRefund } from "./live-stub";
+import type { PaymentProvider } from "./contract";
+import { DEMO_PROVIDER_NAME } from "./demo-provider-name";
+import {
+  confirmDemoCheckout,
+  refundDemoOrder,
+  startDemoCheckout,
+} from "./service";
 
-export const DEMO_PROVIDER_NAME = "demo";
+export { DEMO_PROVIDER_NAME } from "./demo-provider-name";
 
-function payableStatus(order: StoredOrder) {
-  if (order.paymentStatus === "cancelled") {
-    throw new Error("ההזמנה בוטלה.");
-  }
-  if (order.paymentStatus === "paid") {
-    return "paid" as const;
-  }
-  return "ready" as const;
-}
-
-export const demoPaymentProvider = {
+export const demoPaymentProvider: PaymentProvider = {
   name: DEMO_PROVIDER_NAME,
-  isDemo: true as const,
-  async startPayment(order: StoredOrder) {
-    return { status: payableStatus(order) };
+  isDemo: true,
+  async start(input) {
+    const started = await startDemoCheckout(input.order, input.idempotencyKey);
+    return { status: started.status, replayed: started.replayed };
   },
-  async confirmDemoPayment(input: {
-    orderId: string;
-    accessToken: string;
-    outcome: PaymentOutcome;
-  }) {
-    if (input.outcome === "failure") {
-      return markOrderFailed(input.orderId, input.accessToken, DEMO_PROVIDER_NAME);
-    }
+  async confirm(input) {
+    return confirmDemoCheckout(input);
+  },
+  async refund(input) {
+    return refundDemoOrder(input);
+  },
+  verifyWebhook(input) {
+    return verifyWebhookSignature(input);
+  },
+  parseEvent(rawBody) {
+    return parseDemoWebhook(rawBody);
+  },
+};
 
-    return markOrderPaid(input.orderId, input.accessToken, {
-      provider: DEMO_PROVIDER_NAME,
-      paymentReference: createDemoPaymentReference(),
-      paidAt: new Date().toISOString(),
-    });
+export const nonePaymentProvider: PaymentProvider = {
+  name: "none",
+  isDemo: false,
+  async start(input: { order: StoredOrder }) {
+    if (input.order.paymentStatus === "paid") {
+      return { status: "paid", replayed: false };
+    }
+    return { status: "unavailable", replayed: false };
+  },
+  async confirm() {
+    throw new Error("אישור התשלום אינו זמין באמצעי התשלום הנוכחי.");
+  },
+  async refund() {
+    refuseNonDemoRefund();
+  },
+  verifyWebhook() {
+    return { ok: false };
+  },
+  parseEvent() {
+    throw new Error("אישור התשלום אינו זמין באמצעי התשלום הנוכחי.");
   },
 };

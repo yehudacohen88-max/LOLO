@@ -6,10 +6,12 @@ import styles from "@/app/design/bold-host.module.css";
 import { isUuid } from "@/lib/vouchers/input";
 import VoucherCard from "@/components/voucher-card";
 import { appPublicOrigin, originFromProxyHeaders } from "@/lib/app-url";
+import { readStoredSessionVersion } from "@/lib/host/access-version";
 import {
   HOST_SESSION_COOKIE,
   readHostSessionToken,
 } from "@/lib/host/session";
+import { hostSessionVersionMatches } from "@/lib/host/session-version";
 import { getHostVoucherCard } from "@/lib/vouchers/repository";
 
 export const metadata: Metadata = {
@@ -31,6 +33,22 @@ export default async function HostVoucherPage({ params }: PageProps) {
   const jar = await cookies();
   const session = readHostSessionToken(jar.get(HOST_SESSION_COOKIE)?.value);
   if (!session || session.eventId !== eventId) {
+    redirect("/host");
+  }
+  let storedVersion: Awaited<ReturnType<typeof readStoredSessionVersion>>;
+  try {
+    storedVersion = await readStoredSessionVersion(session.eventId);
+  } catch (error) {
+    console.error("[LOLO] host voucher session", {
+      message: error instanceof Error ? error.message : "unknown",
+    });
+    return (
+      <main className={styles.unavailable}>
+        <p>השובר אינו זמין כרגע. נסו שוב מאוחר יותר.</p>
+      </main>
+    );
+  }
+  if (!hostSessionVersionMatches(session, storedVersion)) {
     redirect("/host");
   }
 

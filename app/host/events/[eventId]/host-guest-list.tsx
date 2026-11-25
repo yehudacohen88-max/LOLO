@@ -6,14 +6,18 @@ import styles from "@/app/design/bold-host.module.css";
 import { userFacingMessage } from "@/app/design/user-error";
 import { absoluteAppUrl } from "@/lib/app-url";
 import type { EventGuest } from "@/lib/host/guest-fields";
+import { buildInvitationMessage } from "@/lib/host/invitation-message";
 import { whatsappInviteUrl } from "@/lib/invite/whatsapp";
+import LegalCollectionNotice from "@/components/legal/collection-notice";
 
 type HostGuestListProps = {
   eventId: string;
   eventTitle: string;
   origin: string;
   guests: EventGuest[];
+  invitationGreeting?: string;
   disabled?: boolean;
+  legalDrafts?: boolean;
 };
 
 export default function HostGuestList({
@@ -21,7 +25,9 @@ export default function HostGuestList({
   eventTitle,
   origin,
   guests,
+  invitationGreeting = "",
   disabled = false,
+  legalDrafts = false,
 }: HostGuestListProps) {
   const router = useRouter();
   const [name, setName] = useState("");
@@ -131,11 +137,18 @@ export default function HostGuestList({
         <ul className={styles.stack}>
           {visible.map((guest) => {
             const inviteUrl = absoluteInviteUrl(guest.invitePath ?? "");
+            const greeting = buildInvitationMessage({
+              greeting: invitationGreeting,
+              guestName: guest.name,
+              eventTitle,
+              inviteUrl,
+            });
             const waUrl = whatsappInviteUrl({
               phone: guest.phone,
               guestName: guest.name,
               eventTitle,
               inviteUrl,
+              message: greeting,
             });
 
             return (
@@ -151,6 +164,9 @@ export default function HostGuestList({
                 <div className={styles.guestActions}>
                   {guest.invitePath ? (
                     <>
+                      <p className={`${styles.help} ${styles.preserve}`} dir="auto">
+                        {greeting}
+                      </p>
                       <button
                         type="button"
                         disabled={saving || disabled}
@@ -193,6 +209,7 @@ export default function HostGuestList({
         </ul>
       )}
 
+      <LegalCollectionNotice enabled={legalDrafts} kind="host" className={styles.help} />
       <form onSubmit={addGuest} className={styles.form}>
         <label className={styles.field}>
           <span>שם האורח</span>

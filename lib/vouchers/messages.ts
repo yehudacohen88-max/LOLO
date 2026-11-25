@@ -20,6 +20,10 @@ const MESSAGES: Record<string, { text: string; status: number }> = {
     text: "אין סכום ששולם שעדיין לא הונפק בשובר.",
     status: 409,
   },
+  voucher_demo_blocked: {
+    text: "שובר הדגמה – ללא ערך כספי. אי אפשר להנפיק או לממש אותו ככסף.",
+    status: 409,
+  },
   voucher_amount_changed: {
     text: "הסכום להנפקה השתנה. רעננו את העמוד ונסו שוב.",
     status: 409,
@@ -49,6 +53,22 @@ const MESSAGES: Record<string, { text: string; status: number }> = {
   voucher_terms_invalid: { text: "תנאי השובר אינם תקינים.", status: 400 },
   voucher_store_required: { text: "יש לבחור בית עסק פעיל.", status: 400 },
 };
+
+export const VOUCHER_TERMS_NOT_ENABLED =
+  "ברירות המחדל של תנאי השובר עדיין לא הופעלו.";
+
+export const VOUCHER_TERMS_NOT_CONFIGURED =
+  "תנאי השובר לא הוגדרו, ולכן אי אפשר להנפיק אותו.";
+
+export function isMissingVoucherTermColumns(
+  error: { code?: string; message?: string } | null,
+) {
+  if (!error) {
+    return false;
+  }
+  const code = error.code ?? "";
+  return code === "42703" || code === "PGRST204" || code === "PGRST205" || code === "42P01";
+}
 
 export function voucherErrorCode(message: string) {
   return message.match(/voucher_[a-z0-9_]+/)?.[0] ?? "";

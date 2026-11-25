@@ -2,12 +2,15 @@ import type { Metadata } from "next";
 import { cookies, headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import styles from "@/app/design/bold-host.module.css";
+import { readStoredSessionVersion } from "@/lib/host/access-version";
 import { getHostDashboardData } from "@/lib/host/dashboard";
 import {
   HOST_SESSION_COOKIE,
   readHostSessionToken,
 } from "@/lib/host/session";
+import { hostSessionVersionMatches } from "@/lib/host/session-version";
 import { appPublicOrigin } from "@/lib/app-url";
+import { legalDraftsEnabledFromEnv } from "@/lib/legal/flag";
 import HostDashboard from "./host-dashboard";
 
 type HostEventPageProps = {
@@ -43,6 +46,23 @@ export default async function HostEventDashboardPage({
     redirect("/host");
   }
 
+  let storedVersion: Awaited<ReturnType<typeof readStoredSessionVersion>>;
+  try {
+    storedVersion = await readStoredSessionVersion(session.eventId);
+  } catch (error) {
+    console.error("[LOLO] host session version", {
+      message: error instanceof Error ? error.message : "unknown",
+    });
+    return (
+      <main className={styles.unavailable}>
+        <p>השירות אינו זמין כרגע. נסו שוב מאוחר יותר.</p>
+      </main>
+    );
+  }
+  if (!hostSessionVersionMatches(session, storedVersion)) {
+    redirect("/host");
+  }
+
   let data: Awaited<ReturnType<typeof getHostDashboardData>>;
   try {
     data = await getHostDashboardData(session.eventId);
@@ -64,5 +84,12 @@ export default async function HostEventDashboardPage({
   const origin = appPublicOrigin(requestOriginFromHeaders(headerStore));
   const guestUrl = origin ? `${origin}${data.guestPath}` : data.guestPath;
 
-  return <HostDashboard data={data} guestUrl={guestUrl} origin={origin} />;
+  return (
+    <HostDashboard
+      data={data}
+      guestUrl={guestUrl}
+      origin={origin}
+      legalDrafts={legalDraftsEnabledFromEnv()}
+    />
+  );
 }

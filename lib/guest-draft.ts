@@ -143,6 +143,11 @@ export function getContributionsTotal(contributions: GuestContribution[]) {
   return contributions.reduce((sum, item) => sum + item.amount, 0);
 }
 
+/** A guest cannot continue to payment, or pay, when nothing was selected. */
+export function guestCheckoutAllowed(total: number) {
+  return Number.isFinite(total) && total > 0;
+}
+
 export function saveContributions(
   slug: string,
   contributions: GuestContribution[],

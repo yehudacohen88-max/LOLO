@@ -10,6 +10,7 @@ import {
   voucherStatusLabel,
 } from "@/lib/vouchers/labels";
 import type { StoreVoucherLookup } from "@/lib/vouchers/types";
+import VoucherRedemptionList from "@/components/voucher-redemption-list";
 
 const fieldClass =
   "h-12 rounded-2xl border border-border bg-white px-4 text-base text-foreground outline-none focus:border-brand";
@@ -22,6 +23,7 @@ type RedeemResult = {
   amount: number;
   remainingAmount: number;
   status: StoreVoucherLookup["status"];
+  balance?: StoreVoucherLookup["balance"];
 };
 
 export default function RedeemForm() {
@@ -188,6 +190,11 @@ export default function RedeemForm() {
             יתרה בשובר: {formatGiftAmount(result.remainingAmount)} ·{" "}
             {voucherStatusLabel(result.status)}
           </p>
+          {result.balance ? (
+            <div className="mt-4">
+              <VoucherRedemptionList redemptions={result.balance.redemptions} />
+            </div>
+          ) : null}
           <button
             type="button"
             onClick={reset}
@@ -269,6 +276,9 @@ export default function RedeemForm() {
             <li>{topupTermLabel(lookup.terms)}</li>
             <li>{methodTermLabel(lookup.terms)}</li>
           </ul>
+          <div className="mt-4">
+            <VoucherRedemptionList redemptions={lookup.balance.redemptions} />
+          </div>
           {lookup.blockedReason ? (
             <p className="mt-4 text-sm font-semibold text-brand">{lookup.blockedReason}</p>
           ) : (

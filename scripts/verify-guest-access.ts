@@ -34,6 +34,7 @@ import {
   takeOrderWrite,
   takePaymentIp,
   takePaymentSlug,
+  takeQuote,
 } from "../lib/security/guest-limit";
 import { clientIpFromVercelHeaders } from "../lib/security/client-ip";
 import {
@@ -73,6 +74,9 @@ describe("guest direct access allowlist", () => {
     ["POST", "/api/checkout/quote"],
     ["POST", "/api/payments/start"],
     ["POST", "/api/payments/confirm"],
+    ["POST", "/api/payments/cancel"],
+    ["POST", "/api/payments/refund"],
+    ["POST", "/api/payments/webhook"],
     ["GET", "/api/invite/identity"],
   ];
 
@@ -99,6 +103,9 @@ describe("guest direct access allowlist", () => {
     ["GET", "/api/stores"],
     ["GET", "/api/checkout/quote"],
     ["GET", "/api/payments/confirm"],
+    ["GET", "/api/payments/webhook"],
+    ["GET", "/api/payments/cancel"],
+    ["GET", "/api/payments/refund"],
     ["POST", "/api/invite/identity"],
     ["GET", "/e/demo-event/extra"],
     ["GET", "/e/../admin"],
@@ -143,6 +150,29 @@ describe("event slug minting", () => {
 });
 
 describe("guest rate limits", () => {
+  it("fits a venue network without raising the shared firewall limits", () => {
+    assert.equal(GUEST_LIMITS.readPerIp, 300);
+    assert.equal(GUEST_LIMITS.readWindowMs, 60_000);
+    assert.equal(GUEST_LIMITS.orderPerIp, 40);
+    assert.equal(GUEST_LIMITS.quotePerIp, 40);
+    assert.equal(GUEST_LIMITS.paymentPerIp, 40);
+    assert.equal(GUEST_LIMITS.orderWindowMs, 15 * 60_000);
+    assert.equal(GUEST_LIMITS.quoteWindowMs, 15 * 60_000);
+    assert.equal(GUEST_LIMITS.paymentWindowMs, 15 * 60_000);
+    assert.equal(GUEST_RATE_LIMIT_IDS.read, "lolo-guest-read");
+    assert.equal(GUEST_RATE_LIMIT_IDS.write, "lolo-guest-write");
+  });
+
+  it("lets many guests on one address read, order, quote, and pay", () => {
+    resetGuestLimits();
+    for (let count = 0; count < 11; count += 1) {
+      assert.equal(beginGuestRead("198.51.100.11", NOW).ok, true);
+      assert.equal(takeOrderWrite("198.51.100.11", "venue-slug0001", NOW).ok, true);
+      assert.equal(takeQuote("198.51.100.11", "venue-slug0001", NOW).ok, true);
+      assert.equal(takePaymentIp("198.51.100.11", NOW).ok, true);
+    }
+  });
+
   it("returns a block after the per-IP event read cap", () => {
     resetGuestLimits();
     for (let count = 0; count < GUEST_LIMITS.readPerIp; count += 1) {
@@ -194,6 +224,19 @@ describe("guest rate limits", () => {
       assert.equal(takePaymentSlug("party-slug0001", NOW).ok, true);
     }
     assert.equal(takePaymentSlug("party-slug0001", NOW).ok, false);
+  });
+
+  it("caps checkout quotes per address and still returns a block", () => {
+    resetGuestLimits();
+    for (let count = 0; count < GUEST_LIMITS.quotePerIp; count += 1) {
+      assert.equal(takeQuote("203.0.113.50", "party-quoteslug", NOW).ok, true);
+    }
+    const blocked = takeQuote("203.0.113.50", "party-quoteslug", NOW);
+    assert.equal(blocked.ok, false);
+    if (!blocked.ok) {
+      assert.ok(blocked.retryAfterSeconds >= 1);
+    }
+    assert.equal(takeQuote("203.0.113.51", "party-quoteslug", NOW).ok, true);
   });
 });
 

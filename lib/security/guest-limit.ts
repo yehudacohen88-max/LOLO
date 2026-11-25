@@ -10,20 +10,20 @@ import "server-only";
 export const GUEST_LIMIT_MESSAGE = "יותר מדי בקשות. נסו שוב מאוחר יותר.";
 
 export const GUEST_LIMITS = {
-  readPerIp: 60,
+  readPerIp: 300,
   readWindowMs: 60_000,
   missPerIp: 12,
   missWindowMs: 15 * 60_000,
   missLockMs: 15 * 60_000,
-  orderPerIp: 10,
+  orderPerIp: 40,
   orderPerSlug: 80,
   orderWindowMs: 15 * 60_000,
   orderReadPerIp: 30,
   orderReadWindowMs: 60_000,
-  paymentPerIp: 20,
+  paymentPerIp: 40,
   paymentPerSlug: 120,
   paymentWindowMs: 15 * 60_000,
-  quotePerIp: 30,
+  quotePerIp: 40,
   quotePerSlug: 80,
   quoteWindowMs: 15 * 60_000,
 } as const;

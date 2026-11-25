@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getOrderForGuest, upsertPendingOrder } from "@/lib/orders/repository";
+import { attachRefundSummary } from "@/lib/payments/ledger";
 import {
   GUEST_BODY_BYTES,
   guestItemsProblem,
@@ -45,7 +46,7 @@ export async function GET(request: Request) {
     if (!order) {
       return guestOrderMissResponse();
     }
-    return NextResponse.json(toPublicOrder(order));
+    return NextResponse.json(toPublicOrder(await attachRefundSummary(order)));
   } catch (error) {
     const body = caughtErrorBody(error, "טעינת ההזמנה נכשלה.", 500);
     return NextResponse.json({ error: body.error }, { status: body.status });
@@ -105,7 +106,7 @@ export async function POST(request: Request) {
       guestName: body.guestName ?? "",
       guestPhone: body.guestPhone ?? "",
       guestEmail: body.guestEmail ?? "",
-      wantsConfirmation: body.wantsConfirmation !== false,
+      wantsConfirmation: body.wantsConfirmation === true,
       greetingText: body.greetingText ?? "",
       items,
     });

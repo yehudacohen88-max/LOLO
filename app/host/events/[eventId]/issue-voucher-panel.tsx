@@ -13,6 +13,7 @@ import {
   voucherStatusLabel,
 } from "@/lib/vouchers/labels";
 import { BETA_CLARITY } from "@/app/design/beta-notice";
+import { DEMO_VOUCHER_LABEL } from "@/lib/vouchers/demo-funding";
 import { visibleHostStores } from "@/app/design/host-stores";
 import { userFacingMessage } from "@/app/design/user-error";
 import type { HostDashboardGift } from "@/lib/host/dashboard";
@@ -44,8 +45,12 @@ export default function IssueVoucherPanel({
 
   const selected = fixedStore ?? hostStores.find((store) => store.id === storeId) ?? null;
   const needsChoice = !fixedStore;
-  const canStart = gift.availableAmount > 0 && (Boolean(fixedStore) || hostStores.length > 0);
-  const awaitingStore = gift.availableAmount > 0 && needsChoice && hostStores.length === 0;
+  const realPaid = gift.realPaidAmount ?? gift.paidAmount;
+  const simulatedPaid = gift.simulatedPaidAmount ?? 0;
+  const demoIssue = simulatedPaid > 0 && realPaid <= 0;
+  const issueAmount = demoIssue ? (gift.demoAvailableAmount ?? 0) : gift.availableAmount;
+  const canStart = issueAmount > 0 && (Boolean(fixedStore) || hostStores.length > 0);
+  const awaitingStore = issueAmount > 0 && needsChoice && hostStores.length === 0;
   const issuedBefore = gift.voucheredAmount > 0;
 
   function openConfirmation() {
@@ -64,6 +69,10 @@ export default function IssueVoucherPanel({
       setError("יש לבחור בית עסק פעיל.");
       return;
     }
+    if (!selected.terms) {
+      setError(selected.termsMessage || "תנאי השובר לא הוגדרו, ולכן אי אפשר להנפיק אותו.");
+      return;
+    }
     setSaving(true);
     setError("");
     try {
@@ -73,7 +82,7 @@ export default function IssueVoucherPanel({
         body: JSON.stringify({
           giftId: gift.id,
           storeId: selected.id,
-          expectedAmount: gift.availableAmount,
+          expectedAmount: issueAmount,
           idempotencyKey: idempotencyKey.current,
           validityDays: selected.terms.validityDays,
           allowPartialRedemption: selected.terms.allowPartialRedemption,
@@ -98,16 +107,28 @@ export default function IssueVoucherPanel({
   return (
     <div className="mt-4 border-t border-border pt-4">
       <p className="text-sm text-foreground">
-        שולם {formatGiftAmount(gift.paidAmount)}
-        {" · "}
-        בשוברים {formatGiftAmount(gift.voucheredAmount)}
-        {" · "}
-        זמין להנפקה {formatGiftAmount(gift.availableAmount)}
+        {demoIssue ? (
+          <>
+            {DEMO_VOUCHER_LABEL}
+            {" · "}
+            {formatGiftAmount(simulatedPaid)}
+          </>
+        ) : (
+          <>
+            שולם {formatGiftAmount(gift.paidAmount)}
+            {" · "}
+            בשוברים {formatGiftAmount(gift.voucheredAmount)}
+            {" · "}
+            זמין להנפקה {formatGiftAmount(gift.availableAmount)}
+          </>
+        )}
       </p>
       <p className="mt-1 text-sm leading-relaxed text-muted">
-        {issuedBefore
-          ? "תשלום שמגיע אחרי הנפקת שובר נשאר פנוי, ואפשר להנפיק עליו שובר נוסף."
-          : "אפשר להנפיק שובר על הסכום ששולם גם לפני שהיעד הושלם. תשלום נוסף יישאר פנוי לשובר נוסף."}
+        {demoIssue
+          ? DEMO_VOUCHER_LABEL
+          : issuedBefore
+            ? "תשלום שמגיע אחרי הנפקת שובר נשאר פנוי, ואפשר להנפיק עליו שובר נוסף."
+            : "אפשר להנפיק שובר על הסכום ששולם גם לפני שהיעד הושלם. תשלום נוסף יישאר פנוי לשובר נוסף."}
       </p>
 
       {gift.vouchers.length > 0 ? (
@@ -128,11 +149,13 @@ export default function IssueVoucherPanel({
         </ul>
       ) : null}
 
-      {gift.availableAmount <= 0 ? (
+      {issueAmount <= 0 ? (
         <p className="mt-3 text-sm text-muted">
-          {gift.paidAmount > 0
-            ? "כל הסכום ששולם כבר נמצא בשובר. כשייכנס תשלום חדש אפשר להנפיק שובר נוסף."
-            : "עדיין אין סכום ששולם להנפקה."}
+          {demoIssue
+            ? "אין יתרת הדגמה נוספת להנפקה."
+            : gift.paidAmount > 0
+              ? "כל הסכום ששולם כבר נמצא בשובר. כשייכנס תשלום חדש אפשר להנפיק שובר נוסף."
+              : "עדיין אין סכום ששולם להנפקה."}
         </p>
       ) : null}
 
@@ -164,9 +187,10 @@ export default function IssueVoucherPanel({
             זוהי סביבת התנסות. השובר שיונפק אינו בעל ערך כספי ולא ניתן לממשו בחנות
           </p>
           <p className="mt-3 text-3xl font-bold text-brand">
-            {formatGiftAmount(gift.availableAmount)}
+            {formatGiftAmount(issueAmount)}
           </p>
-          {gift.targetAmount ? (
+          {demoIssue ? <p className="mt-1 text-sm font-semibold text-brand">{DEMO_VOUCHER_LABEL}</p> : null}
+          {demoIssue ? null : gift.targetAmount ? (
             <p className="mt-1 text-sm text-muted">
               מתוך יעד {formatGiftAmount(gift.targetAmount)}
               {gift.percentOfTarget != null
@@ -176,7 +200,7 @@ export default function IssueVoucherPanel({
           ) : (
             <p className="mt-1 text-sm text-muted">אין יעד למתנה. השובר הוא על הסכום ששולם.</p>
           )}
-          {gift.percentOfTarget != null && gift.percentOfTarget < 100 ? (
+          {!demoIssue && gift.percentOfTarget != null && gift.percentOfTarget < 100 ? (
             <p className="mt-2 text-sm font-semibold text-foreground">
               היעד עדיין לא הושלם. השובר יונפק על הסכום ששולם בלבד.
             </p>
@@ -217,18 +241,24 @@ export default function IssueVoucherPanel({
             </p>
           )}
 
-          {selected ? (
+          {selected?.terms ? (
             <ul className="mt-4 flex flex-col gap-1 text-sm text-foreground">
               <li>תוקף: {validityTermLabel(selected.terms)} מההנפקה</li>
               <li>{partialTermLabel(selected.terms)}</li>
               <li>{topupTermLabel(selected.terms)}</li>
               <li>דרך מימוש: {methodTermLabel(selected.terms)}</li>
             </ul>
+          ) : selected ? (
+            <p className="mt-4 text-sm text-brand">
+              {selected.termsMessage || "תנאי השובר לא הוגדרו, ולכן אי אפשר להנפיק אותו."}
+            </p>
           ) : (
             <p className="mt-4 text-sm text-muted">בחרו בית עסק כדי לראות את תנאי השובר.</p>
           )}
           <p className="mt-3 text-sm text-muted">
-            ההנפקה לא עוצרת תרומות חדשות. מה שישולם אחר כך יישאר זמין לשובר נוסף.
+            {demoIssue
+              ? DEMO_VOUCHER_LABEL
+              : "ההנפקה לא עוצרת תרומות חדשות. מה שישולם אחר כך יישאר זמין לשובר נוסף."}
           </p>
 
           {error ? <p className="mt-3 text-sm text-brand">{error}</p> : null}
@@ -236,7 +266,7 @@ export default function IssueVoucherPanel({
             <button
               type="button"
               onClick={issue}
-              disabled={saving || disabled || !selected}
+              disabled={saving || disabled || !selected?.terms}
               className="inline-flex h-12 flex-1 items-center justify-center rounded-full bg-brand px-5 text-base font-semibold text-white hover:bg-brand-hover disabled:opacity-60"
             >
               {saving ? "מנפיקים..." : "אישור והנפקת שובר"}

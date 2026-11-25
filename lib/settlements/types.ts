@@ -68,4 +68,7 @@ export type StoreBalance = {
   pendingPayable: number;
   paidCount: number;
   paidPayable: number;
+  demoCount: number;
+  demoGross: number;
+  unpricedCount: number;
 };

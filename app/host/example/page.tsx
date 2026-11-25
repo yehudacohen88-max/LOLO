@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { legalDraftsEnabledFromEnv } from "@/lib/legal/flag";
 import HostDashboard from "../events/[eventId]/host-dashboard";
 import { EXAMPLE_DASHBOARD_NOTE, exampleDashboardData } from "./example-dashboard";
 
@@ -27,6 +28,7 @@ export default async function HostExamplePage({ searchParams }: ExamplePageProps
       origin="https://lolo.example"
       exampleNote={EXAMPLE_DASHBOARD_NOTE}
       actionsEnabled={interactive}
+      legalDrafts={legalDraftsEnabledFromEnv()}
     />
   );
 }
