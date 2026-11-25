@@ -24,6 +24,7 @@ import {
   recoveryStartPayload,
 } from "../lib/host/recovery-flow";
 import { createHostSessionToken, readHostSessionToken } from "../lib/host/session";
+import { localDatabaseUiAllowed, supabaseUrlIsLoopback } from "../lib/supabase/loopback-guard";
 import { hostSessionVersionMatches } from "../lib/host/session-version";
 import {
   guestCanCancel,
@@ -209,6 +210,25 @@ describe("host recovery", () => {
     assert.match(outbox, /localDatabaseUiAllowed/);
     assert.match(outbox, /status: 404/);
     assert.doesNotMatch(outbox, /accessCode/);
+
+    const previousUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    try {
+      process.env.NEXT_PUBLIC_SUPABASE_URL = "https://example.supabase.co";
+      assert.equal(localDatabaseUiAllowed(), false);
+      process.env.NEXT_PUBLIC_SUPABASE_URL = "http://127.0.0.1:54321";
+      assert.equal(localDatabaseUiAllowed(), true);
+      delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+      assert.equal(localDatabaseUiAllowed(), false);
+      assert.equal(supabaseUrlIsLoopback("http://127.0.0.1:3000/api/host/recovery/local-outbox"), true);
+      assert.equal(supabaseUrlIsLoopback("https://lolo.vercel.app/api/host/recovery/local-outbox"), false);
+      assert.throws(() => supabaseUrlIsLoopback("not a url"));
+    } finally {
+      if (previousUrl === undefined) {
+        delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+      } else {
+        process.env.NEXT_PUBLIC_SUPABASE_URL = previousUrl;
+      }
+    }
   });
 
   it("burns a challenge after five mismatches and keeps the public error uniform", () => {
