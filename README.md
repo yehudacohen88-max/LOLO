@@ -25,6 +25,7 @@ Next.js 16 (App Router), React 19, TypeScript, Supabase, Tailwind CSS 4, Vercel.
 - `BETA_ACCESS_SECRET`
 - `NEXT_PUBLIC_APP_URL` (אופציונלי)
 - `PAYMENT_PROVIDER` (אופציונלי. ריק = תשלום הדגמה)
+- `LEGAL_DRAFTS_ENABLED` (אופציונלי. כבוי אם לא הוגדר. מציג טיוטות משפטיות והודעות איסוף)
 
 ## בסיס הנתונים
 
@@ -48,7 +49,7 @@ Next.js 16 (App Router), React 19, TypeScript, Supabase, Tailwind CSS 4, Vercel.
 12. `supabase/vouchers.sql`
 13. `supabase/settlements.sql`
 
-אחרי שהאפליקציה שרצה בפרודקשן קוראת אירוע דרך השרת, מריצים פעם אחת את `supabase/events-anon-read.sql`. הוא סוגר קריאה אנונימית לאירועים ולמתנות, ולא מוחק שורות. לא מריצים אותו לפני שהקוד הזה חי באתר.
+Production כבר בלי מדיניות על events ועל event_gifts. זה מצב הסיום של `supabase/events-anon-read.sql`, ולכן הקובץ לא נמצא ברשימת ה-SQL ל-Production. הוא נשאר בסדר המקומי וב-CI, כי הרצה חוזרת של `supabase/schema.sql` פותחת את הקריאה מחדש. לא מריצים את `supabase/fix-public-read.sql`.
 
 אירוע הדגמה, אופציונלי ולא הורס נתונים קיימים:
 
@@ -69,6 +70,7 @@ npm run verify:sessions
 npm run verify:checkout
 npm run verify:vouchers
 npm run verify:settlements
+npm run verify:legal
 npm run test:e2e
 node scripts/hash-demo-access.mjs
 ```

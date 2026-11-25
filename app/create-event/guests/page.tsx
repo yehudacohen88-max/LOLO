@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import CreateFrame from "../create-frame";
+import { legalDraftsEnabledFromEnv } from "@/lib/legal/flag";
 import GuestsForm from "./guests-form";
 
 export const metadata: Metadata = {
@@ -14,7 +15,7 @@ export default function GuestsPage() {
       title="את מי מזמינים?"
       lede="הוסיפו את האורחים שלכם. את ההזמנה נשלח בהמשך."
     >
-      <GuestsForm />
+      <GuestsForm legalDrafts={legalDraftsEnabledFromEnv()} />
     </CreateFrame>
   );
 }

@@ -8,6 +8,7 @@ import {
   readHostSessionToken,
 } from "@/lib/host/session";
 import { appPublicOrigin } from "@/lib/app-url";
+import { legalDraftsEnabledFromEnv } from "@/lib/legal/flag";
 import HostDashboard from "./host-dashboard";
 
 type HostEventPageProps = {
@@ -64,5 +65,12 @@ export default async function HostEventDashboardPage({
   const origin = appPublicOrigin(requestOriginFromHeaders(headerStore));
   const guestUrl = origin ? `${origin}${data.guestPath}` : data.guestPath;
 
-  return <HostDashboard data={data} guestUrl={guestUrl} origin={origin} />;
+  return (
+    <HostDashboard
+      data={data}
+      guestUrl={guestUrl}
+      origin={origin}
+      legalDrafts={legalDraftsEnabledFromEnv()}
+    />
+  );
 }
