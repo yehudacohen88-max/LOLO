@@ -202,7 +202,7 @@ where session_version is null;
 select count(*) = 0 as greeting_nulls
 from public.events
 where invitation_greeting is null;
-select polname
+select policyname
 from pg_policies
 where schemaname = 'public'
   and tablename in ('host_identities', 'host_identity_events', 'host_recovery_challenges')
@@ -257,10 +257,10 @@ Changes:
 - Replaces `public.set_updated_at()` with the same body already installed by `orders.sql` and `demo-checkout.sql`, and adds `notification_templates_set_updated_at`, `notification_messages_set_updated_at`, `documents_set_updated_at`.
 - Inserts Hebrew template rows with `on conflict (id) do nothing`.
 - Nullable columns on `platform_settings`: `vat_rate_percent`, `vat_included`, `default_document_kind`, `document_currency`, `notification_channels`.
-- One data write: sets `notification_channels` to `array['email']` on the `platform_settings` row `id = 'default'` only when that column is null. It does not set a VAT rate.
+- One data write: sets `notification_channels` to `array['email']` on the `platform_settings` row `id = 'default'` only when that column is null. It does not set a VAT rate. That `UPDATE` fires the existing `platform_settings_set_updated_at` trigger (`before update`, from `supabase/demo-checkout.sql`), which calls `public.set_updated_at()` and writes `public.platform_settings.updated_at`. The file does not add that trigger; it only updates the row.
 - RLS enabled on the three tables. No policies. Revoke from `anon`, `authenticated`, and `public`. `grant all` to `service_role`.
 
-Existing rows: orders, vouchers, and events are not updated. VAT columns stay null. The settings row gains `notification_channels = {email}` when it was null.
+Existing rows: orders, vouchers, and events are not updated. VAT columns stay null. The settings row gains `notification_channels = {email}` when it was null. On that first write, `platform_settings.updated_at` moves to the apply time. A post-check diff on `platform_settings.updated_at` is expected. A second run does not update the row once `notification_channels` is non-null, so `updated_at` stays put.
 
 Idempotent: yes. The settings update does nothing once the column is non-null. Template inserts do nothing on conflict.
 
@@ -300,7 +300,12 @@ from pg_policies
 where schemaname = 'public'
   and tablename in ('notification_templates', 'notification_messages', 'documents');
 select count(*) > 0 as templates_seeded from public.notification_templates;
+select updated_at
+from public.platform_settings
+where id = 'default';
 ```
+
+`updated_at` on the `default` row is newer than the pre-check value when this file's `UPDATE` ran (the column was null). That difference is the trigger, not a second settings write. If the column was already non-null, `updated_at` is unchanged.
 
 ## 7. `supabase/audit-events.sql`
 
