@@ -54,7 +54,7 @@ Next.js 16 (App Router), React 19, TypeScript, Supabase, Tailwind CSS 4, Vercel.
 
 אחרי אישור, ולא לפני כן, מריצים גם את `supabase/payments-attempts.sql` (אחרי `demo-checkout.sql`). הקובץ מוסיף `payment_attempts` ו־`payment_refunds` ומשאיר את מדיניות ההחזרים ריקה. עד אז התשלום נכשל עם "רישום התשלומים עדיין לא הופעל." לא מריצים אותו על Production מתוך הקוד.
 
-אחרי שהאפליקציה שרצה בפרודקשן קוראת אירוע דרך השרת, מריצים פעם אחת את `supabase/events-anon-read.sql`. הוא סוגר קריאה אנונימית לאירועים ולמתנות, ולא מוחק שורות. לא מריצים אותו לפני שהקוד הזה חי באתר.
+Production כבר בלי מדיניות על events ועל event_gifts. זה מצב הסיום של `supabase/events-anon-read.sql`, ולכן הקובץ לא נמצא ברשימת ה-SQL ל-Production. הוא נשאר בסדר המקומי וב-CI, כי הרצה חוזרת של `supabase/schema.sql` פותחת את הקריאה מחדש. לא מריצים את `supabase/fix-public-read.sql`.
 
 אירוע הדגמה, אופציונלי ולא הורס נתונים קיימים:
 
