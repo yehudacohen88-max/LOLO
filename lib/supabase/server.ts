@@ -4,15 +4,10 @@ import {
   readRequiredEnv,
   SERVICE_UNAVAILABLE_MESSAGE,
 } from "@/lib/security/required-secret";
-
-function normalizeSupabaseUrl(raw: string) {
-  return raw
-    .trim()
-    .replace(/\r/g, "")
-    .replace(/^['"]|['"]$/g, "")
-    .replace(/\/+$/, "")
-    .replace(/\/rest\/v1$/i, "");
-}
+import {
+  assertPreviewDatabaseAllowed,
+  normalizeSupabaseUrl,
+} from "@/lib/supabase/preview-guard";
 
 export function getSupabaseServiceClient() {
   if (typeof window !== "undefined") {
@@ -22,10 +17,16 @@ export function getSupabaseServiceClient() {
     throw error;
   }
 
+  if (process.env.VERCEL_ENV === "preview") {
+    assertPreviewDatabaseAllowed(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "");
+  }
+
   const url = readRequiredEnv("NEXT_PUBLIC_SUPABASE_URL");
   const serviceKey = readRequiredEnv("SUPABASE_SERVICE_ROLE_KEY");
+  const normalizedUrl = normalizeSupabaseUrl(url);
+  assertPreviewDatabaseAllowed(normalizedUrl);
 
-  return createClient(normalizeSupabaseUrl(url), serviceKey, {
+  return createClient(normalizedUrl, serviceKey, {
     auth: {
       persistSession: false,
       autoRefreshToken: false,

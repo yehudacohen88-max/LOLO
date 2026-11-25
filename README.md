@@ -69,6 +69,7 @@ npm run verify:sessions
 npm run verify:checkout
 npm run verify:vouchers
 npm run verify:settlements
+npm run verify:preview-guard
 npm run test:e2e
 node scripts/hash-demo-access.mjs
 ```
