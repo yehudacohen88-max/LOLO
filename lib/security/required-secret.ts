@@ -1,4 +1,5 @@
 import "server-only";
+import { isPreviewDisconnected } from "@/lib/supabase/preview-guard";
 
 export const SERVICE_UNAVAILABLE_MESSAGE =
   "השירות אינו זמין כרגע. נסו שוב מאוחר יותר.";
@@ -20,7 +21,17 @@ export function readRequiredEnv(name: string) {
 }
 
 export function isServiceUnavailable(error: unknown) {
-  return error instanceof Error && error.name === "ServiceUnavailableError";
+  return (
+    (error instanceof Error && error.name === "ServiceUnavailableError") ||
+    isPreviewDisconnected(error)
+  );
+}
+
+export function serviceUnavailableMessage(error?: unknown) {
+  if (isServiceUnavailable(error) && error instanceof Error && error.message) {
+    return error.message;
+  }
+  return SERVICE_UNAVAILABLE_MESSAGE;
 }
 
 export function caughtErrorBody(
@@ -29,7 +40,7 @@ export function caughtErrorBody(
   fallbackStatus = 400,
 ) {
   if (isServiceUnavailable(error)) {
-    return { error: SERVICE_UNAVAILABLE_MESSAGE, status: 503 };
+    return { error: serviceUnavailableMessage(error), status: 503 };
   }
   return {
     error: error instanceof Error && error.message ? error.message : fallback,

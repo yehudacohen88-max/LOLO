@@ -17,7 +17,7 @@ import {
 } from "@/lib/security/login-limit";
 import {
   isServiceUnavailable,
-  SERVICE_UNAVAILABLE_MESSAGE,
+  serviceUnavailableMessage,
 } from "@/lib/security/required-secret";
 import { getSupabaseServiceClient } from "@/lib/supabase/server";
 
@@ -85,7 +85,7 @@ export async function POST(request: Request) {
   } catch (error) {
     if (isServiceUnavailable(error)) {
       return NextResponse.json(
-        { error: SERVICE_UNAVAILABLE_MESSAGE },
+        { error: serviceUnavailableMessage(error) },
         { status: 503 },
       );
     }

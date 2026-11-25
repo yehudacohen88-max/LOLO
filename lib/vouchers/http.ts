@@ -2,7 +2,7 @@ import "server-only";
 import { NextResponse } from "next/server";
 import {
   isServiceUnavailable,
-  SERVICE_UNAVAILABLE_MESSAGE,
+  serviceUnavailableMessage,
 } from "@/lib/security/required-secret";
 import {
   VoucherActionError,
@@ -17,7 +17,7 @@ export function jsonFromError(error: unknown, fallback: string) {
     return NextResponse.json({ error: error.message }, { status: error.status });
   }
   if (isServiceUnavailable(error)) {
-    return NextResponse.json({ error: SERVICE_UNAVAILABLE_MESSAGE }, { status: 503 });
+    return NextResponse.json({ error: serviceUnavailableMessage(error) }, { status: 503 });
   }
   if (error instanceof Error && /[\u0590-\u05FF]/.test(error.message)) {
     return NextResponse.json({ error: error.message }, { status: 400 });
