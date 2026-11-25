@@ -1,6 +1,6 @@
 # SQL apply order
 
-Ordered list of every SQL file in this repo. The machine-readable copy is `scripts/local-db-order.mjs`. Local Docker and the pull-request CI workflow apply this order with `psql` inside the database container. Nothing here is applied to the hosted project `fafvveudrlovaozazkny`.
+Ordered list of every SQL file in this repo. The machine-readable copy is `scripts/local-db-order.mjs`. Local Docker and the pull-request CI workflow apply this order with `psql` inside the database container. Nothing here is applied to the hosted project `fafvveudrlovaozazkny`. The files a person must run on Production are the shorter list in `docs/system/production-sql-list.md`. Step 20 is in this local order and is not on that list.
 
 There is no down-migration file in the repo. Rollback is the steps under each file. Re-running a file is safe where the header says so; it does not undo data.
 
@@ -172,6 +172,7 @@ On 2026-11-24 the `full` profile applied cleanly to a loopback Supabase database
 
 - Depends on: steps 1 and 2, and it must stay after step 16 in the same run as step 1. Re-running `schema.sql` alone reopens anonymous reads.
 - Changes: closes anonymous SELECT on events and gifts.
+- Not a Production migration. The 24 Nov 2026 read already has zero policies on `events` and `event_gifts`, which is this file's end state. Keep the step in the local and CI order, because `schema.sql` opens those policies on a fresh database.
 - Risk: medium. Wrong order reopens the catalog.
 - Tested: local full apply, and both CI profiles. Integration test checks the anonymous REST catalog is closed.
 - Rollback: do not run `supabase/fix-public-read.sql`. Re-apply this file to close reads again.

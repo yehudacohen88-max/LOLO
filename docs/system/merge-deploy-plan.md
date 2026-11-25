@@ -9,6 +9,7 @@ Hard limits for the person who runs this later:
 - Do not change Vercel env, firewall, or domains in these stages. `BETA_ACCESS_ENABLED`, `LEGAL_DRAFTS_ENABLED`, and `SETTLEMENTS_ENABLED` stay unset or false. `PAYMENT_PROVIDER` stays `demo` until a separate vendor decision.
 - Do not apply `supabase/demo-seed.sql`, `supabase/fix-public-read.sql`, or `supabase/demo-cleanup.sql` to Production.
 - Do not schedule `supabase/events-anon-read.sql` as a new Production migration. The 24 Nov 2026 read already has its end state. It stays in the local and CI order only.
+- The only SQL files for Production, in order, are in `docs/system/production-sql-list.md`.
 - Do not uncomment the write block in `supabase/pilot-isolate-test-data.sql`.
 - Stop at the first failed pre-check or post-check. Do not start the next stage.
 
