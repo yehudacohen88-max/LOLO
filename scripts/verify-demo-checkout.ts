@@ -524,7 +524,7 @@ describe("payment attempts, webhooks, and demo refunds", () => {
           paidAt: "2026-10-07T10:00:00.000Z",
           chargedAmount: 100,
           alreadyRefunded: 0,
-          issuedVoucher: false,
+          redeemedVoucher: false,
           existing: null,
           createReference: () => "demo-refund-fixed",
           outbound,
@@ -547,7 +547,7 @@ describe("payment attempts, webhooks, and demo refunds", () => {
       paidAt: "2026-10-07T10:00:00.000Z",
       chargedAmount: 100,
       alreadyRefunded: 0,
-      issuedVoucher: false,
+      redeemedVoucher: false,
       existing: null,
       createReference: () => {
         references += 1;
@@ -574,7 +574,7 @@ describe("payment attempts, webhooks, and demo refunds", () => {
       paidAt: "2026-10-07T10:00:00.000Z",
       chargedAmount: 100,
       alreadyRefunded: 40,
-      issuedVoucher: false,
+      redeemedVoucher: false,
       existing: recorded,
       createReference: () => {
         references += 1;
@@ -606,7 +606,7 @@ describe("payment attempts, webhooks, and demo refunds", () => {
           paidAt: "2026-10-07T10:00:00.000Z",
           chargedAmount: 100,
           alreadyRefunded: 0,
-          issuedVoucher: false,
+          redeemedVoucher: false,
           existing: null,
           createReference: () => "demo-refund-nope",
         }),

@@ -38,7 +38,7 @@ export type DemoRefundInput = {
   paidAt: string | null;
   chargedAmount: number;
   alreadyRefunded: number;
-  issuedVoucher: boolean;
+  redeemedVoucher: boolean;
   existing: DemoRefundRecord | null;
   createReference: () => string;
   /**
@@ -78,7 +78,7 @@ export function performDemoRefund(input: DemoRefundInput): DemoRefundRecord {
     chargedAmount: input.chargedAmount,
     alreadyRefunded: input.alreadyRefunded,
     requestedAmount: input.amount,
-    issuedVoucher: input.issuedVoucher,
+    redeemedVoucher: input.redeemedVoucher,
     paymentStatus: input.paymentStatus,
   });
   if (!decision.ok) {

@@ -16,7 +16,7 @@ export const REFUND_FORBIDDEN = "אין הרשאה לבצע את ההחזר.";
 
 export const REFUND_WINDOW_CLOSED = "חלון ההחזרים נסגר.";
 
-export const REFUND_VOUCHER_BLOCKED = "אי אפשר להחזיר כל עוד יש שובר שהונפק על ההזמנה.";
+export const REFUND_VOUCHER_BLOCKED = "אי אפשר להחזיר כל עוד יש מימוש על השובר.";
 
 export const REFUND_FULL_ONLY = "מדיניות ההחזרים מאפשרת החזר מלא בלבד.";
 

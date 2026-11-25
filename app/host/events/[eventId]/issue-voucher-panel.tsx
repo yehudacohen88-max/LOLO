@@ -69,6 +69,10 @@ export default function IssueVoucherPanel({
       setError("יש לבחור בית עסק פעיל.");
       return;
     }
+    if (!selected.terms) {
+      setError(selected.termsMessage || "תנאי השובר לא הוגדרו, ולכן אי אפשר להנפיק אותו.");
+      return;
+    }
     setSaving(true);
     setError("");
     try {
@@ -237,13 +241,17 @@ export default function IssueVoucherPanel({
             </p>
           )}
 
-          {selected ? (
+          {selected?.terms ? (
             <ul className="mt-4 flex flex-col gap-1 text-sm text-foreground">
               <li>תוקף: {validityTermLabel(selected.terms)} מההנפקה</li>
               <li>{partialTermLabel(selected.terms)}</li>
               <li>{topupTermLabel(selected.terms)}</li>
               <li>דרך מימוש: {methodTermLabel(selected.terms)}</li>
             </ul>
+          ) : selected ? (
+            <p className="mt-4 text-sm text-brand">
+              {selected.termsMessage || "תנאי השובר לא הוגדרו, ולכן אי אפשר להנפיק אותו."}
+            </p>
           ) : (
             <p className="mt-4 text-sm text-muted">בחרו בית עסק כדי לראות את תנאי השובר.</p>
           )}
@@ -258,7 +266,7 @@ export default function IssueVoucherPanel({
             <button
               type="button"
               onClick={issue}
-              disabled={saving || disabled || !selected}
+              disabled={saving || disabled || !selected?.terms}
               className="inline-flex h-12 flex-1 items-center justify-center rounded-full bg-brand px-5 text-base font-semibold text-white hover:bg-brand-hover disabled:opacity-60"
             >
               {saving ? "מנפיקים..." : "אישור והנפקת שובר"}

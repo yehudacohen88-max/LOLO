@@ -4,12 +4,12 @@ import {
   formatVoucherWhen,
   methodTermLabel,
   partialTermLabel,
-  redemptionChannelLabel,
   topupTermLabel,
   validityTermLabel,
   voucherStatusLabel,
 } from "@/lib/vouchers/labels";
 import type { VoucherCardModel } from "@/lib/vouchers/types";
+import VoucherRedemptionList from "@/components/voucher-redemption-list";
 import VoucherShareActions from "@/components/voucher-share-actions";
 
 function statusClass(status: VoucherCardModel["status"], celebration: boolean) {
@@ -148,30 +148,7 @@ export default function VoucherCard({
           </div>
         </dl>
 
-        <section>
-          <h2 className="text-base font-bold text-foreground">מימושים</h2>
-          {model.redemptions.length === 0 ? (
-            <p className="mt-2 text-sm text-muted">עדיין אין מימושים.</p>
-          ) : (
-            <ul className="mt-3 flex flex-col gap-2">
-              {model.redemptions.map((redemption) => (
-                <li
-                  key={redemption.id}
-                  className="rounded-2xl border border-border px-4 py-3 text-sm"
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="font-semibold">{formatGiftAmount(redemption.amount)}</span>
-                    <span className="text-muted">{redemptionChannelLabel(redemption.channel)}</span>
-                  </div>
-                  <p className="mt-1 text-muted">{formatVoucherWhen(redemption.redeemedAt)}</p>
-                  {redemption.reference ? (
-                    <p className="mt-1 text-muted">אסמכתה: {redemption.reference}</p>
-                  ) : null}
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
+        <VoucherRedemptionList redemptions={model.redemptions} />
 
         <VoucherShareActions shareUrl={model.shareUrl} />
       </div>

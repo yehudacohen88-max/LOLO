@@ -8,7 +8,6 @@ import {
   SETTLEMENT_LABELS,
   type AdminStore,
 } from "@/lib/admin/store-fields";
-import { VOUCHER_TERM_DEFAULTS } from "@/lib/vouchers/terms";
 
 const fieldClass =
   "h-12 rounded-2xl border border-border bg-white px-4 text-base text-foreground outline-none placeholder:text-muted/70 focus:border-brand";
@@ -257,7 +256,7 @@ export default function StoreForm({ store }: { store?: AdminStore }) {
       <section className="flex flex-col gap-4">
         <h2 className="text-lg font-bold text-foreground">הגדרות שובר</h2>
         <p className="text-sm leading-relaxed text-muted">
-          ההגדרות קובעות את תוקף השובר, מימוש חלקי, השלמה בחנות ודרך המימוש. שדה ריק משתמש בברירת מחדל, והיא מוצגת למארח ולחנות.
+          ההגדרות קובעות את תוקף השובר, מימוש חלקי, השלמה בחנות ודרך המימוש. שדה ריק משתמש בברירת המחדל של המערכת. אם גם היא לא הוגדרה, אי אפשר להנפיק שובר.
         </p>
         <label className="flex flex-col gap-2">
           <span className="text-sm font-semibold">דרך מימוש</span>
@@ -273,7 +272,7 @@ export default function StoreForm({ store }: { store?: AdminStore }) {
             <option value="בחנות ובאתר" />
           </datalist>
           <span className="text-xs text-muted">
-            אם השדה ריק: {VOUCHER_TERM_DEFAULTS.redemptionMethod}
+            שדה ריק משתמש בברירת המחדל של המערכת.
           </span>
         </label>
         <label className="flex flex-col gap-2">
@@ -286,7 +285,7 @@ export default function StoreForm({ store }: { store?: AdminStore }) {
             className={fieldClass}
           />
           <span className="text-xs text-muted">
-            אם השדה ריק: {VOUCHER_TERM_DEFAULTS.validityDays} ימים
+            שדה ריק משתמש בברירת המחדל של המערכת.
           </span>
         </label>
         <label className="flex flex-col gap-2">
@@ -300,7 +299,7 @@ export default function StoreForm({ store }: { store?: AdminStore }) {
             <option value="true">כן</option>
             <option value="false">לא</option>
           </select>
-          <span className="text-xs text-muted">אם לא הוגדר: מימוש של כל היתרה בלבד</span>
+          <span className="text-xs text-muted">אם לא הוגדר, נעשה שימוש בברירת המחדל של המערכת.</span>
         </label>
         <label className="flex flex-col gap-2">
           <span className="text-sm font-semibold">הלקוח יכול להשלים כסף בחנות</span>
@@ -313,7 +312,7 @@ export default function StoreForm({ store }: { store?: AdminStore }) {
             <option value="true">כן</option>
             <option value="false">לא</option>
           </select>
-          <span className="text-xs text-muted">אם לא הוגדר: אי אפשר להשלים סכום בחנות</span>
+          <span className="text-xs text-muted">אם לא הוגדר, נעשה שימוש בברירת המחדל של המערכת.</span>
         </label>
       </section>
 
