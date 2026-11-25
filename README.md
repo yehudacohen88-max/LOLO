@@ -50,7 +50,7 @@ Next.js 16 (App Router), React 19, TypeScript, Supabase, Tailwind CSS 4, Vercel.
 13. `supabase/settlements.sql` — לא הורץ ב־Production של הפיילוט. לא מריצים אותו עד אישור. המסכים וה־API של ההתחשבנות סגורים כל עוד `SETTLEMENTS_ENABLED` לא הוגדר במפורש ל־`true`.
 14. `supabase/settlement-exclude-demo.sql` — רק אחרי `settlements.sql` ואחרי `pilot-demo-voucher-guard.sql` (הקובץ שמגדיר את `vouchers.demo_only`, לא בפיילוט הזה). מחליף את `create_store_settlement` כך שמימוש של שובר `demo_only` לא נכנס להתחשבנות. לא מריצים עד אישור, ולא מריצים על Production מהפריסה.
 
-אחרי שהאפליקציה שרצה בפרודקשן קוראת אירוע דרך השרת, מריצים פעם אחת את `supabase/events-anon-read.sql`. הוא סוגר קריאה אנונימית לאירועים ולמתנות, ולא מוחק שורות. לא מריצים אותו לפני שהקוד הזה חי באתר.
+Production כבר בלי מדיניות על events ועל event_gifts. זה מצב הסיום של `supabase/events-anon-read.sql`, ולכן הקובץ לא נמצא ברשימת ה-SQL ל-Production. הוא נשאר בסדר המקומי וב-CI, כי הרצה חוזרת של `supabase/schema.sql` פותחת את הקריאה מחדש. לא מריצים את `supabase/fix-public-read.sql`.
 
 אירוע הדגמה, אופציונלי ולא הורס נתונים קיימים:
 
