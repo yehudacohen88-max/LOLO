@@ -1,4 +1,5 @@
 import { roundMoney } from "@/lib/money";
+import { activeRealProviderAllowlist, isAllowListedRealProvider } from "@/lib/payments/allowlist";
 
 /** Exact label for a voucher that must not be treated as money. */
 export const DEMO_VOUCHER_LABEL = "שובר הדגמה – ללא ערך כספי";
@@ -21,26 +22,31 @@ export type VoucherPoolSlice = {
 };
 
 /**
- * Real money is a paid order whose provider is a non-demo name and whose
- * reference is not a demo reference. Null, blank, and "demo" are simulated.
- * Fail closed: anything we cannot prove is a live provider is not real money.
+ * Real money is a paid order whose provider is on the real-provider allow-list
+ * and whose reference is not a demo reference. Empty, "demo", "none", a demo-
+ * reference, and any name that is not allow-listed are simulated.
+ * One classifier for payments, vouchers, and settlement. A new PSP name is
+ * allow-listed; it is not inferred from "anything except demo".
  */
-export function isSimulatedPayment(slice: PaidSlice) {
+export function isSimulatedPayment(
+  slice: PaidSlice,
+  allowlist: readonly string[] = activeRealProviderAllowlist(),
+) {
   if (slice.paymentStatus !== "paid") {
     return false;
   }
   const provider = (slice.paymentProvider ?? "").trim().toLowerCase();
   const reference = (slice.paymentReference ?? "").trim().toLowerCase();
-  if (!provider || provider === "demo") {
+  if (!provider || provider === "demo" || provider === "none") {
     return true;
   }
   if (reference.startsWith("demo-")) {
     return true;
   }
-  return false;
+  return !isAllowListedRealProvider(provider, allowlist);
 }
 
-export function isRealMoneyPayment(slice: PaidSlice) {
+export function isRealMoneyPayment(slice: PaidSlice, allowlist?: readonly string[]) {
   if (slice.paymentStatus !== "paid") {
     return false;
   }
@@ -48,10 +54,10 @@ export function isRealMoneyPayment(slice: PaidSlice) {
   if (!(amount > 0)) {
     return false;
   }
-  return !isSimulatedPayment(slice);
+  return !isSimulatedPayment(slice, allowlist);
 }
 
-export function sumPaidPools(slices: PaidSlice[]) {
+export function sumPaidPools(slices: PaidSlice[], allowlist?: readonly string[]) {
   let realPaid = 0;
   let simulatedPaid = 0;
   for (const slice of slices) {
@@ -59,7 +65,7 @@ export function sumPaidPools(slices: PaidSlice[]) {
     if (!(amount > 0) || slice.paymentStatus !== "paid") {
       continue;
     }
-    if (isSimulatedPayment(slice)) {
+    if (isSimulatedPayment(slice, allowlist)) {
       simulatedPaid = roundMoney(simulatedPaid + amount);
     } else {
       realPaid = roundMoney(realPaid + amount);

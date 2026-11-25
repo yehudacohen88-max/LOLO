@@ -1,6 +1,11 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
+import {
+  REAL_PROVIDER_ALLOWLIST,
+  isAllowListedRealProvider,
+  setLocalRealProviderAllowlist,
+} from "../lib/payments/allowlist";
 import { guestCheckoutAllowed } from "../lib/guest-draft";
 import { guestItemsProblem } from "../lib/orders/guest-input";
 import {
@@ -46,8 +51,43 @@ describe("demo funding is not money", () => {
       isSimulatedPayment({ ...realPaid, paymentReference: "demo-slipped" }),
       true,
     );
-    assert.equal(isRealMoneyPayment(realPaid), true);
+    assert.equal(isSimulatedPayment(realPaid), true);
+    assert.equal(isRealMoneyPayment(realPaid), false);
+    assert.equal(isSimulatedPayment(realPaid, ["cardcom"]), false);
+    assert.equal(isRealMoneyPayment(realPaid, ["cardcom"]), true);
+    assert.equal(
+      isSimulatedPayment({ ...realPaid, paymentReference: "demo-slipped" }, ["cardcom"]),
+      true,
+    );
     assert.equal(isSimulatedPayment({ ...realPaid, paymentStatus: "pending" }), false);
+    assert.equal(sumPaidPools([realPaid]).realPaid, 0);
+    assert.equal(sumPaidPools([realPaid]).simulatedPaid, 350);
+  });
+
+  it("refuses to redeem a demo-funded pool", () => {
+    assert.equal(isSimulatedPayment(demoPaid), true);
+    assert.deepEqual(
+      planFundedRedeem({
+        demoOnly: true,
+        voucherAmount: 200,
+        realPaid: 0,
+        simulatedPaid: 200,
+        monetaryCommitted: 0,
+        fundingKnown: true,
+      }),
+      { ok: false, reason: "demo" },
+    );
+    assert.deepEqual(
+      planFundedRedeem({
+        demoOnly: null,
+        voucherAmount: 200,
+        realPaid: 0,
+        simulatedPaid: 200,
+        monetaryCommitted: 200,
+        fundingKnown: true,
+      }),
+      { ok: false, reason: "demo" },
+    );
   });
 
   it("blocks a monetary issue and a redeem when funding is demo", () => {
@@ -127,7 +167,7 @@ describe("demo funding is not money", () => {
   });
 
   it("keeps a real-provider voucher issuable and redeemable", () => {
-    const sums = sumPaidPools([realPaid, demoPaid]);
+    const sums = sumPaidPools([realPaid, demoPaid], ["cardcom"]);
     assert.equal(sums.realPaid, 350);
     assert.equal(sums.simulatedPaid, 350);
 
@@ -252,5 +292,33 @@ describe("demo guard SQL does not treat an unknown provider as money", () => {
     const replay = issue.indexOf("idempotency_key");
     const plan = issue.indexOf("planFundedVoucherIssue");
     assert.ok(replay > 0 && plan > replay);
+  });
+});
+
+describe("the real-provider allow-list stays empty outside the local database", () => {
+  it("widens classification only while LOLO_LOCAL_DB=1 and then restores it", () => {
+    const previous = process.env.LOLO_LOCAL_DB;
+    const fixture = { ...realPaid, paymentProvider: "fixture", paymentReference: "local-fixture" };
+    try {
+      delete process.env.LOLO_LOCAL_DB;
+      assert.throws(() => setLocalRealProviderAllowlist(["fixture"]), /LOLO_LOCAL_DB=1/);
+      assert.equal(isSimulatedPayment(fixture), true);
+      assert.deepEqual([...REAL_PROVIDER_ALLOWLIST], []);
+      process.env.LOLO_LOCAL_DB = "1";
+      setLocalRealProviderAllowlist(["demo", "fixture"]);
+      assert.equal(isAllowListedRealProvider("demo"), false);
+      assert.equal(isSimulatedPayment(demoPaid), true);
+      assert.equal(isSimulatedPayment(fixture), false);
+    } finally {
+      if (process.env.LOLO_LOCAL_DB === "1") {
+        setLocalRealProviderAllowlist(null);
+      }
+      if (previous === undefined) {
+        delete process.env.LOLO_LOCAL_DB;
+      } else {
+        process.env.LOLO_LOCAL_DB = previous;
+      }
+    }
+    assert.equal(isSimulatedPayment(fixture), true);
   });
 });
