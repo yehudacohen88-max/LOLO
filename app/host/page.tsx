@@ -21,6 +21,11 @@ export default function HostLoginPage() {
       </section>
       <section className={styles.loginCard}>
         <HostLoginForm />
+        <p className={styles.help}>
+          <Link href="/host/events">האירועים שלי</Link>
+          {" · "}
+          <Link href="/host/recovery">שחזור קוד</Link>
+        </p>
       </section>
     </div>
   );

@@ -37,12 +37,13 @@ export function whatsappInviteUrl(input: {
   guestName: string;
   eventTitle: string;
   inviteUrl: string;
+  message?: string;
 }) {
   const number = toWhatsAppNumber(input.phone);
   if (!number || !input.inviteUrl) {
     return "";
   }
 
-  const text = whatsappInviteMessage(input);
+  const text = input.message?.trim() || whatsappInviteMessage(input);
   return `https://api.whatsapp.com/send?phone=${number}&text=${encodeURIComponent(text)}`;
 }

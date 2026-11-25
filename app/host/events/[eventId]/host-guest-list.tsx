@@ -6,6 +6,7 @@ import styles from "@/app/design/bold-host.module.css";
 import { userFacingMessage } from "@/app/design/user-error";
 import { absoluteAppUrl } from "@/lib/app-url";
 import type { EventGuest } from "@/lib/host/guest-fields";
+import { buildInvitationMessage } from "@/lib/host/invitation-message";
 import { whatsappInviteUrl } from "@/lib/invite/whatsapp";
 
 type HostGuestListProps = {
@@ -13,6 +14,7 @@ type HostGuestListProps = {
   eventTitle: string;
   origin: string;
   guests: EventGuest[];
+  invitationGreeting?: string;
   disabled?: boolean;
 };
 
@@ -21,6 +23,7 @@ export default function HostGuestList({
   eventTitle,
   origin,
   guests,
+  invitationGreeting = "",
   disabled = false,
 }: HostGuestListProps) {
   const router = useRouter();
@@ -131,11 +134,18 @@ export default function HostGuestList({
         <ul className={styles.stack}>
           {visible.map((guest) => {
             const inviteUrl = absoluteInviteUrl(guest.invitePath ?? "");
+            const greeting = buildInvitationMessage({
+              greeting: invitationGreeting,
+              guestName: guest.name,
+              eventTitle,
+              inviteUrl,
+            });
             const waUrl = whatsappInviteUrl({
               phone: guest.phone,
               guestName: guest.name,
               eventTitle,
               inviteUrl,
+              message: greeting,
             });
 
             return (
@@ -151,6 +161,9 @@ export default function HostGuestList({
                 <div className={styles.guestActions}>
                   {guest.invitePath ? (
                     <>
+                      <p className={`${styles.help} ${styles.preserve}`} dir="auto">
+                        {greeting}
+                      </p>
                       <button
                         type="button"
                         disabled={saving || disabled}
