@@ -1,6 +1,11 @@
 import "server-only";
 import { NextResponse } from "next/server";
 import {
+  SETTLEMENTS_PILOT_MESSAGE,
+  SettlementPilotDisabledError,
+  settlementsEnabled,
+} from "@/lib/settlements/availability";
+import {
   SettlementActionError,
   SettlementSchemaMissingError,
 } from "@/lib/settlements/messages";
@@ -9,7 +14,17 @@ import {
   SERVICE_UNAVAILABLE_MESSAGE,
 } from "@/lib/security/required-secret";
 
+export function settlementPilotUnavailable() {
+  if (settlementsEnabled()) {
+    return null;
+  }
+  return NextResponse.json({ error: SETTLEMENTS_PILOT_MESSAGE }, { status: 501 });
+}
+
 export function jsonFromSettlementError(error: unknown, fallback: string) {
+  if (error instanceof SettlementPilotDisabledError) {
+    return NextResponse.json({ error: error.message }, { status: 501 });
+  }
   if (error instanceof SettlementSchemaMissingError) {
     return NextResponse.json({ error: error.message }, { status: 503 });
   }

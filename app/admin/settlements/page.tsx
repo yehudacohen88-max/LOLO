@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { getAdminSession } from "@/lib/admin/session";
+import { settlementsEnabled } from "@/lib/settlements/availability";
 import { formatGiftAmount } from "@/lib/guest-draft";
 import { settlementBatchLabel } from "@/lib/settlements/labels";
 import { SETTLEMENT_SCHEMA_MESSAGE } from "@/lib/settlements/messages";
@@ -36,6 +37,10 @@ function statusClass(status: string, overdue: boolean) {
 }
 
 export default async function AdminSettlementsPage({ searchParams }: PageProps) {
+  if (!settlementsEnabled()) {
+    notFound();
+  }
+
   const session = await getAdminSession();
   if (!session) {
     redirect("/admin");
