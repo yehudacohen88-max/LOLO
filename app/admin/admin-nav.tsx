@@ -10,6 +10,7 @@ const LINKS = [
   { href: "/admin/redemptions", label: "מימושים", exact: false },
   { href: "/admin/settlements", label: "התחשבנויות", exact: false },
   { href: "/admin/settings", label: "הגדרות", exact: false },
+  { href: "/admin/notifications", label: "הודעות", exact: false },
 ];
 
 export default function AdminNav() {
