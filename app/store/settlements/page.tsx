@@ -5,8 +5,13 @@ import { settlementsEnabled } from "@/lib/settlements/availability";
 import SettlementFigures from "@/components/settlement-figures";
 import { settlementLabel } from "@/lib/admin/store-fields";
 import { formatGiftAmount } from "@/lib/guest-draft";
-import { settlementBatchLabel } from "@/lib/settlements/labels";
+import {
+  DEMO_REDEMPTION_LABEL,
+  lineTermsLabel,
+  settlementBatchLabel,
+} from "@/lib/settlements/labels";
 import { listStoreSettlementDetails } from "@/lib/settlements/repository";
+import { loadSettlementReport } from "@/lib/settlements/reports";
 import type { SettlementDetail } from "@/lib/settlements/types";
 import { getStoreSession } from "@/lib/store/session";
 import { formatVoucherWhen } from "@/lib/vouchers/labels";
@@ -32,6 +37,7 @@ export default async function StoreSettlementsPage() {
 
   let storeName = "";
   let settlements: SettlementDetail[] = [];
+  let report: Awaited<ReturnType<typeof loadSettlementReport>> | null = null;
   let loadError = "";
   try {
     storeName = await getStoreLabel(session.storeId);
@@ -42,6 +48,7 @@ export default async function StoreSettlementsPage() {
   }
   try {
     settlements = await listStoreSettlementDetails(session.storeId);
+    report = await loadSettlementReport(session.storeId);
   } catch (error) {
     loadError = error instanceof Error ? error.message : "טעינת ההתחשבנויות נכשלה.";
   }
@@ -62,13 +69,42 @@ export default async function StoreSettlementsPage() {
         <StoreLogoutButton />
       </header>
       <p className="mt-4 text-sm leading-relaxed text-muted">
-        כאן רואים התחשבנויות שממתינות לתשלום והתחשבנויות ששולמו. הסכום לתשלום הוא מה שמומש פחות עמלת
-        LOLO.
+        כאן רואים מה מגיע לבית העסק: הסכום שמומש פחות העמלה שנשמרה במימוש, או ברירת המחדל מההגדרות.
+        מימושי הדגמה מוצגים לחוד ואינם נספרים לתשלום.
       </p>
-      <Link href="/store/redeem" className="mt-4 text-sm font-semibold text-brand">
-        חזרה למימוש שוברים
-      </Link>
+      <div className="mt-4 flex flex-wrap gap-4">
+        <Link href="/store/redeem" className="text-sm font-semibold text-brand">
+          חזרה למימוש שוברים
+        </Link>
+        <a href="/api/store/settlements/report" className="text-sm font-semibold text-brand">
+          הורדת דוח (CSV)
+        </a>
+      </div>
       {loadError ? <p className="mt-6 text-sm text-brand">{loadError}</p> : null}
+      {report ? (
+        <section className="mt-6 rounded-3xl border border-border bg-white p-5">
+          <h2 className="text-lg font-bold">יתרה לתשלום</h2>
+          <div className="mt-4">
+            <SettlementFigures
+              gross={report.totals.payableGross}
+              commission={report.totals.payableCommission}
+              payable={report.totals.payableAmount}
+            />
+          </div>
+          {report.totals.demoCount > 0 ? (
+            <p className="mt-4 text-sm text-muted">
+              {DEMO_REDEMPTION_LABEL}: {formatGiftAmount(report.totals.demoGross)} (
+              {report.totals.demoCount.toLocaleString("he-IL")})
+            </p>
+          ) : null}
+          {report.totals.blockedCount > 0 ? (
+            <p className="mt-3 text-sm text-brand">
+              {report.totals.blockedCount.toLocaleString("he-IL")} מימושים חסומים עד שיוגדרו עמלה,
+              ימי תשלום וכלל עיגול.
+            </p>
+          ) : null}
+        </section>
+      ) : null}
       {!loadError && settlements.length === 0 ? (
         <p className="mt-8 text-base text-muted">אין עדיין התחשבנויות להצגה.</p>
       ) : null}
@@ -119,6 +155,9 @@ function SettlementList({ items }: { items: SettlementDetail[] }) {
                 <li key={line.id} className="flex items-start justify-between gap-3">
                   <span>
                     {line.giftTitle}
+                    <span className="mt-1 block text-xs text-muted">
+                      {lineTermsLabel(line.paymentTermsDays, line.termsSpecified)}
+                    </span>
                     <span className="mt-1 block font-mono text-xs text-muted" dir="ltr">
                       {line.voucherCode}
                     </span>

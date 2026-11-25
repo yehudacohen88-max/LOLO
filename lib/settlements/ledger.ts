@@ -1,4 +1,9 @@
 import { earliestDueAt, splitCommission, sumMoney, settlementDueAt } from "@/lib/settlements/money";
+import {
+  resolveCommissionPercent,
+  resolvePaymentTermsDays,
+  type SettlementPolicy,
+} from "@/lib/settlements/policy";
 
 const PAYMENT_METHODS = ["bank_transfer", "invoice", "manual", "other"] as const;
 
@@ -11,6 +16,7 @@ export type LedgerRedemptionInput = {
   commissionPercent: number | null;
   paymentTermsDays: number | null;
   redeemedAt: string;
+  demoOnly?: boolean;
 };
 
 type LedgerLine = {
@@ -38,6 +44,7 @@ export type LedgerSettlement = {
 };
 
 type RedemptionRow = LedgerRedemptionInput & {
+  demoOnly: boolean;
   settlementStatus: "UNSETTLED" | "SETTLEMENT_PENDING" | "SETTLED";
 };
 
@@ -65,12 +72,21 @@ export class SettlementLedger {
   private vouchers = new Map<string, VoucherRow>();
   private sequence = 0;
   private chain: Promise<void> = Promise.resolve();
+  private policy: SettlementPolicy;
+
+  constructor(policy: SettlementPolicy) {
+    this.policy = policy;
+  }
 
   addRedemption(input: LedgerRedemptionInput) {
     if (this.redemptions.some((row) => row.id === input.id)) {
       throw new Error("settlement_redemption_taken");
     }
-    this.redemptions.push({ ...input, settlementStatus: "UNSETTLED" });
+    this.redemptions.push({
+      ...input,
+      demoOnly: input.demoOnly === true,
+      settlementStatus: "UNSETTLED",
+    });
     const voucher = this.vouchers.get(input.voucherId) ?? {
       fullyRedeemed: input.fullyRedeemed,
       status: input.fullyRedeemed ? "REDEEMED" : "PARTIALLY_REDEEMED",
@@ -87,6 +103,10 @@ export class SettlementLedger {
 
   voucherStatus(voucherId: string) {
     return this.vouchers.get(voucherId)?.status ?? "";
+  }
+
+  redemptionStatus(redemptionId: string) {
+    return this.redemptions.find((row) => row.id === redemptionId)?.settlementStatus ?? "";
   }
 
   activeRedemptionIds() {
@@ -107,7 +127,8 @@ export class SettlementLedger {
       }
 
       const open = this.redemptions.filter(
-        (row) => row.storeId === storeId && row.settlementStatus === "UNSETTLED",
+        (row) =>
+          row.storeId === storeId && row.settlementStatus === "UNSETTLED" && !row.demoOnly,
       );
       if (open.length === 0) {
         return { ok: false as const, reason: "none" as const };
@@ -118,13 +139,20 @@ export class SettlementLedger {
         if (active.has(row.id)) {
           throw new Error("settlement_redemption_taken");
         }
-        const split = splitCommission(row.gross, row.commissionPercent);
+        const commission = resolveCommissionPercent(row.commissionPercent, this.policy);
+        const terms = resolvePaymentTermsDays(row.paymentTermsDays, this.policy);
+        const split = splitCommission(
+          row.gross,
+          commission.percent,
+          this.policy.rounding,
+          commission.specified,
+        );
         return {
           redemptionId: row.id,
           grossAmount: split.grossAmount,
           commissionAmount: split.commissionAmount,
           payableAmount: split.payableAmount,
-          dueAt: settlementDueAt(row.redeemedAt, row.paymentTermsDays),
+          dueAt: settlementDueAt(row.redeemedAt, terms.days),
           released: false,
         };
       });

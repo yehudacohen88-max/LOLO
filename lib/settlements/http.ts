@@ -42,3 +42,14 @@ export function jsonFromSettlementError(error: unknown, fallback: string) {
   });
   return NextResponse.json({ error: fallback }, { status: 400 });
 }
+
+export function settlementCsvResponse(filename: string, body: string) {
+  return new NextResponse(body, {
+    status: 200,
+    headers: {
+      "Content-Type": "text/csv; charset=utf-8",
+      "Content-Disposition": `attachment; filename="${filename}"`,
+      "Cache-Control": "no-store",
+    },
+  });
+}

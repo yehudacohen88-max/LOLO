@@ -1,4 +1,9 @@
 import { sumMoney, splitCommission, isSettlementOverdue } from "@/lib/settlements/money";
+import {
+  tryResolveCommissionPercent,
+  type SettlementPolicy,
+} from "@/lib/settlements/policy";
+import { roundingIsConfigured } from "@/lib/settlements/rounding";
 import type { StoreBalance } from "@/lib/settlements/types";
 
 export type FinanceOverview = {
@@ -22,6 +27,10 @@ export type FinanceOverview = {
   payableOutstanding: number;
   overdueCount: number;
   overduePayable: number;
+  demoRedeemedCount: number;
+  demoRedeemedAmount: number;
+  unpricedCount: number;
+  pricingReady: boolean;
 };
 
 export type OverviewOrder = {
@@ -38,6 +47,7 @@ export type OverviewRedemption = {
   amount: number;
   commissionPercent: number | null;
   settlementStatus: string;
+  demoOnly?: boolean;
 };
 
 export type OverviewSettlement = {
@@ -67,6 +77,7 @@ export function buildFinanceOverview(input: {
   vouchers: OverviewVoucher[];
   redemptions: OverviewRedemption[];
   settlements: OverviewSettlement[];
+  policy: SettlementPolicy;
   now?: number;
 }): { overview: FinanceOverview; overdue: OverdueSettlement[] } {
   const now = input.now ?? Date.now();
@@ -75,18 +86,39 @@ export function buildFinanceOverview(input: {
 
   const issued = input.vouchers.filter((voucher) => voucher.status !== "CANCELLED");
   const vouchersIssuedAmount = sumMoney(issued.map((voucher) => voucher.amount));
+  const pricingReady = roundingIsConfigured(input.policy.rounding);
 
-  const redemptionSplits = input.redemptions.map((redemption) =>
-    splitCommission(redemption.amount, redemption.commissionPercent),
-  );
-  const redeemedAmount = sumMoney(redemptionSplits.map((split) => split.grossAmount));
-  const storeCommission = sumMoney(redemptionSplits.map((split) => split.commissionAmount));
+  const demo = input.redemptions.filter((redemption) => redemption.demoOnly === true);
+  const priced = input.redemptions.flatMap((redemption) => {
+    if (redemption.demoOnly) {
+      return [];
+    }
+    const commission = tryResolveCommissionPercent(redemption.commissionPercent, input.policy);
+    if (!commission) {
+      return [];
+    }
+    return [
+      {
+        settlementStatus: redemption.settlementStatus,
+        split: splitCommission(
+          redemption.amount,
+          commission.percent,
+          input.policy.rounding,
+          commission.specified,
+        ),
+      },
+    ];
+  });
+  const unpricedCount = input.redemptions.filter(
+    (redemption) => !redemption.demoOnly && !tryResolveCommissionPercent(redemption.commissionPercent, input.policy),
+  ).length;
+
+  const redeemedAmount = sumMoney(priced.map((row) => row.split.grossAmount));
+  const storeCommission = sumMoney(priced.map((row) => row.split.commissionAmount));
 
   const unsettledPayable = sumMoney(
-    input.redemptions.flatMap((redemption, index) =>
-      redemption.settlementStatus === "UNSETTLED"
-        ? [redemptionSplits[index]?.payableAmount ?? 0]
-        : [],
+    priced.flatMap((row) =>
+      row.settlementStatus === "UNSETTLED" ? [row.split.payableAmount] : [],
     ),
   );
 
@@ -111,7 +143,7 @@ export function buildFinanceOverview(input: {
       guestFeeRevenue,
       vouchersIssuedCount: issued.length,
       vouchersIssuedAmount,
-      redeemedCount: input.redemptions.length,
+      redeemedCount: priced.length,
       redeemedAmount,
       storeCommission,
       loloRevenue: sumMoney([guestFeeRevenue, storeCommission]),
@@ -121,6 +153,10 @@ export function buildFinanceOverview(input: {
       payableOutstanding: sumMoney([unsettledPayable, payablePending]),
       overdueCount: overdueRows.length,
       overduePayable: sumMoney(overdueRows.map((settlement) => settlement.payableAmount)),
+      demoRedeemedCount: demo.length,
+      demoRedeemedAmount: sumMoney(demo.map((redemption) => redemption.amount)),
+      unpricedCount,
+      pricingReady,
     },
     overdue: overdueRows.map((settlement) => ({
       id: settlement.id,
@@ -133,8 +169,14 @@ export function buildFinanceOverview(input: {
 
 export function buildStoreBalances(
   stores: { id: string; name: string }[],
-  unsettled: { storeId: string; amount: number; commissionPercent: number | null }[],
+  unsettled: {
+    storeId: string;
+    amount: number;
+    commissionPercent: number | null;
+    demoOnly?: boolean;
+  }[],
   settlements: { storeId: string; status: string; payableAmount: number }[],
+  policy: SettlementPolicy,
 ): StoreBalance[] {
   const byStore = new Map<string, StoreBalance>();
 
@@ -157,6 +199,9 @@ export function buildStoreBalances(
       pendingPayable: 0,
       paidCount: 0,
       paidPayable: 0,
+      demoCount: 0,
+      demoGross: 0,
+      unpricedCount: 0,
     };
     byStore.set(storeId, created);
     return created;
@@ -168,7 +213,23 @@ export function buildStoreBalances(
 
   const unsettledByStore = new Map<string, { gross: number[]; commission: number[]; payable: number[] }>();
   for (const redemption of unsettled) {
-    const split = splitCommission(redemption.amount, redemption.commissionPercent);
+    const row = ensure(redemption.storeId, "");
+    if (redemption.demoOnly) {
+      row.demoCount += 1;
+      row.demoGross = sumMoney([row.demoGross, redemption.amount]);
+      continue;
+    }
+    const commission = tryResolveCommissionPercent(redemption.commissionPercent, policy);
+    if (!commission) {
+      row.unpricedCount += 1;
+      continue;
+    }
+    const split = splitCommission(
+      redemption.amount,
+      commission.percent,
+      policy.rounding,
+      commission.specified,
+    );
     const bucket = unsettledByStore.get(redemption.storeId) ?? {
       gross: [],
       commission: [],
@@ -178,7 +239,6 @@ export function buildStoreBalances(
     bucket.commission.push(split.commissionAmount);
     bucket.payable.push(split.payableAmount);
     unsettledByStore.set(redemption.storeId, bucket);
-    const row = ensure(redemption.storeId, "");
     row.unsettledCount += 1;
   }
 

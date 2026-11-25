@@ -109,8 +109,8 @@ export default async function AdminSettlementDetailPage({ params }: PageProps) {
               <p className="mt-2 text-sm leading-relaxed text-muted">
                 סומן כשולם {settlement.paidAt ? formatVoucherWhen(settlement.paidAt) : ""}. אופן
                 התשלום: {settlementLabel(settlement.paymentMethod)}.
-                {settlement.paymentReference ? ` אסמכתה: ${settlement.paymentReference}.` : ""} בגרסת
-                ההדגמה זו אינה העברה בנקאית.
+                {settlement.paymentReference ? ` אסמכתה: ${settlement.paymentReference}.` : " לא נרשמה אסמכתה."}{" "}
+                זה רישום של מפעיל, לא תנועת כסף.
               </p>
             </section>
           ) : null}

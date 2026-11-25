@@ -21,6 +21,11 @@ import {
   listStoreSettlementDetails,
   markSettlementPaid,
 } from "../lib/settlements/repository";
+import {
+  loadReconciliation,
+  loadSettlementReport,
+  saveSettlementPolicy,
+} from "../lib/settlements/reports";
 
 const read = (path: string) => readFileSync(new URL(path, import.meta.url), "utf8");
 
@@ -59,6 +64,17 @@ describe("settlement pages and links stay hidden", () => {
       read("../app/store/settlements/page.tsx"),
       "listStoreSettlementDetails(",
     );
+    firstGateBefore(
+      read("../app/store/settlements/page.tsx"),
+      "loadSettlementReport(",
+    );
+    firstGateBefore(read("../app/admin/settlements/report/page.tsx"), "loadSettlementReport(");
+    firstGateBefore(
+      read("../app/admin/settlements/reconciliation/page.tsx"),
+      "loadReconciliation(",
+    );
+    const settings = read("../app/admin/settings/page.tsx");
+    assert.ok(settings.indexOf("settlementsEnabled()") < settings.indexOf("readSettlementPolicy("));
   });
 
   it("drops settlement links from the admin nav, dashboard, redemptions, and store redeem page", () => {
@@ -86,12 +102,15 @@ describe("settlement pages and links stay hidden", () => {
 
 describe("settlement APIs stay closed", () => {
   const routes = [
-    ["../app/api/admin/settlements/route.ts", "createStoreSettlement("],
-    ["../app/api/admin/settlements/[settlementId]/cancel/route.ts", "cancelSettlement("],
-    ["../app/api/admin/settlements/[settlementId]/pay/route.ts", "markSettlementPaid("],
+    ["../app/api/admin/settlements/route.ts", "createStoreSettlement(", "POST"],
+    ["../app/api/admin/settlements/[settlementId]/cancel/route.ts", "cancelSettlement(", "POST"],
+    ["../app/api/admin/settlements/[settlementId]/pay/route.ts", "markSettlementPaid(", "POST"],
+    ["../app/api/admin/settlements/report/route.ts", "loadSettlementReport(", "GET"],
+    ["../app/api/store/settlements/report/route.ts", "loadSettlementReport(", "GET"],
+    ["../app/api/admin/settings/settlement/route.ts", "saveSettlementPolicy(", "PUT"],
   ] as const;
 
-  for (const [path, call] of routes) {
+  for (const [path, call, method] of routes) {
     it(`returns 501 before ${call} can reach the database`, async () => {
       const source = read(path);
       assert.ok(source.indexOf("settlementPilotUnavailable()") < source.indexOf(call));
@@ -104,8 +123,9 @@ describe("settlement APIs stay closed", () => {
         throw new Error("settlement pilot called the network");
       };
       try {
-        const { POST } = await import(path.replace(/\.ts$/, ""));
-        const response = await POST(
+        const route = await import(path.replace(/\.ts$/, ""));
+        const handler = route[method] as (request: Request, context: { params: Promise<{ settlementId: string }> }) => Promise<Response>;
+        const response = await handler(
           new Request("http://local.test/api/admin/settlements", {
             method: "POST",
             body: "{}",
@@ -145,6 +165,13 @@ describe("settlement APIs stay closed", () => {
         () => createStoreSettlement("00000000-0000-4000-8000-000000000001", "key"),
         () => markSettlementPaid("00000000-0000-4000-8000-000000000001", null, null),
         () => cancelSettlement("00000000-0000-4000-8000-000000000001"),
+        () => loadSettlementReport(),
+        () => loadReconciliation(),
+        () => saveSettlementPolicy({
+          rounding: null,
+          fallbackCommissionPercent: null,
+          fallbackPaymentTermsDays: null,
+        }),
       ];
       for (const attempt of blocked) {
         await assert.rejects(async () => {

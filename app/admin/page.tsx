@@ -116,8 +116,12 @@ export default async function AdminHomePage() {
               />
               <StatCard
                 label="סכום שמומש"
-                value={formatGiftAmount(overview.redeemedAmount)}
-                hint={`${formatCount(overview.redeemedCount)} מימושים`}
+                value={overview.pricingReady ? formatGiftAmount(overview.redeemedAmount) : "—"}
+                hint={
+                  overview.pricingReady
+                    ? `${formatCount(overview.redeemedCount)} מימושים`
+                    : undefined
+                }
               />
             </div>
           </section>
@@ -131,11 +135,20 @@ export default async function AdminHomePage() {
             <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               <StatCard
                 label="הכנסות LOLO"
-                value={formatGiftAmount(overview.loloRevenue)}
-                hint={`${formatGiftAmount(overview.guestFeeRevenue)} דמי שירות + ${formatGiftAmount(overview.storeCommission)} עמלות`}
+                value={
+                  overview.pricingReady ? formatGiftAmount(overview.loloRevenue) : "—"
+                }
+                hint={
+                  overview.pricingReady
+                    ? `${formatGiftAmount(overview.guestFeeRevenue)} דמי שירות + ${formatGiftAmount(overview.storeCommission)} עמלות`
+                    : "העמלה מוצגת אחרי שכלל העיגול נשמר ושאפשר להפריד מימושי הדגמה."
+                }
                 emphasize
               />
-              <StatCard label="עמלות מבתי עסק" value={formatGiftAmount(overview.storeCommission)} />
+              <StatCard
+                label="עמלות מבתי עסק"
+                value={overview.pricingReady ? formatGiftAmount(overview.storeCommission) : "—"}
+              />
               <StatCard label="דמי שירות מאורחים" value={formatGiftAmount(overview.guestFeeRevenue)} />
             </div>
           </section>
@@ -146,7 +159,7 @@ export default async function AdminHomePage() {
               <StatCard
                 label="לתשלום לבתי עסק"
                 value={
-                  settlementMoney
+                  settlementMoney && overview.pricingReady
                     ? formatGiftAmount(settlementMoney.payableOutstanding)
                     : "—"
                 }
@@ -154,7 +167,9 @@ export default async function AdminHomePage() {
               />
               <StatCard
                 label="טרם הוסדר"
-                value={formatGiftAmount(overview.payableUnsettled)}
+                value={
+                  overview.pricingReady ? formatGiftAmount(overview.payableUnsettled) : "—"
+                }
               />
               <StatCard
                 label="ממתין לתשלום"
@@ -174,6 +189,18 @@ export default async function AdminHomePage() {
                 }
               />
             </div>
+            {overview.demoRedeemedCount > 0 ? (
+              <p className="mt-4 text-sm text-muted">
+                הדגמה — לא לתשלום: {formatGiftAmount(overview.demoRedeemedAmount)} (
+                {formatCount(overview.demoRedeemedCount)} מימושים)
+              </p>
+            ) : null}
+            {overview.unpricedCount > 0 ? (
+              <p className="mt-3 text-sm text-brand">
+                {formatCount(overview.unpricedCount)} מימושים בלי אחוז עמלה לא נכללו בתשלום לבית
+                העסק.
+              </p>
+            ) : null}
             {settlementsEnabled() && snapshot?.settlementsReady && snapshot.overdue.length > 0 ? (
               <ul className="mt-4 flex flex-col gap-3">
                 {snapshot.overdue.slice(0, 6).map((item) => (
