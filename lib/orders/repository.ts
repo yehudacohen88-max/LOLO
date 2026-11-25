@@ -16,7 +16,9 @@ import {
   orderMoneyFromRow,
 } from "@/lib/payments/fee";
 import { rethrowIfCheckoutSchema } from "@/lib/payments/schema-error";
-import { decideMarkFailed, decideMarkPaid } from "@/lib/payments/state";
+import { CANCEL_PAID_REFUSED } from "@/lib/payments/messages";
+import { assertDemoMoneyCapture } from "@/lib/payments/separation";
+import { decideCancel, decideMarkFailed, decideMarkPaid } from "@/lib/payments/state";
 import type { CheckoutAmounts } from "@/lib/payments/fee";
 import type { MarkPaidAttempt } from "@/lib/payments/state";
 import type { StoredEvent } from "@/lib/events/types";
@@ -505,6 +507,9 @@ export async function markOrderPaid(
   if (decision.action === "reject") {
     throw new Error("לא ניתן לאשר את התשלום.");
   }
+  if (decision.action === "mark_paid") {
+    assertDemoMoneyCapture(attempt);
+  }
   if (decision.action === "mark_paid" && !(current.contributionAmount > 0)) {
     throw new Error("עדיין לא נבחרה מתנה.");
   }
@@ -594,4 +599,174 @@ export async function markOrderFailed(
     throw new Error("עדכון התשלום נכשל.");
   }
   return failed;
+}
+
+export async function getOrderById(orderId: string): Promise<StoredOrder | null> {
+  const supabase = getSupabaseServiceClient();
+  const { data: order, error } = await supabase
+    .from("orders")
+    .select("*")
+    .eq("id", orderId)
+    .maybeSingle();
+
+  if (error) {
+    failOrderWrite(error, "ההזמנה לא נמצאה.");
+  }
+  if (!order) {
+    return null;
+  }
+
+  const { data: items } = await supabase.from("order_items").select("*").eq("order_id", orderId);
+  return mapStoredOrder(order, items ?? []);
+}
+
+export async function markOrderPaidFromVerifiedEvent(
+  orderId: string,
+  attempt: MarkPaidAttempt,
+): Promise<StoredOrder> {
+  if (!/^[a-z0-9_-]{1,40}$/.test(attempt.provider)) {
+    throw new Error("אישור התשלום נכשל.");
+  }
+  if (!/^[\w-]{1,80}$/.test(attempt.paymentReference) || !attempt.paidAt) {
+    throw new Error("אישור התשלום נכשל.");
+  }
+
+  const current = await getOrderById(orderId);
+  if (!current) {
+    throw new Error("ההזמנה לא נמצאה.");
+  }
+  const decision = decideMarkPaid(snapshotOf(current), attempt);
+  if (decision.action === "reject") {
+    throw new Error("לא ניתן לאשר את התשלום.");
+  }
+  if (decision.action === "mark_paid") {
+    assertDemoMoneyCapture(attempt);
+  }
+  if (decision.action === "mark_paid" && !(current.contributionAmount > 0)) {
+    throw new Error("עדיין לא נבחרה מתנה.");
+  }
+  if (decision.action === "already_paid") {
+    return current;
+  }
+
+  const supabase = getSupabaseServiceClient();
+  const { data, error } = await supabase
+    .from("orders")
+    .update({
+      payment_status: "paid",
+      payment_provider: decision.snapshot.paymentProvider,
+      payment_reference: decision.snapshot.paymentReference,
+      paid_at: decision.snapshot.paidAt,
+    })
+    .eq("id", orderId)
+    .in("payment_status", ["pending", "failed"])
+    .select("id")
+    .maybeSingle();
+
+  if (error) {
+    failOrderWrite(error, "אישור התשלום נכשל.");
+  }
+  if (!data) {
+    const raced = await getOrderById(orderId);
+    if (raced?.paymentStatus === "paid") {
+      return raced;
+    }
+    throw new Error("לא ניתן לאשר את התשלום.");
+  }
+
+  const paid = await getOrderById(orderId);
+  if (!paid) {
+    throw new Error("אישור התשלום נכשל.");
+  }
+  return paid;
+}
+
+export async function markOrderFailedFromVerifiedEvent(
+  orderId: string,
+  provider: string,
+): Promise<StoredOrder> {
+  const current = await getOrderById(orderId);
+  if (!current) {
+    throw new Error("ההזמנה לא נמצאה.");
+  }
+  const decision = decideMarkFailed(snapshotOf(current), provider);
+  if (decision.action === "reject") {
+    throw new Error("לא ניתן לעדכן את התשלום.");
+  }
+  if (decision.action === "already_paid" || decision.action === "already_failed") {
+    return current;
+  }
+
+  const supabase = getSupabaseServiceClient();
+  const { data, error } = await supabase
+    .from("orders")
+    .update({
+      payment_status: "failed",
+      payment_provider: decision.snapshot.paymentProvider,
+      payment_reference: decision.snapshot.paymentReference,
+      paid_at: decision.snapshot.paidAt,
+    })
+    .eq("id", orderId)
+    .eq("payment_status", "pending")
+    .select("id")
+    .maybeSingle();
+
+  if (error) {
+    failOrderWrite(error, "עדכון התשלום נכשל.");
+  }
+  if (!data) {
+    const raced = await getOrderById(orderId);
+    if (raced?.paymentStatus === "paid" || raced?.paymentStatus === "failed") {
+      return raced;
+    }
+    throw new Error("לא ניתן לעדכן את התשלום.");
+  }
+  const failed = await getOrderById(orderId);
+  if (!failed) {
+    throw new Error("עדכון התשלום נכשל.");
+  }
+  return failed;
+}
+
+export async function cancelUnpaidOrder(orderId: string, accessToken: string): Promise<StoredOrder> {
+  const current = await getOrderForGuest(orderId, accessToken);
+  if (!current) {
+    throw new Error("ההזמנה לא נמצאה.");
+  }
+  const decision = decideCancel(snapshotOf(current));
+  if (decision.action === "reject") {
+    throw new Error(CANCEL_PAID_REFUSED);
+  }
+  if (decision.action === "already_cancelled") {
+    return current;
+  }
+
+  const supabase = getSupabaseServiceClient();
+  const { data, error } = await supabase
+    .from("orders")
+    .update({ payment_status: "cancelled" })
+    .eq("id", orderId)
+    .eq("access_token", accessToken)
+    .in("payment_status", ["pending", "failed"])
+    .select("id")
+    .maybeSingle();
+
+  if (error) {
+    failOrderWrite(error, "לא ניתן לבטל את ההזמנה.");
+  }
+  if (!data) {
+    const raced = await getOrderForGuest(orderId, accessToken);
+    if (raced?.paymentStatus === "cancelled" || raced?.paymentStatus === "paid") {
+      if (raced.paymentStatus === "paid") {
+        throw new Error(CANCEL_PAID_REFUSED);
+      }
+      return raced;
+    }
+    throw new Error("לא ניתן לבטל את ההזמנה.");
+  }
+  const cancelled = await getOrderForGuest(orderId, accessToken);
+  if (!cancelled) {
+    throw new Error("לא ניתן לבטל את ההזמנה.");
+  }
+  return cancelled;
 }

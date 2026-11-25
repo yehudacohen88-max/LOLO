@@ -3,12 +3,14 @@ import { toPublicOrder } from "@/lib/events/public-guest";
 import { GUEST_BODY_BYTES, isUuid } from "@/lib/orders/guest-input";
 import { guestCheckoutAllowed } from "@/lib/guest-draft";
 import { getOrderForGuest } from "@/lib/orders/repository";
+import { paymentFailureResponse } from "@/lib/payments/http";
+import { paymentIdempotencyKey, readIdempotencyKey } from "@/lib/payments/idempotency";
+import { presentOrder } from "@/lib/payments/service";
 import { getDemoPaymentProvider } from "@/lib/payments/provider";
 import { demoBrowserConfirmEnabled } from "@/lib/payments/selection";
 import type { PaymentOutcome } from "@/lib/payments/types";
 import { guestOrderMissResponse, guardPaymentIp, guardPaymentSlug } from "@/lib/security/guest-guard";
 import { readLimitedJson } from "@/lib/security/guest-http";
-import { caughtErrorBody } from "@/lib/security/required-secret";
 
 export const dynamic = "force-dynamic";
 
@@ -33,6 +35,7 @@ export async function POST(request: Request) {
     orderId?: string;
     accessToken?: string;
     outcome?: string;
+    idempotencyKey?: string;
   };
   const orderId = body.orderId?.trim() ?? "";
   const accessToken = body.accessToken?.trim() ?? "";
@@ -58,20 +61,27 @@ export async function POST(request: Request) {
     }
 
     const provider = getDemoPaymentProvider();
-    if (!provider?.confirmDemoPayment) {
+    if (!provider) {
       return NextResponse.json({ error: UNAVAILABLE }, { status: 400 });
     }
 
     const outcome: PaymentOutcome = body.outcome;
-    const order = await provider.confirmDemoPayment({
-      orderId,
-      accessToken,
-      outcome,
-    });
+    const idempotencyKey = readIdempotencyKey(
+      body.idempotencyKey,
+      paymentIdempotencyKey(orderId, outcome === "success" ? "confirm-success" : "confirm-failure"),
+    );
+    const order = await presentOrder(
+      await provider.confirm({
+        orderId,
+        accessToken,
+        outcome,
+        idempotencyKey,
+      }),
+    );
 
     return NextResponse.json(toPublicOrder(order));
   } catch (error) {
-    const failure = caughtErrorBody(error, "אישור התשלום נכשל.");
+    const failure = paymentFailureResponse(error, "אישור התשלום נכשל.");
     return NextResponse.json({ error: failure.error }, { status: failure.status });
   }
 }
