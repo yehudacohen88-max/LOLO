@@ -27,7 +27,7 @@ SQL files are applied by hand in the Supabase SQL editor. Deploy does not run th
 | --- | --- | --- |
 | `supabase/schema.sql` | `events`, `event_gifts` | Yes. First install only. Re-running it after `events-anon-read.sql` reopens anonymous reads. |
 | `supabase/events-server-write.sql` | Revokes anon write (and select) on events and gifts | Assumed. Server writes go through the service role (`lib/events/publish-server.ts`). |
-| `supabase/events-anon-read.sql` | Drops public SELECT policies and revokes anon select | README says run once after the server guest read is deployed. If it was skipped, anon can still read events and gifts. |
+| `supabase/events-anon-read.sql` | Drops public SELECT policies and revokes anon select | The 24 Nov 2026 read already has no policies on events and event gifts, which is this file's end state. It is not a pending Production migration. Local and CI still apply it after schema.sql, because schema.sql opens the read policies. |
 | `supabase/orders.sql` | `orders`, `order_items`, `set_updated_at`, `order_item_matches_event` | Yes. Checkout and the host dashboard select these tables. |
 | `supabase/host-access-code.sql` | `event_host_access` | Yes. `POST /api/host/login` reads it. |
 | `supabase/event-guests.sql` | `event_guests` | Yes. `lib/host/guest-list.ts`. |
