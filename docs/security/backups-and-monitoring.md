@@ -45,4 +45,5 @@ A later monitoring pass, still without buying a product until someone asks, can 
 - "הנפקת השוברים עדיין לא הופעלה." means `supabase/vouchers.sql` is not on that database.
 - "ההתחשבנות עדיין לא הופעלה." means `supabase/settlements.sql` is not on that database. That is still the Production state. Do not apply it from CI.
 - Do not re-run `supabase/schema.sql` on a database that already had `supabase/events-anon-read.sql`. That reopens anonymous reads. Run the anonymous-read file again afterwards if it happens.
+- The 24 Nov 2026 Production read already has no policies on events and event gifts. `supabase/events-anon-read.sql` is not a pending Production migration. It stays in the local and CI order.
 - Do not restore Production from a laptop, and do not run `supabase/demo-seed.sql` or `supabase/demo-cleanup.sql` against it.

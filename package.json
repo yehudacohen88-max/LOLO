@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:local": "node scripts/dev-local.mjs dev",
+    "start:local": "node scripts/dev-local.mjs start",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
@@ -18,6 +20,8 @@
     "verify:sessions": "node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/register-test-hooks.mjs --test scripts/verify-session-separation.ts scripts/verify-login-ip.ts",
     "verify:host-images": "node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/register-test-hooks.mjs --test scripts/verify-host-images.ts scripts/verify-host-isolation.ts scripts/verify-upload-security.ts scripts/verify-login-ip.ts",
     "test:e2e": "npm run build && playwright test",
+    "test:e2e:local": "playwright test -c playwright.local.config.ts",
+    "verify:headers": "node --experimental-strip-types --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/register-test-hooks.mjs --test scripts/verify-security-headers.ts",
     "db:local": "node scripts/local-db.mjs start --profile ci",
     "db:reset": "node scripts/local-db.mjs reset",
     "db:seed": "node scripts/local-db.mjs seed",

@@ -269,6 +269,95 @@ function seed() {
   applyProfile("seed");
 }
 
+function listedFile(file) {
+  if (Object.hasOwn(skippedSql, file)) {
+    fail(`Refusing to apply skipped file ${file}`);
+  }
+  const absolute = path.resolve(root, file);
+  if (!absolute.startsWith(`${root}${path.sep}`)) {
+    fail(`Refusing SQL path ${file}`);
+  }
+  if (!existsSync(absolute)) {
+    fail(`SQL file is not in this checkout: ${file}`);
+  }
+  return absolute;
+}
+
+function applyListed(files) {
+  if (files.length === 0) {
+    fail("Name at least one SQL file to apply on the loopback database.");
+  }
+  assertNoProductionEnv(process.env);
+  requireDocker();
+  const status = readStatus();
+  assertLocalStatus(status);
+  for (const file of files) {
+    const absolute = listedFile(file);
+    console.error(`Applying ${file}`);
+    applyFile(absolute);
+  }
+}
+
+function wipe() {
+  // Dropping schemas inside the running database container keeps the local
+  // Docker network intact. `supabase db reset` recreates containers and, on
+  // this machine, detaches the database from the network the API uses.
+  assertNoProductionEnv(process.env);
+  requireDocker();
+  const status = readStatus();
+  assertLocalStatus(status);
+  querySql(`
+    drop schema if exists public cascade;
+    create schema public;
+    grant usage on schema public to postgres, anon, authenticated, service_role;
+    grant all on schema public to postgres, service_role;
+    alter default privileges in schema public grant all on tables to postgres, service_role;
+  `);
+  console.error("Local public schema was dropped and recreated. No SQL file was applied.");
+}
+
+function querySql(sql) {
+  assertNoProductionEnv(process.env);
+  if (sql.toLowerCase().includes(PRODUCTION_SUPABASE_REF)) {
+    fail("Refusing a query that names the Production project.");
+  }
+  const status = readStatus();
+  assertLocalStatus(status);
+  const container = dbContainer();
+  const result = spawnSync(
+    "docker",
+    [
+      "exec",
+      "-i",
+      "-e",
+      "PGCLIENTENCODING=UTF8",
+      container,
+      "psql",
+      "-U",
+      "postgres",
+      "-d",
+      "postgres",
+      "-v",
+      "ON_ERROR_STOP=1",
+      "-t",
+      "-A",
+      "-c",
+      sql,
+    ],
+    { encoding: "utf8" },
+  );
+  if (result.error) {
+    fail(result.error.message);
+  }
+  if (result.status !== 0) {
+    if (result.stderr) {
+      process.stderr.write(result.stderr);
+    }
+    process.exit(result.status || 1);
+  }
+  process.stdout.write(result.stdout ?? "");
+}
+
 function exportEnv() {
   assertNoProductionEnv(process.env);
   const status = readStatus();
@@ -303,6 +392,18 @@ if (command === "start") {
   applyProfile(readProfile(argv, ""));
 } else if (command === "export-env") {
   exportEnv();
+} else if (command === "wipe") {
+  wipe();
+} else if (command === "apply-files") {
+  applyListed(argv.slice(1).filter((arg) => arg !== "--"));
+} else if (command === "query") {
+  const sql = argv.slice(1).join(" ").trim();
+  if (!sql) {
+    fail("Usage: node scripts/local-db.mjs query <sql>");
+  }
+  querySql(sql);
 } else {
-  fail("Usage: node scripts/local-db.mjs <start|reset|seed|apply|export-env> [--profile ci|full|seed]");
+  fail(
+    "Usage: node scripts/local-db.mjs <start|reset|wipe|seed|apply|apply-files|query|export-env> [--profile ci|full|seed]",
+  );
 }

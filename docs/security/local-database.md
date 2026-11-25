@@ -62,7 +62,7 @@ The order below is the `full` profile. The default `ci` profile is the same list
 26. `supabase/pilot-isolate-test-data.sql`
 27. `supabase/demo-seed.sql`
 
-Steps 1–12 match the README install order. Step 20 closes anonymous reads of events and gifts, after the host-identity columns. The local database always has the server that reads events, so CI applies that file in the same run as the first install file. Re-running the first file by itself would open anonymous reads again; the script only applies it as part of this list.
+Steps 1–12 match the README install order. Step 20 closes anonymous reads of events and gifts, after the host-identity columns. The local database always has the server that reads events, so CI applies that file in the same run as the first install file. Re-running the first file by itself would open anonymous reads again; the script only applies it as part of this list. Step 20 is local and CI only. The 24 Nov 2026 Production read already has no policies on events and event gifts, so that file is not a Production migration. The Production list is docs/system/production-sql-list.md.
 
 Steps 21 and 22 are omitted from the default CI job so that job matches Production, where settlements are not applied. The second CI job and `npm run db:reset` opt in. Step 22 must follow both the settlements file and the pilot demo-voucher guard.
 

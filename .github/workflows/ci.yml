@@ -80,3 +80,27 @@ jobs:
           LOLO_LOCAL_PROFILE: ${{ matrix.profile }}
           LOLO_VERIFY_ANON_LOCK: "1"
         run: node scripts/run-verify.mjs
+
+      - name: Check whether the local UI exists on this branch
+        id: local_ui
+        if: matrix.profile == 'full'
+        run: |
+          if [ -f app/api/host/recovery/local-outbox/route.ts ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "Host recovery route is not on this branch yet. The browser step runs after that route is on the merge base."
+          fi
+
+      - name: Install the local-UI browser
+        if: matrix.profile == 'full' && steps.local_ui.outputs.ready == 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: Drive the app against the local database
+        if: matrix.profile == 'full' && steps.local_ui.outputs.ready == 'true'
+        env:
+          LOLO_LOCAL_DB: "1"
+          LOLO_LOCAL_PORT: "3100"
+          BETA_ACCESS_ENABLED: "false"
+          PAYMENT_PROVIDER: demo
+        run: npx playwright test -c playwright.local.config.ts
