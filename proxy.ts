@@ -3,6 +3,7 @@ import type { NextRequest } from "next/server";
 import {
   BETA_SESSION_COOKIE,
   betaGateModeFromEnv,
+  isUngatedPath,
   readBetaSessionValue,
   safeNextPath,
 } from "@/lib/beta/gate";
@@ -32,7 +33,7 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  if (pathname === "/beta" || pathname === "/api/beta/login") {
+  if (isUngatedPath(pathname)) {
     return NextResponse.next();
   }
 
