@@ -21,24 +21,35 @@ export function supabaseUrlLooksLikeProduction(url: string) {
   return normalizeSupabaseUrl(url).toLowerCase().includes(PRODUCTION_PROJECT_REF);
 }
 
-function allowListedPreviewUrl(url: string) {
-  const allow = process.env.LOLO_ALLOW_PREVIEW_DB_URL ?? "";
-  if (!allow.trim()) {
+export type PreviewDatabaseEnv = {
+  vercelEnv?: string;
+  allowPreviewDbUrl?: string;
+};
+
+function allowListedPreviewUrl(url: string, allowRaw: string) {
+  if (!allowRaw.trim()) {
     return false;
   }
-  return normalizeSupabaseUrl(allow) === normalizeSupabaseUrl(url);
+  return normalizeSupabaseUrl(allowRaw) === normalizeSupabaseUrl(url);
 }
 
-/** False on Vercel Preview unless the URL is allow-listed and is not Production. */
-export function previewAllowsDatabaseUrl(url: string) {
-  if (process.env.VERCEL_ENV !== "preview") {
+/**
+ * False on Vercel Preview unless the URL is allow-listed and is not Production.
+ * Pass `env` to classify a specific environment without reading process.env.
+ */
+export function previewAllowsDatabaseUrl(url: string, env?: PreviewDatabaseEnv) {
+  const vercelEnv = env ? (env.vercelEnv ?? "") : (process.env.VERCEL_ENV ?? "");
+  const allowRaw = env
+    ? (env.allowPreviewDbUrl ?? "")
+    : (process.env.LOLO_ALLOW_PREVIEW_DB_URL ?? "");
+  if (vercelEnv !== "preview") {
     return true;
   }
   const normalized = normalizeSupabaseUrl(url);
   if (!normalized || supabaseUrlLooksLikeProduction(normalized)) {
     return false;
   }
-  return allowListedPreviewUrl(normalized);
+  return allowListedPreviewUrl(normalized, allowRaw);
 }
 
 export function createPreviewDisconnectedError() {

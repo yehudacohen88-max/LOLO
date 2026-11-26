@@ -97,6 +97,15 @@ export function betaGateModeFromEnv(): BetaGateMode {
   });
 }
 
+/** Paths that answer before the beta password check. */
+export function isUngatedPath(pathname: string) {
+  return (
+    pathname === "/beta" ||
+    pathname === "/api/beta/login" ||
+    pathname === "/api/health"
+  );
+}
+
 export function safeNextPath(value: string | null | undefined) {
   if (!value) {
     return "/";
