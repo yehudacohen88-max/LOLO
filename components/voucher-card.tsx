@@ -1,4 +1,5 @@
 import { formatGiftAmount } from "@/lib/guest-draft";
+import { DEMO_VOUCHER_LABEL } from "@/lib/vouchers/demo-funding";
 import {
   formatVoucherWhen,
   methodTermLabel,
@@ -58,22 +59,26 @@ export default function VoucherCard({
         </div>
         <p className="mt-8 text-sm text-white/80">שובר מתנה</p>
         <p className="mt-1 text-4xl font-bold tracking-tight">{formatGiftAmount(model.amount)}</p>
-        {balanceDiffers ? (
+        {model.demoOnly ? (
+          <p className="mt-2 text-sm text-white/80">לא ניתן למימוש</p>
+        ) : balanceDiffers ? (
           <p className="mt-2 text-sm text-white/90">
             יתרה למימוש {formatGiftAmount(model.remainingAmount)}
           </p>
         ) : (
           <p className="mt-2 text-sm text-white/80">הסכום המלא זמין למימוש</p>
         )}
-        <p
-          className={
-            celebration
-              ? "mt-5 rounded-2xl bg-[#ffb84d] px-4 py-3 text-sm font-bold leading-relaxed text-[#172f2b]"
-              : "mt-5 rounded-2xl bg-white/15 px-4 py-3 text-sm font-bold leading-relaxed"
-          }
-        >
-          שובר הדגמה בלבד — ללא ערך כספי ואינו ניתן למימוש בחנות
-        </p>
+        {model.demoOnly ? (
+          <p
+            className={
+              celebration
+                ? "mt-5 rounded-2xl bg-[#ffb84d] px-4 py-3 text-sm font-bold leading-relaxed text-[#172f2b]"
+                : "mt-5 rounded-2xl bg-white/15 px-4 py-3 text-sm font-bold leading-relaxed"
+            }
+          >
+            {DEMO_VOUCHER_LABEL}
+          </p>
+        ) : null}
       </div>
 
       <div className="flex flex-col gap-6 px-6 py-6">

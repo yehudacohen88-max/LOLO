@@ -20,6 +20,10 @@ const MESSAGES: Record<string, { text: string; status: number }> = {
     text: "אין סכום ששולם שעדיין לא הונפק בשובר.",
     status: 409,
   },
+  voucher_demo_blocked: {
+    text: "שובר הדגמה – ללא ערך כספי. אי אפשר להנפיק או לממש אותו ככסף.",
+    status: 409,
+  },
   voucher_amount_changed: {
     text: "הסכום להנפקה השתנה. רעננו את העמוד ונסו שוב.",
     status: 409,

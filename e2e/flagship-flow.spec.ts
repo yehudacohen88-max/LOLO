@@ -362,3 +362,12 @@ for (const viewport of [
     });
   });
 }
+
+test("greeting without a gift does not continue at 0 shekels", async ({ page }) => {
+  await installFlow(page, true);
+  await page.goto("/e/flagship-fixture/greeting");
+  await expect(page.getByRole("heading", { name: "מוסיפים ברכה אישית" })).toBeVisible();
+  await expect(page.getByRole("button", { name: /ממשיכים/ })).toHaveCount(0);
+  await expect(page.getByText("עדיין לא נבחרה מתנה.")).toBeVisible();
+  await expect(page.locator("[data-journey-choice] [data-journey-frame], [data-journey-choice] [data-gift-fallback]")).toHaveCount(0);
+});

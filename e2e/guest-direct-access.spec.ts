@@ -271,12 +271,18 @@ test("guest reads stay public and every other surface stays gated", async ({ req
 });
 
 test("repeated event reads from one address return 429", async ({ request }) => {
+  // Matches GUEST_LIMITS.readPerIp. A private address keeps this loop off the
+  // shared "unknown" bucket other guest tests use.
+  const readsBeforeBlock = 300;
   let blocked = false;
-  for (let count = 0; count < 70; count += 1) {
-    const response = await request.get("/api/events/demo-event");
+  for (let count = 0; count < readsBeforeBlock + 1; count += 1) {
+    const response = await request.get("/api/events/demo-event", {
+      headers: { "x-real-ip": "203.0.113.80" },
+    });
     if (response.status() === 429) {
       blocked = true;
       expect(response.headers()["retry-after"]).toBeTruthy();
+      expect(count).toBe(readsBeforeBlock);
       break;
     }
     expect(response.status()).toBe(200);
