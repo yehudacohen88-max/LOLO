@@ -64,6 +64,10 @@ On a disposable local PostgreSQL 16.15 database, the schema was built in the REA
 
 Post-check on that local database after each run: `voucher_demo_guard_version()` returned 1, the allow-list was empty, `payment_provider_is_real` was false for `demo`, `none`, and `cardcom`, no voucher had `demo_only` null, and exactly one `vouchers_guard_issue` trigger existed. `anon` cannot execute `voucher_demo_guard_version()`. `authenticated` cannot execute `redeem_voucher`. `service_role` can. RLS is enabled on `payment_provider_allowlist` and there is no policy. RLS is not forced.
 
+### Effect on the existing Production voucher (checked read-only, 2026-11-26)
+
+Production has one voucher: 150 ₪, status `REDEEMED`, remaining 0, one redemption of 150 (2026-10-13). It is on the gift funded by four paid orders of 150 ₪ each, all with provider `demo` and a `demo-` reference. The guard SQL rewrites no existing row (`demo_only` is added with default false). Redeem of that voucher fails before and after the SQL (`voucher_closed` before, `voucher_demo_blocked` after). No allow-list entry changes that: `demo` cannot be added to the allow-list and the references start with `demo-`. After the SQL, `voucher_paid_amount` for that gift is 0 instead of 600, and an issue for that gift would create a `demo_only` voucher (not redeemable), not a real one.
+
 ## Pre-checks
 
 Read-only. Run these on Production through the read-only connector before the paste. Save the results. Do not insert a row to test a function.
@@ -202,7 +206,7 @@ In Vercel, roll Production back to the deployment built from `c3b720fd` (PR #42)
 
 ### Database
 
-Do this only to remove the file, and only with Founder approval. Read first:
+Do this only to remove the guard file, and only with Founder approval. The rollback is one SQL file, `supabase/pilot-demo-voucher-guard-rollback.sql`. It is database-only and does not depend on a Vercel rollback. Read first:
 
 ```sql
 select count(*) as demo_flagged
@@ -214,35 +218,24 @@ from public.payment_provider_allowlist
 order by 1;
 ```
 
-Stop if `demo_flagged` is not 0. Those vouchers were issued under the guard. Restoring `redeem_voucher` from `supabase/vouchers.sql` would make them redeemable as money, because that older function does not read `demo_only`.
+The file refuses to run (and changes nothing) if `demo_flagged` is not 0 or the allow-list is not empty. Those vouchers were issued under the guard, and the old `redeem_voucher` does not read `demo_only`, so it would make them redeemable as money. Dropping the allow-list table deletes the reviewed provider names, so copy them out first. If it refuses, stop and ask the Founder.
 
-Stop if the allow-list is not empty, unless those provider names have been copied out of the query above. Dropping the table deletes them.
+Paste the whole file in the Production SQL editor, once. It runs as one transaction:
 
-Then, in this order:
+1. Restores the five function bodies that the guard file replaced, exactly as Production had them before the guard (taken from the live Production definitions on 2026-11-26, identical to the backup of 2026-11-25): `voucher_paid_amount(uuid, uuid)`, `voucher_committed_amount(uuid, uuid)`, `vouchers_guard_issue()`, `issue_gift_voucher(...)`, `redeem_voucher(...)`.
+2. Resets execute on those functions to `service_role` only.
+3. Drops `payment_provider_is_real(text)`, `voucher_simulated_amount(uuid, uuid)`, `voucher_demo_committed_amount(uuid, uuid)`, `voucher_demo_guard_version()`, the column `vouchers.demo_only`, and the table `payment_provider_allowlist`.
+4. Asserts the end state. A failed assertion rolls the whole transaction back.
 
-1. Restore only these function bodies from the `supabase/vouchers.sql` already applied in Production (the copy on `main` at `c3b720fd`). Do not re-run the whole file. Do not drop the trigger `vouchers_guard_issue`.
-   - `voucher_paid_amount(uuid, uuid)`
-   - `voucher_committed_amount(uuid, uuid)`
-   - `vouchers_guard_issue()`
-   - `issue_gift_voucher(uuid, uuid, uuid, text, text, text, uuid, integer, boolean, boolean, text, boolean, boolean, boolean, boolean, numeric)`
-   - `redeem_voucher(uuid, text, text, numeric, text, uuid, text, text)`
-2. Leave `cancel_voucher(uuid)` as it is. This file does not replace it.
-3. Drop the functions this file added:
+It does not touch `cancel_voucher`, the trigger `vouchers_guard_issue` (it keeps calling the restored function), `public.vouchers` rows, `public.redemptions`, or any order. Running it twice is safe.
 
-```sql
-drop function if exists public.payment_provider_is_real(text);
-drop function if exists public.voucher_simulated_amount(uuid, uuid);
-drop function if exists public.voucher_demo_committed_amount(uuid, uuid);
-drop function if exists public.voucher_demo_guard_version();
-```
+Confirm afterwards: `to_regprocedure('public.voucher_demo_guard_version()')` is null, `demo_only` is absent, and `vouchers_guard_issue` is present once. With the guard function gone, the new app (if still deployed) refuses to issue or redeem from simulated funding. That is fail closed.
 
-4. After those drops, and only while `demo_flagged` was 0:
+### Rollback test (local)
 
-```sql
-alter table public.vouchers drop column if exists demo_only;
-drop table if exists public.payment_provider_allowlist;
-```
+Run on a disposable local PostgreSQL 16 restored from the external backup of 2026-11-25 (`-c timezone=UTC`). The sequence was: apply guard, apply again, run rollback (with a test allow-list row to confirm it refuses, then without), run rollback again, re-apply guard, roll back again.
 
-Do not drop `public.vouchers`, `public.redemptions`, or the trigger `vouchers_guard_issue`.
-
-Confirm `to_regprocedure('public.voucher_demo_guard_version()')` is null, `demo_only` is absent, and `vouchers_guard_issue` is still present.
+- After each rollback, the function definitions (md5 of `pg_get_functiondef`), execute grants, the trigger definition, every table column, and the table list were identical to the pre-guard baseline. The row md5 of all 11 public tables matched the backup again.
+- Applying the guard twice produced an identical catalog. Re-applying after a rollback produced the same catalog as the first apply.
+- The rollback refused while the allow-list had a row, and left the guard in place.
+- With the guard applied, `redeem_voucher` on the only existing voucher raised `voucher_demo_blocked`. Before the guard it raised `voucher_closed`.
