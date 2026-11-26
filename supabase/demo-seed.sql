@@ -142,7 +142,7 @@ begin
     '19:00',
     'אולם הדגמה',
     'רחוב הדגמה 1, תל אביב',
-    'אירוע הדגמה של LOLO. השמות והטלפונים כאן בדויים.',
+    'אירוע הדגמה של LOLO. השמות והטלפונים כאן בדויים. נתונים לדוגמה.',
     '',
     'catalog',
     '{}'::integer[],
@@ -267,16 +267,24 @@ begin
       false,
       3000
     );
-    perform public.redeem_voucher(
-      store_a_id,
-      'store',
-      'demo-seed',
-      null,
-      'demo-seed',
-      (issued->>'id')::uuid,
-      null,
-      null
-    );
+    -- The pilot guard (voucher_demo_guard_version) marks this voucher demo_only
+    -- and redeem_voucher rejects it. Skip the redeem once that function exists
+    -- so this seed still creates the event. Without the guard, the old
+    -- redeem stays so an unguarded local database matches the original demo.
+    if to_regprocedure('public.voucher_demo_guard_version()') is null then
+      perform public.redeem_voucher(
+        store_a_id,
+        'store',
+        'demo-seed',
+        null,
+        'demo-seed',
+        (issued->>'id')::uuid,
+        null,
+        null
+      );
+    else
+      raise notice 'Pilot guard is installed. Demo voucher % was not redeemed.', issued->>'id';
+    end if;
 
     issued := public.issue_gift_voucher(
       event_id,

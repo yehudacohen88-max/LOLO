@@ -60,7 +60,7 @@ export function continuityFromEvent(
     .filter((item) => item.active !== false)
     .sort((a, b) => a.priority - b.priority);
   const chosen = loadContributions(stored.slug)[0];
-  const gift = (chosen ? gifts.find((item) => item.id === chosen.giftId) : undefined) ?? gifts[0];
+  const gift = chosen ? gifts.find((item) => item.id === chosen.giftId) : undefined;
   const row = gift && funding ? funding.find((item) => item.giftId === gift.id) : undefined;
   const copy = row
     ? giftProgressCopy({

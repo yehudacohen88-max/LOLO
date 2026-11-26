@@ -71,6 +71,8 @@ export type VoucherCardModel = {
   terms: VoucherTerms;
   redemptions: VoucherRedemptionView[];
   shareUrl: string;
+  /** True when the voucher has no monetary value and cannot be redeemed. */
+  demoOnly: boolean;
 };
 
 export type StoreVoucherLookup = {

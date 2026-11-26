@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { toPublicOrder } from "@/lib/events/public-guest";
 import { GUEST_BODY_BYTES, isUuid } from "@/lib/orders/guest-input";
+import { guestCheckoutAllowed } from "@/lib/guest-draft";
 import { getOrderForGuest } from "@/lib/orders/repository";
 import { getDemoPaymentProvider } from "@/lib/payments/provider";
 import { demoBrowserConfirmEnabled } from "@/lib/payments/selection";
@@ -47,6 +48,10 @@ export async function POST(request: Request) {
     if (!current) {
       return guestOrderMissResponse();
     }
+    if (!guestCheckoutAllowed(current.contributionAmount)) {
+      return NextResponse.json({ error: "עדיין לא נבחרה מתנה." }, { status: 400 });
+    }
+
     const slugLimited = await guardPaymentSlug(request, current.eventSlug, current.eventId);
     if (slugLimited) {
       return slugLimited;
