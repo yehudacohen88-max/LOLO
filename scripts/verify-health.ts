@@ -17,14 +17,33 @@ const STAGING_URL = "https://lolo-preview-example.supabase.co";
 const SERVICE_KEY = "test-service-role-key";
 
 describe("health route gate", () => {
-  it("lets the health check through and keeps other APIs gated", () => {
+  it("lets only the exact health path through and keeps every other route gated", () => {
     assert.equal(isUngatedPath("/api/health"), true);
     assert.equal(isUngatedPath("/beta"), true);
     assert.equal(isUngatedPath("/api/beta/login"), true);
-    assert.equal(isUngatedPath("/api/health/"), false);
-    assert.equal(isUngatedPath("/api/healthz"), false);
-    assert.equal(isUngatedPath("/api/events/missing"), false);
-    assert.equal(isUngatedPath("/API/health"), false);
+
+    const stillGated = [
+      "/api/health/",
+      "/api/health-anything",
+      "/api/health/extra",
+      "/api/healthcare",
+      "/api/healthz",
+      "/api/health?db=1",
+      "/API/health",
+      "/api/events/missing",
+      "/api/admin/login",
+      "/api/admin/settings",
+      "/api/host/login",
+      "/api/stores",
+      "/api/orders",
+      "/admin",
+      "/host",
+      "/store",
+      "/",
+    ];
+    for (const path of stillGated) {
+      assert.equal(isUngatedPath(path), false, path);
+    }
   });
 });
 
@@ -174,23 +193,75 @@ describe("health check", () => {
   });
 
   it("omits dependency errors and secrets from the report", async () => {
-    const secret = "super-secret-service-role";
+    const hostname = "db.internal.example";
+    const databaseUrl = `https://${hostname}/rest/v1/events`;
+    const serviceKey = "super-secret-service-role";
+    const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.health-token";
+    const envValue = "SUPABASE_SERVICE_ROLE_KEY=service-role-env-value";
+    const stack = `Error: connect ECONNREFUSED ${databaseUrl}\n    at probeSupabaseRest (lib/health/database-probe.ts:29:11)`;
     const report = await runHealthCheck({
       access: "ready",
       probe: async () => {
-        throw new Error(`connect failed https://${PRODUCTION_PROJECT_REF}.supabase.co ${secret}`);
+        const error = new Error(
+          `connect failed ${databaseUrl} ${serviceKey} ${token} ${envValue}`,
+        );
+        error.stack = stack;
+        throw error;
       },
     });
     const body = JSON.stringify(report);
+    for (const secret of [
+      hostname,
+      databaseUrl,
+      serviceKey,
+      token,
+      envValue,
+      "SUPABASE_SERVICE_ROLE_KEY",
+      "ECONNREFUSED",
+      "probeSupabaseRest",
+      "database-probe.ts",
+      "connect failed",
+      PRODUCTION_PROJECT_REF,
+    ]) {
+      assert.equal(body.includes(secret), false, secret);
+    }
     assert.equal(report.components.database.status, "error");
-    assert.equal(body.includes(secret), false);
-    assert.equal(body.includes(PRODUCTION_PROJECT_REF), false);
-    assert.equal(body.includes("connect failed"), false);
     assert.deepEqual(Object.keys(report).sort(), ["components", "status"]);
+    assert.deepEqual(Object.keys(report.components).sort(), ["app", "database"]);
+    assert.deepEqual(Object.keys(report.components.app), ["status"]);
     assert.deepEqual(Object.keys(report.components.database).sort(), [
       "latencyMs",
       "status",
     ]);
+    assert.equal(
+      ["ok", "not_configured", "disconnected", "timeout", "error"].includes(
+        report.components.database.status,
+      ),
+      true,
+    );
+  });
+
+  it("does not connect when credentials are missing", async () => {
+    const access = databaseAccess({
+      vercelEnv: "production",
+      supabaseUrl: undefined,
+      serviceRoleKey: undefined,
+    });
+    assert.equal(access, "not_configured");
+    let calls = 0;
+    const report = await runHealthCheck({
+      access,
+      timeoutMs: HEALTH_TIMEOUT_MS,
+      probe: async () => {
+        calls += 1;
+        throw new Error("probe must not run");
+      },
+    });
+    assert.equal(calls, 0);
+    assert.equal(report.components.database.status, "not_configured");
+    assert.equal(report.components.database.latencyMs, undefined);
+    assert.equal(healthHttpStatus(report), 503);
+    assert.equal(JSON.stringify(report).includes("probe must not run"), false);
   });
 });
 
